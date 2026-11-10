@@ -3,7 +3,24 @@
 #   docker compose up -d        # start
 #   docker compose down         # stop (keeps the named volume / data)
 #   docker compose down -v      # stop and wipe the data volume
+# The game server is in the profile "server", so the commands above leave it alone; make run-server starts it.
 services:
+  server:
+    profiles: [server]
+    build:
+      context: .
+      dockerfile: Server/PristonTale.Server/Dockerfile
+    container_name: pristontale-server
+    # The files it writes in data/ belong to the user who runs make, so the host's tools can still open them.
+    user: "${HOST_UID:-0}:${HOST_GID:-0}"
+    environment:
+      HOME: /tmp
+    ports:
+      - "10009:10009"
+    volumes:
+      - ./assets:/app/assets:ro
+      - ./data:/app/data
+
   postgres:
     image: postgres:17
     container_name: pristontale-postgres

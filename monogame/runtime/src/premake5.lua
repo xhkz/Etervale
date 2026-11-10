@@ -109,7 +109,7 @@ function faudio()
     libdirs {"external/faudio/build"}
     linkoptions {
         "-Wl,-force_load,external/faudio/build/libFAudio.a",
-        "-Wl,-ld_classic"
+        "-Wl,-no_fixup_chains"
     }
     
     filter {"system:linux"}

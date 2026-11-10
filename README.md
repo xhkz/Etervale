@@ -81,6 +81,26 @@ dotnet build tools/PristonTale.WorldImport/PristonTale.WorldImport.csproj -c Rel
 build compiles its shaders with the fork's effect processor (`monogame/pipeline`), which the solution builds first. The
 standalone importer build is explicit because its Release output must be available for the `--no-build` commands below.
 
+On macOS and Linux the [Makefile](Makefile) runs these steps:
+
+- `make setup` installs the build dependencies and builds the native runtime, then restores the tools and the
+  solution. On macOS it installs .NET 10, cmake, premake and pkg-config with Homebrew (it stops if Homebrew or the
+  Xcode command line tools are missing). If no Vulkan SDK is found in `~/VulkanSDK`, it downloads LunarG's SDK and
+  opens its installer, so you accept its licence yourself; `make setup VULKAN_SDK=<sdk>/macOS` uses an SDK installed
+  somewhere else. On Linux it installs the packages with `apt-get` or `dnf` and stops if premake5 or .NET 10 is
+  missing.
+- `make server` builds the server, the importer and `PristonTale.DevAccounts`.
+- `make client` builds the client and `PristonTale.VfxImport`.
+- `make run-server` starts the server in Docker, in the foreground (Ctrl-C stops it). If `data/pristontale.db` is
+  missing, it first imports and verifies the world data on the host. The `server` service of `docker-compose.yml`
+  builds the image from `Server/PristonTale.Server/Dockerfile`, publishes port 10009, mounts `assets/` read-only and
+  `data/` (the database and the certificate), and runs as the user who runs `make`. It is in the compose profile
+  `server`, so `docker compose up` still starts only PostgreSQL. Create accounts while the server is stopped: SQLite
+  cannot safely share its WAL between the host and the container.
+- `make run-client` builds the client and starts it; it connects to `localhost`, where the container's port is.
+
+The run commands below work after `make server` and `make client`.
+
 ## Screenshots
 
 <img width="1920" height="1033" alt="image" src="https://github.com/user-attachments/assets/d5978f70-be44-4e95-92c7-7af454e220f0" />

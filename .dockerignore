@@ -1,0 +1,7 @@
+# The server image builds only the projects the server references (Server/PristonTale.Server/Dockerfile).
+*
+!Server/
+!Shared/
+!Persistence/
+**/bin/
+**/obj/

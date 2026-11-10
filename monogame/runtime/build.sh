@@ -67,6 +67,10 @@ if [ "${rid%%-*}" = linux ]; then
   sdl_options="$sdl_options -DSDL_ALSA=ON -DSDL_ALSA_SHARED=ON -DSDL_PULSEAUDIO=ON -DSDL_PULSEAUDIO_SHARED=ON"
   sdl_options="$sdl_options -DSDL_PIPEWIRE=ON -DSDL_PIPEWIRE_SHARED=ON"
 fi
+# macOS: premake5.lua links the runtime for arm64 and x86_64 in one library, so its static SDL2 and FAudio hold both.
+universal=""
+if [ "$rid" = osx ]; then universal="-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"; fi
+sdl_options="$sdl_options $universal"
 sdl_stamp=$(stamp_of sdl2 "$sdl_options")
 if [ ! -f "$S/build/libSDL2.a" ] || [ "$(cat "$S/build/etervale.stamp" 2> /dev/null)" != "$sdl_stamp" ]; then
   rm -rf "$S/build"
@@ -87,12 +91,12 @@ if [ "${rid%%-*}" = linux ]; then
 fi
 
 F="$src/external/faudio"
-faudio_stamp=$(stamp_of faudio "")
+faudio_stamp=$(stamp_of faudio "$universal")
 if [ ! -f "$F/build/libFAudio.a" ] || [ "$(cat "$F/build/etervale.stamp" 2> /dev/null)" != "$faudio_stamp" ]; then
   rm -rf "$F/build"
   cmake -S "$F" -B "$F/build" -DBUILD_SHARED_LIBS=OFF -DBUILD_SDL3=OFF \
     -DCMAKE_C_STANDARD_INCLUDE_DIRECTORIES="$S/include" -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_POSITION_INDEPENDENT_CODE=ON > /dev/null
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON $universal > /dev/null
   nice_ cmake --build "$F/build" --config Release -j "$JOBS" > /dev/null
   echo "$faudio_stamp" > "$F/build/etervale.stamp"
 fi
