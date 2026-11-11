@@ -21,6 +21,9 @@ register count, binary size, stack size, local memory, inputs and outputs), when
 - With `MG_PIPELINE_STATISTICS=1` in the environment at device creation and the extension present, the extension and its
   feature are enabled and every graphics and compute pipeline is created with the capture flag (off by default: capturing
   may slow pipeline creation). The last bound graphics and compute pipelines are kept.
+- The extension's two functions are taken from the device with `vkGetDeviceProcAddr` after its creation, on every
+  platform: macOS links MoltenVK statically, which exports no extension entry points, so naming them directly does not
+  link there. A device that lacks either keeps the statistics off.
 - `MGG_GraphicsDevice_GetPipelineStatistics(device, compute, buffer, capacity)`: the statistics of the last bound graphics
   (`compute` 0) or compute (1) pipeline as UTF-8 lines `executable<TAB>statistic<TAB>value`; returns the length, 0 before
   any pipeline, -1 when the statistics are off.

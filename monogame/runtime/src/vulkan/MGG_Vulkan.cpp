@@ -342,8 +342,11 @@ struct MGG_GraphicsDevice
 
 	// Etervale fork (issue 012): VK_KHR_pipeline_executable_properties, enabled when MG_PIPELINE_STATISTICS=1 at device
 	// creation and the driver has it: pipelines are then created with their statistics captured, and the last bound
-	// graphics and compute pipelines are kept for MGG_GraphicsDevice_GetPipelineStatistics.
+	// graphics and compute pipelines are kept for MGG_GraphicsDevice_GetPipelineStatistics. The extension's functions
+	// are taken from the device: macOS links MoltenVK, which exports no extension entry points.
 	bool pipelineStatistics = false;
+	PFN_vkGetPipelineExecutablePropertiesKHR getPipelineExecutableProperties = nullptr;
+	PFN_vkGetPipelineExecutableStatisticsKHR getPipelineExecutableStatistics = nullptr;
 	VkPipeline lastGraphicsPipeline = VK_NULL_HANDLE;
 	VkPipeline lastComputePipeline = VK_NULL_HANDLE;
 
@@ -1691,6 +1694,17 @@ MGG_GraphicsDevice* MGG_GraphicsDevice_Create(MGG_GraphicsSystem* system, MGG_Gr
 	VK_CHECK_RESULT(res);
 	VK_SET_OBJECT_NAME(device->device, device->device, VK_OBJECT_TYPE_DEVICE, "MGG_GraphicsDevice.device");
 	VK_SET_OBJECT_NAME(device->device, device->physicalDevice, VK_OBJECT_TYPE_PHYSICAL_DEVICE, "MGG_GraphicsDevice.physicalDevice");
+
+	if (device->pipelineStatistics)
+	{
+		device->getPipelineExecutableProperties = (PFN_vkGetPipelineExecutablePropertiesKHR)vkGetDeviceProcAddr(device->device, "vkGetPipelineExecutablePropertiesKHR");
+		device->getPipelineExecutableStatistics = (PFN_vkGetPipelineExecutableStatisticsKHR)vkGetDeviceProcAddr(device->device, "vkGetPipelineExecutableStatisticsKHR");
+		if (device->getPipelineExecutableProperties == nullptr || device->getPipelineExecutableStatistics == nullptr)
+		{
+			printf("%s has no entry points on this device: no pipeline statistics.\n", VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+			device->pipelineStatistics = false;
+		}
+	}
 
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.instance = system->instance;
@@ -7182,9 +7196,9 @@ MG_EXPORT mgint MGG_GraphicsDevice_GetPipelineStatistics(MGG_GraphicsDevice* dev
 	VkPipelineInfoKHR info = { VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR };
 	info.pipeline = pipeline;
 	uint32_t executables = 0;
-	vkGetPipelineExecutablePropertiesKHR(device->device, &info, &executables, nullptr);
+	device->getPipelineExecutableProperties(device->device, &info, &executables, nullptr);
 	std::vector<VkPipelineExecutablePropertiesKHR> properties(executables, { VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_PROPERTIES_KHR });
-	vkGetPipelineExecutablePropertiesKHR(device->device, &info, &executables, properties.data());
+	device->getPipelineExecutableProperties(device->device, &info, &executables, properties.data());
 
 	std::string text;
 	for (uint32_t e = 0; e < executables; e++)
@@ -7193,9 +7207,9 @@ MG_EXPORT mgint MGG_GraphicsDevice_GetPipelineStatistics(MGG_GraphicsDevice* dev
 		executable.pipeline = pipeline;
 		executable.executableIndex = e;
 		uint32_t count = 0;
-		vkGetPipelineExecutableStatisticsKHR(device->device, &executable, &count, nullptr);
+		device->getPipelineExecutableStatistics(device->device, &executable, &count, nullptr);
 		std::vector<VkPipelineExecutableStatisticKHR> statistics(count, { VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_STATISTIC_KHR });
-		vkGetPipelineExecutableStatisticsKHR(device->device, &executable, &count, statistics.data());
+		device->getPipelineExecutableStatistics(device->device, &executable, &count, statistics.data());
 		for (const auto& statistic : statistics)
 		{
 			char value[64];

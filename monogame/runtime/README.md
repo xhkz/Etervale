@@ -146,7 +146,8 @@ Since the C# half was forked too (`../issues/001-framework-from-source.md`), eac
 24. **Pipeline statistics** (`../issues/012-pipeline-statistics.md`; interface version 3): with `MG_PIPELINE_STATISTICS=1`
     at device creation and `VK_KHR_pipeline_executable_properties` present, pipelines are created with their statistics
     captured; `MGG_GraphicsDevice_GetPipelineStatistics` returns those of the last bound graphics or compute pipeline
-    (registers, binary and stack size... as the driver reports them).
+    (registers, binary and stack size... as the driver reports them). The extension's functions come from
+    `vkGetDeviceProcAddr`, since the MoltenVK that macOS links exports none.
 
 25. **NoOverwrite uploads in place** (`MGG_Buffer_SetDataNoOverwrite`, `../issues/013-no-overwrite-uploads.md`; interface
     version 4): `SetDataOptions.NoOverwrite` on a dynamic buffer no longer renames the buffer and copies its old
@@ -164,6 +165,9 @@ Since the C# half was forked too (`../issues/001-framework-from-source.md`), eac
     interface version 7): whether the SDL window is maximized, and maximizing it.
 30. **Mono pan** (`common/mg_audio.cpp`, `../issues/019-mono-pan.md`, `upstream/20-mono-pan.md`): a mono voice's right
     channel was `-pan - 1` at or left of the centre (phase inverted, louder to the left); it is `pan + 1`.
+31. **macOS build** (`../issues/020-macos-build.md`): FAudio's macOS link uses `-no_fixup_chains` instead of
+    `-ld_classic`, which current Xcode ignores, so the unaligned pointers of its packed curves link; `build.sh` builds
+    SDL2 and FAudio for arm64 and x86_64 like the runtime.
 
 The runtime also prints the swapchain image count and present mode, an early submission when the uniform buffer is
 full, and a warning when two resources of one shader share a binding.
@@ -192,7 +196,8 @@ powershell -ExecutionPolicy Bypass -File monogame/runtime/build-windows.ps1
 Linux needs cmake, make, a C++17 compiler, premake5, pkg-config and the development headers of the three sound
 servers SDL2 is built for (Fedora: `alsa-lib-devel pulseaudio-libs-devel pipewire-devel`; Debian/Ubuntu:
 `libasound2-dev libpulse-dev libpipewire-0.3-dev`), plus the version-control client that fetches SDL2 and FAudio. macOS needs Xcode and the Vulkan SDK (MoltenVK), with
-`VULKAN_SDK` set. Windows uses `build-windows.ps1` (above).
+`VULKAN_SDK` set; its `bin/osx/` library holds arm64 and x86_64, and so do the SDL2 and FAudio built for it. Windows
+uses `build-windows.ps1` (above).
 
 A local build needs the glibc of the machine that built it (Fedora 44: 2.43). A portable Linux library is built on an
 older distribution (Ubuntu 22.04: glibc 2.35), and release packages should ship that one.
