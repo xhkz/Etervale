@@ -111,13 +111,18 @@ dotnet run --project tools/PristonTale.GltfExport -c Release --no-build -- <armo
 | `--lit-stage` | Stages get lit materials instead of the default unlit ones (stage lighting is baked into vertex colours) |
 | `--stage-object` | `.smd`/`.smb` only: play model animation at the field-object rate over its `[160, last]` loop |
 | `--t-pose` | `.inx` only: rebind the biped with horizontal arms; use it for both the armor and its `--anims-only` file |
+| `--strict-textures` | Exit 2 when any texture fell back to the placeholder |
+| `--verbose` | Full exception stacks and temporary-directory cleanup failures |
 
 - Option names are case-insensitive; options that take a value accept it once; any other `--` argument is an error.
 - A physique `.smd` model with a sibling `.smb` is exported skinned to that skeleton.
 - Textures are converted to PNG in a temporary directory that is deleted afterwards.
 - Alpha modes follow the engine's queue (`PristonMaterialRuntimeFactory.Classify`): a cut-out is `MASK` even when
   flagged to draw late (the foliage), a late colour blend or a transparent material is `BLEND`, the rest `OPAQUE`.
-- `PTGLTF_DEBUG=1` prints full exception stacks and cleanup failures. Exit 0 on success, 1 on any error.
+- Each missing or unreadable texture is listed on stderr (`texture fallback: '<name>' (<reason>)`) and counted in the
+  summary.
+- `--verbose` prints full exception stacks and cleanup failures. Exit 0 on success, 1 on any error, 2 under
+  `--strict-textures` when a texture fell back (the file is still written).
 
 ## WorldImport (`ptworld`)
 
@@ -170,7 +175,6 @@ dotnet run --project tools/PristonTale.DevAccounts -c Release --no-build -- add-
 | --- | --- |
 | `--sqlite <path>` | SQLite file; default `data/pristontale.db`; relative paths resolve as described below |
 | `--conn "<npgsql>"` | PostgreSQL instead; exclusive with `--sqlite` |
-| `PT_PG_CONN` (env) | PostgreSQL connection used when neither option is given |
 
 - `add-char`: name 3-16 characters and unused; class by `PlayerClass` name (case-insensitive) or number; level ≥ 1
   (default 1).
@@ -309,7 +313,8 @@ dotnet run --project tools/PristonTale.DataImport -c Release --no-build -- copy 
   already in `assets/` is kept untouched.
 - Refuses (and reports) an SMD whose signature is not one the game's reader knows (`SmdLayout`), a bitmap
   without a `BM`/`A8`/`C8` header, a TGA that is not true colour (stored or run-length) and other damaged headers; exits
-  1 when anything was refused.
+  1 when anything was refused. A file still masked with 0x82 is judged through the mask (`AssetMask`) and copied as it
+  is, since the game reads it.
 - The deep fields' stages that the archive lacked (Stemple, the Heart of Fire, the Crystal Nest and the Land of Nurwn)
   came from a client that masks its data with 0x82: `copy <client> assets --mask 0x82 Field/HeartOfFire Field/CrystalNest
   Field/LandofNurwn Field/SeaA Field/AncientW`.

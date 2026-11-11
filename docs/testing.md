@@ -26,7 +26,7 @@ benchmarks, and the asset/GPU probes that read game data or create a Vulkan devi
 | `WorldPump.cs` | Ticks a `WorldServer` at 50 ms until an operation it serves completes (service and transaction cases) |
 | `WireRoundTrip.cs` | Snapshots through server `PresenceEncoder` and client `PresenceDecoder` over original packet bytes |
 | `MultiplayerServer.cs`, `MultiplayerClient.cs` | A whole server in the runner (real host, disposable SQLite, ephemeral port, synthetic world) and real TCP clients with the world each one observed |
-| `AllocationSampler.cs` | Allocation ticks by type for benchmarks (`PRESENCE_ALLOCATIONS=1`) |
+| `AllocationSampler.cs` | Allocation ticks by type for benchmarks (`--benchmark-presence ... --allocations`) |
 | `AbsoluteContentManager.cs` | `ContentManager` that opens `.xnb` files from an absolute content root (GPU probes) |
 | `*Probe.cs`, `*Probe.<Topic>.cs` | Opt-in probes (see Probes); never part of the default suite |
 | `*Benchmark.cs`, `RenderBenchmarkProbe.cs` | Opt-in benchmarks; `DomainTests.BenchmarkAsync` is the `--benchmark` tick benchmark |
@@ -75,7 +75,7 @@ Default case files by area (all `tests/PristonTale.Tests/<Name>.cs`):
 | HUD and screens | `HudInteractionTests`, `CharacterHeadTests`, `CharacterSelectTests` | 800x600 layout, hit tests |
 | Rendering | `RenderTests`, `RenderFidelityTests`, `PhotorealTests`, `MaterialAdapterTests`, `ShadowProjectionTests`, `SkyTests` | CPU-side renderer |
 | Meshes, effects | `SkinPaletteTests`, `ModelNormalTests`, `AnimationFallbackTests`, `TransientLightTests` | Skinning, lights |
-| Formats | `BinaryCursorTests`, `EffectLoadingTests`, `GltfExportTests`, `GltfModelTests` | Binary readers, shader load failure, glTF export, glTF reading |
+| Formats | `BinaryCursorTests`, `EffectLoadingTests`, `GltfExportTests`, `GltfModelTests`, `ModelTextTests` | Binary readers, shader load failure, glTF export, glTF reading, model descriptors compiled to model info and model path resolution |
 | glTF rendering | `GltfRenderingTests` | glTF animation sampling and skin matrices, material map packing, texture transform, batches of 64 bones and the clip timeline |
 
 ## Running
@@ -118,7 +118,9 @@ git diff --check
   rules and definitions use exists there, and prints `(skipped: no assets/Effect/Vfx next to the repository)` when none
   is found. The authored definitions are checked without assets from `tools/PristonTale.VfxImport/Authored/`.
 - The `GltfModelTests` case on the Mythcreature reads `char/npc/Mythcreature/Mythcreature.glb` from the assets root when
-  it is there, and skips otherwise.
+  it is there, and skips otherwise; the `ModelTextTests` case "every descriptor of the game's characters ..." reads
+  every descriptor under the assets root's `char/` with an `.inx` beside it (three edited after it listed as
+  `Revised`), compiles each into a temporary directory and reads it back, and skips without an assets root.
 - Test-only models live in `tests/assets/` (ignored by git and not distributed: their licenses are not cleared for
   redistribution), found by `TestAssets.Find` walking up from the runner; a case using them skips with a message when
   the folder is absent. `tests/assets/gltf/` holds `Solus_the_knight.glb` (75 joints, 21 clips with step and linear
@@ -161,7 +163,7 @@ All CPU-only; no GPU, assets or database unless stated.
 | --- | --- |
 | `--benchmark` | After the (filtered) suite: 5 runs of 128 players, 100 warmup and 1,000 measured 50 ms ticks; median, p95, max, bytes/tick |
 | `--benchmark-world` | 128 players + 512 monsters at 20 Hz (AI, combat, collision, snapshots, 128 drained outboxes); spacing 128 and 64 units, 5 runs each |
-| `--benchmark-presence <counts> <layouts> <ticks>` | The real `WorldServer` tick plus one `PresenceEncoder` per player (no sockets): e.g. `500,1000,2000,5000 spread,crowded 100`. Players walk, a quarter fight, a tenth cast; prints tick and encode p50/p99, CPU cores, bytes per client per second and per tick, allocations (tick and encode), collections and heap. `PRESENCE_ALLOCATIONS=1` adds the allocating types. Results: [protocol.md](protocol.md#measured-capacity) |
+| `--benchmark-presence <counts> <layouts> <ticks> [--allocations]` | The real `WorldServer` tick plus one `PresenceEncoder` per player (no sockets): e.g. `500,1000,2000,5000 spread,crowded 100`. Players walk, a quarter fight, a tenth cast; prints tick and encode p50/p99, CPU cores, bytes per client per second and per tick, allocations (tick and encode), collections and heap. `--allocations` adds the allocating types. Results: [protocol.md](protocol.md#measured-capacity) |
 | `--benchmark-parsing <assets>` | Binary cursor microbenchmarks and `Field/forest/fore-1.smd` parses; requires 752 materials, 35,519 faces |
 | `--profile-ricarten <assets>` | Ricarten stage and model parsing, collision build and texture preparation times |
 
@@ -196,13 +198,13 @@ when reading those assets is authorized. GPU probes:
 | `--capture-chat <assets> <content> <output-dir> [<background.png>]` | yes | Chat window open, closed, unfocused, per tab, assistant split and page, shrunk beside the inventory, at 1280x720 and scale 2; speech bubbles over players, an NPC and a monster |
 | `--capture-item-hud <assets> <content> <output-dir>` | yes | Premium timer column, hover and blink, Teleport Core pages and confirmation, item tooltips (orb, package, crystal, gift box, chocolate, castle stone, lucky bag), item effects, castle items and boosters in the effects bar, the puzzle board, finished puzzle and collector question, an item carried over a free cell, another item and the weapon slot, and the count box for a carried stack set down above the window |
 | `--capture-shadows <assets> <content> <output-dir>` | yes | Two characters and Babel at Navisko's start by day (wide, close, and close without contact shadows, without shadows, and the occlusion view), beside the nearest lamp by night, a morning with the sun moving at the server clock's rate, a camera turning around them, and ten seconds of the mean brightness per frame with the sun moving (`Brightness <frame> <all> <ground>` lines, no images); Karina and Ariel where Navisko places them. At 1920x1080; consecutive frames with a change image (`-change.png`, eight times brighter) and the count of changed pixels |
-| `--capture-item-effects <assets> <content> <output-dir>` | yes | Ricarten at night: pets idle and striking, firecracker bursts, the skill-learn light, force orb glow and hit, a big head, crystal pets with their plates in the return sparkle, the soccer-ball head |
+| `--capture-item-effects <assets> <content> <output-dir>` | yes | Ricarten at night: pets idle and striking, firecracker bursts, the skill-learn light, force orb glow and hit, a big head, crystal pets with their plates in the return sparkle, the soccer-ball head, the aging light |
 | `--capture-login <assets> <content> <output-dir> <background.png>` | yes | Login screen edge cases (see below) |
 | `--capture-skills <assets> <content> <output-dir> [<hex,hex,...>]` | yes | Casts skills with the server timeline (see below) |
 | `--capture-sky <assets> <content> <output-dir>` | yes | One `sky-NN.png` per sky profile |
 | `--capture-weather <assets> <content> <output-dir>` | yes | Ricarten's start under each weather at 1920x1080 after two seconds: clear, overcast, light, heavy and storm rain, a lightning flash, rain at dusk and at night, close under the eaves, the clouds' shadows and a morning mist, a storm in the morning mist (`storm-dawn-mist`: the deck and the mist grey, not orange), also over the harbour toward the sunrise (`mist-harbour`: the water and the far quays must fade into the haze, without blue patches or bright silhouettes); the realistic sky toward the horizon at noon, at sunrise with and without the mist, in a broken afternoon, at sunset and dusk, under a full and a new moon, overcast, in a storm and its lightning, in a storm at night and at dawn, with a rainbow and the aurora, and the classic dome, also in the rain at noon, in the afternoon, at dusk and at night (`sky-classic-rain*`: the clouds must go on past the rain dome's rim, without a band of the hour's colour above it); `sky-drift`, eight frames of clouds in a strong wind with each frame's change from the last (`sky-drift-N-change.png`, and the count of pixels changed by more than 6 levels), where a wavering or flickering sky shows over the clouds' bodies (`WeatherCaptureProbe`) |
 | `--capture-npcs <assets> <content> <output.png>` | yes | NPC presentation capture |
-| `--capture-gltf <assets> <content> <output-dir> <model,model,...>` | yes | glTF models as actors beside a legacy NPC; `layers` is four built spheres (plain, clearcoat, sheen, diffuse transmission) |
+| `--capture-gltf <assets> <content> <output-dir> <model,model,...>` | yes | glTF models (a file, or model info relative to the assets root: its Stand) as actors beside a legacy NPC; `layers` is four built spheres (plain, clearcoat, sheen, diffuse transmission) |
 | `--capture-job-heads <assets> <content> <output.png>` | yes | Job-head presentation capture |
 | `--capture-equipment <assets> <content> <output-dir>` | yes | Equipment captures |
 | `--capture-ranged-equipment <assets> <content> <output-dir>` | yes | Bow and crossbow attachment captures |
@@ -218,7 +220,7 @@ when reading those assets is authorized. GPU probes:
 | `--verify-equipment <assets>` | no | Equipped attack clips against `PlayerEquipmentTiming` |
 | `--export-equipment-timings <assets> <output.json>` | no | Writes the generated `World/Motion/Data/PlayerEquipmentTiming.json` (see Pitfalls) |
 | `--verify-world-rewards <assets> <disposable.db>` | no | Real catalog checks on a copy of an imported database (see below) |
-| `--validate-binary-assets <assets>` | no | Parses every `.inx`, `.smd`, `.smb` and `.cam` under the root and lists failures |
+| `--validate-binary-assets <assets>` | no | Parses every `.inx`, `.smd`, `.smb` and `.cam` under the root and lists failures, and every texture a drawn material names that the renderer would not find (only listed, not a failure) |
 | `--inspect-actor <assets> <actor-path>` | no | Prints mesh, skeleton, material and bone details of one actor |
 | `--inspect-ricarten-ground <assets>` | no | Reads only the Ricarten stage: stacked floors near the entrance gate and high cameras with an occluded focus |
 

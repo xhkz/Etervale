@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using PristonTale.Engine3D.Rendering.Lighting;
+using PristonTale.Gameplay.Audio;
 using PristonTale.Simulation.Items.Usable;
 
 namespace PristonTale.Gameplay.Effects;
@@ -15,6 +16,9 @@ public sealed class ItemUseEffects
     public const string LearnSound = "wav/Effects/Skill/Learn_Skill.wav";
     public const string DrinkSound = "Image/SinImage/Sound/drink2.wav";
     public const string EatSound = "Image/SinImage/Sound/drink1.wav";
+    // An aged copy reaching its level plays the level-up sound at 16000 Hz.
+    public const string AgingUpSound = "wav/Effects/event/level UP.wav";
+    private static readonly float AgingUpPitch = SoundRates.Octaves(1600f);
     public static readonly string[] FirecrackerSounds = ["wav/Effects/event/firecracker01.wav", "wav/Effects/event/firecracker02.wav",
         "wav/Effects/event/firecracker03.wav"];
     private static readonly string[] Crackers = ["FireCrackerAll", "FireCrackerHeart", "FireCrackerMoon", "FireCrackerStar", "FireCrackerNormal"];
@@ -32,7 +36,7 @@ public sealed class ItemUseEffects
         _skills = skills;
         _lights = lights;
         _sounds = sounds;
-        sounds?.Preload(FirecrackerSounds.Append(LearnSound).Append(DrinkSound).Append(EatSound));
+        sounds?.Preload(FirecrackerSounds.Append(LearnSound).Append(DrinkSound).Append(EatSound).Append(AgingUpSound));
     }
 
     public int PendingBursts => _bursts.Count;
@@ -67,6 +71,9 @@ public sealed class ItemUseEffects
             case ItemEffectKind.Return:
             case ItemEffectKind.HeadChange:
                 _sounds?.Play(LearnSound, position, listener);
+                break;
+            case ItemEffectKind.AgingUp:
+                _sounds?.Play(AgingUpSound, position, listener, 1f, AgingUpPitch);
                 break;
             case ItemEffectKind.GiftBox:
                 // The eat event's orange light at chest height.

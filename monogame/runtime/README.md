@@ -163,7 +163,9 @@ Since the C# half was forked too (`../issues/001-framework-from-source.md`), eac
     sampled through a depth view.
 29. **Maximized state** (`MGP_Window_GetIsMaximized`, `MGP_Window_Maximize`, `../issues/017-window-maximize.md`;
     interface version 7): whether the SDL window is maximized, and maximizing it.
-30. **macOS build** (`../issues/018-macos-build.md`): FAudio's macOS link uses `-no_fixup_chains` instead of
+30. **Mono pan** (`common/mg_audio.cpp`, `../issues/019-mono-pan.md`, `upstream/20-mono-pan.md`): a mono voice's right
+    channel was `-pan - 1` at or left of the centre (phase inverted, louder to the left); it is `pan + 1`.
+31. **macOS build** (`../issues/020-macos-build.md`): FAudio's macOS link uses `-no_fixup_chains` instead of
     `-ld_classic`, which current Xcode ignores, so the unaligned pointers of its packed curves link; `build.sh` builds
     SDL2 and FAudio for arm64 and x86_64 like the runtime.
 
