@@ -27,7 +27,7 @@ internal static class GameMasterCommandTests
         ("//netlog", 1), ("/user_limit", 2), ("/kick", 2), ("/kill", 2), ("/open_warehouse", 2), ("/shutdown", 2), ("/weather", 2),
         ("/reload_settings", 4), ("/setting", 4), ("/insert", 2),
         ("/usercode", 1), ("/userid", 1), ("/username", 1), ("/near", 2), ("/call", 2), ("/where", 2), ("/field", 2),
-        ("/player_location", 2), ("/expup", 4), ("/GiveMeExp!", 4), ("/GiveMeMoney!", 4),
+        ("/player_location", 2), ("/expup", 4), ("/GiveMeExp!", 4), ("/GiveMeMoney!", 4), ("/god", 4),
         ("/user", 1), ("/sockets", 1), ("/talk", 1), ("/set_absorb", 4), ("/area_users", 1), ("/monster", 1), ("/mymonster", 1),
         ("/event_monster", 1), ("/area_monster", 1), ("/show_blackuser", 1), ("/reset_blackuser", 1), ("/free_blackuser", 1), ("/hide", 1),
         ("/show", 1), ("/get_money", 3), ("/dm_info", 1), ("/get_guid", 1), ("/grant", 1),
@@ -46,6 +46,7 @@ internal static class GameMasterCommandTests
         yield return ("event monsters, field reports, absorption and monster speech", MonsterDetailsAsync);
         yield return ("item commands drop rolled, perfect and specialized copies and gold, and gifts are stored before delivery", ItemsAsync);
         yield return ("experience, premium resets, force orb and premium reports", CharacterAsync);
+        yield return ("/god sets every attribute of the game master to 500000 and keeps the unspent points", GodAsync);
         yield return ("server commands set the player limit, start the shutdown, release refused logins and move characters", ServerCommandsAsync);
         yield return ("a lent level opens commands until the borrower leaves, and test servers open the gift commands", GrantAsync);
     }
@@ -275,12 +276,17 @@ internal static class GameMasterCommandTests
         await fixture.SayAsync(gm, "/@get \"Stone Axe\"");
         await fixture.SayAsync(gm, "/GiveMeMoney! 5000");
         Assert.True(gm.Link.Last == ">What the hell~!!( 5000 )", gm.Link.Last);
-        await fixture.SayAsync(gm, "/GiveMeMoney! 1000001");
-        Assert.True(gm.Link.Last == ">What the hell~!!( 5000 )", "more than 1,000,000 gold must be refused");
+        await fixture.SayAsync(gm, "/GiveMeMoney! 1000000001");
+        Assert.True(gm.Link.Last == ">What the hell~!!( 5000 )", "more than 1,000,000,000 gold must be refused");
         fixture.Tick(1);
         var drops = FieldOf(fixture).GroundLoot.Snapshot();
         Assert.True(drops.Count(drop => drop.View.CatalogKey == "WA101") == 2 && drops.Single(drop => drop.View.Gold).View.Amount == 5000 && drops.All(drop => drop.Public),
             "the created items and gold were not dropped at the game master");
+        await fixture.SayAsync(gm, "/GiveMeMoney! 1000000000");
+        fixture.Tick(1);
+        Assert.True(gm.Link.Last == ">What the hell~!!( 1000000000 )"
+            && FieldOf(fixture).GroundLoot.Snapshot().Count(drop => drop.View.Gold && drop.View.Amount == 1_000_000_000) == 1,
+            $"1,000,000,000 gold, the most a game master may drop, was not dropped: {gm.Link.Last}");
         await fixture.SayAsync(gm, "/@get_perf WA101 MS");
         Assert.True(gm.Link.Last == "Perfect WA101 (Mechanician) created", gm.Link.Last);
         await fixture.SayAsync(gm, "/@get_perf WA101 MS 18");
@@ -368,6 +374,20 @@ internal static class GameMasterCommandTests
         await fixture.SayAsync(gm, "/get_forceorb");
         Assert.True(gm.Link.Last.StartsWith($"0> Force Orb - [{orb.IconNumber}] ( 29 sec )", StringComparison.Ordinal)
             || gm.Link.Last.StartsWith($"0> Force Orb - [{orb.IconNumber}] ( 30 sec )", StringComparison.Ordinal), gm.Link.Last);
+    }
+
+    private static async Task GodAsync()
+    {
+        var fixture = new ChatFixture();
+        var gm = await fixture.JoinAsync("Keeper", 0, 0, GameMasterLevel.Administrator);
+        var character = gm.Session.Character!;
+        var points = character.StatPoints;
+        var life = character.MaxLife;
+        await fixture.SayAsync(gm, "/god");
+        var god = GmPlayerCommands.GodAttribute;
+        Assert.True(character.Attributes == new CharacterAttributes(god, god, god, god, god), $"attributes {character.Attributes}");
+        Assert.True(character.StatPoints == points && character.MaxLife > life, "the unspent points changed or the derived stats were not recomputed");
+        Assert.True(gm.Link.Last == $"> Every attribute is {god}", gm.Link.Last);
     }
 
     private static async Task ServerCommandsAsync()

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.Xna.Framework;
+using PristonTale.Engine3D.Rendering;
 using PristonTale.Gameplay.UI.Rendering;
 using PristonTale.Simulation.Characters;
 using PristonTale.Contracts.World;
@@ -165,6 +166,11 @@ public sealed class HudBar
             painter.Sprite(HudArt.Walk, 575, 565 + y);
         }
 
+        if (view.CameraMode != PristonCameraMode.Manual)
+        {
+            painter.Sprite(view.CameraMode == PristonCameraMode.Auto ? HudArt.CameraAuto : HudArt.CameraFixed, 575 + 24, 565 + y);
+        }
+
         if (view.MapVisible)
         {
             painter.Sprite(HudArt.MapOn, 575 + 48, 565 + y);
@@ -243,8 +249,12 @@ public sealed class HudBar
             case HudToggle.Walk:
                 painter.Sprite(view.Running ? HudArt.RunInfo : HudArt.WalkInfo, 575 + 12 - 38, 536 + y);
                 break;
+            case HudToggle.Camera when view.CameraMode == PristonCameraMode.Auto:
+                // The original draws this one tooltip three pixels further right.
+                painter.Sprite(HudArt.CameraAutoInfo, 575 + 26 + 13 - 38, 536 + y);
+                break;
             case HudToggle.Camera:
-                painter.Sprite(HudArt.CameraHandInfo, 575 + 24 + 12 - 38, 536 + y);
+                painter.Sprite(view.CameraMode == PristonCameraMode.Lock ? HudArt.CameraFixedInfo : HudArt.CameraHandInfo, 575 + 24 + 12 - 38, 536 + y);
                 break;
             case HudToggle.Map:
                 painter.Sprite(view.MapVisible ? HudArt.MapOffInfo : HudArt.MapOnInfo, 575 + 48 + 12 - 38, 536 + y);
@@ -272,6 +282,7 @@ public sealed class HudBar
 public readonly record struct HudBarView(
     float TimeOfDay,
     bool Running,
+    PristonCameraMode CameraMode,
     bool MapVisible,
     bool LeftSkill,
     bool RightSkill,

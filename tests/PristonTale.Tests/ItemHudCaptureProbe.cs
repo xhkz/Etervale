@@ -21,7 +21,8 @@ using PristonTale.Contracts.Texts;
 namespace PristonTale.Tests;
 
 // Captures the special-item HUD: the premium timer column with its grey covers, hover box and last-seconds blink, the
-// Teleport Core field list and its confirmation, usable item tooltips, item effects in the running-effects bar (castle
+// Teleport Core field list and its confirmation, usable item tooltips, the name marks of a two-handed and a one-handed
+// weapon and a robe, item effects in the running-effects bar (castle
 // items, boosters and the skill-delay item), and the puzzle board, its finished glow and the collector's question.
 internal sealed class ItemHudCaptureProbe : Game
 {
@@ -44,6 +45,9 @@ internal sealed class ItemHudCaptureProbe : Game
         ChocolateTooltip,
         CastleTooltip,
         LuckyBagTooltip,
+        TwoHandedTooltip,
+        OneHandedTooltip,
+        RobeTooltip,
         PuzzleBoard,
         PuzzleComplete,
         PuzzleExchange,
@@ -83,6 +87,9 @@ internal sealed class ItemHudCaptureProbe : Game
         new("item-tooltip-chocolate-800", Scene.ChocolateTooltip, WaitMs: 300),
         new("item-tooltip-castle-800", Scene.CastleTooltip, WaitMs: 300),
         new("item-tooltip-luckybag-800", Scene.LuckyBagTooltip, WaitMs: 300),
+        new("item-tooltip-twohanded-800", Scene.TwoHandedTooltip, WaitMs: 300),
+        new("item-tooltip-onehanded-800", Scene.OneHandedTooltip, WaitMs: 300),
+        new("item-tooltip-robe-800", Scene.RobeTooltip, WaitMs: 300),
         new("puzzle-board-800", Scene.PuzzleBoard, WaitMs: 300),
         new("puzzle-complete-800", Scene.PuzzleComplete, WaitMs: 1500),
         new("puzzle-exchange-800", Scene.PuzzleExchange, WaitMs: 300),
@@ -105,6 +112,7 @@ internal sealed class ItemHudCaptureProbe : Game
     private RenderTarget2D? _target;
     private OwnerState _owner = null!;
     private OwnerState _items = null!;
+    private OwnerState _gear = null!;
     private OwnerState _stack = null!;
     private OwnerState _boxed = null!;
     private OwnerState _board = null!;
@@ -162,6 +170,15 @@ internal sealed class ItemHudCaptureProbe : Game
                 Sized("BC106", "defiance Stone", 6), Sized(Puzzles.LuckyBagIcon, Puzzles.LuckyBagName, 24, "PZ101")
             }
         };
+        _gear = _owner with
+        {
+            InventoryRevision = _owner.InventoryRevision + 4,
+            Items = new OwnedItemView[]
+            {
+                Sized("WA105", "Battle Axe", 0) with { Kind = ItemKind.Axe }, Sized("WS207", "Claymore", 3) with { Kind = ItemKind.Sword },
+                Sized("DA225", "Robe", 6) with { Kind = ItemKind.Armor }
+            }
+        };
         _stack = _items with
         {
             InventoryRevision = _items.InventoryRevision + 10,
@@ -211,6 +228,7 @@ internal sealed class ItemHudCaptureProbe : Game
     {
         Scene.CrystalTooltip or Scene.GiftTooltip or Scene.ChocolateTooltip or Scene.CastleTooltip or Scene.LuckyBagTooltip
             or Scene.CarryFree or Scene.CarryExchange or Scene.CarrySlot => _items,
+        Scene.TwoHandedTooltip or Scene.OneHandedTooltip or Scene.RobeTooltip => _gear,
         Scene.ThrowCount or Scene.GoldCount or Scene.PairHint => _stack,
         Scene.QuestBox => _boxed,
         Scene.PuzzleBoard => _board,
@@ -238,6 +256,13 @@ internal sealed class ItemHudCaptureProbe : Game
         {
             _target?.Dispose();
             _target = new RenderTarget2D(GraphicsDevice, scenario.Width, scenario.Height);
+        }
+
+        // The HUD lays itself out from the bound viewport: its updates see the capture target it is drawn into, so that
+        // hover and clicks hit what the capture shows rather than the window's back buffer.
+        GraphicsDevice.SetRenderTarget(_target);
+        if (!_prepared)
+        {
             // Escape's order: one call closes one thing (a count box left open first).
             while (_hud.ClosePanel())
             {
@@ -260,7 +285,7 @@ internal sealed class ItemHudCaptureProbe : Game
             var owner = Owner(scenario.Scene);
             _hud.Update(owner, default, default);
             var keys = scenario.Scene is Scene.OrbTooltip or Scene.PackageTooltip or Scene.CrystalTooltip or Scene.GiftTooltip or Scene.ChocolateTooltip
-                or Scene.CastleTooltip or Scene.LuckyBagTooltip or Scene.PuzzleBoard or Scene.PuzzleComplete
+                or Scene.CastleTooltip or Scene.LuckyBagTooltip or Scene.TwoHandedTooltip or Scene.OneHandedTooltip or Scene.RobeTooltip or Scene.PuzzleBoard or Scene.PuzzleComplete
                 or Scene.CarryFree or Scene.CarryExchange or Scene.CarrySlot or Scene.ThrowCount or Scene.GoldCount or Scene.PairHint or Scene.QuestBox
                 ? new KeyboardState(Keys.I)
                 : default;
@@ -332,6 +357,7 @@ internal sealed class ItemHudCaptureProbe : Game
         }
 
         _hud.Update(Owner(scenario.Scene), default, Pointer(scenario, layout));
+        GraphicsDevice.SetRenderTarget(null);
     }
 
     private long _revision;
@@ -395,6 +421,9 @@ internal sealed class ItemHudCaptureProbe : Game
             Scene.ChocolateTooltip => HudInventoryLayout.Cell(origin, 4, 1, 1).Center,
             Scene.CastleTooltip => HudInventoryLayout.Cell(origin, 6, 1, 1).Center,
             Scene.LuckyBagTooltip => HudInventoryLayout.Cell(origin, 24, 1, 1).Center,
+            Scene.TwoHandedTooltip => HudInventoryLayout.Cell(origin, 0, 1, 1).Center,
+            Scene.OneHandedTooltip => HudInventoryLayout.Cell(origin, 3, 1, 1).Center,
+            Scene.RobeTooltip => HudInventoryLayout.Cell(origin, 6, 1, 1).Center,
             Scene.CarryFree => HudInventoryLayout.Cell(origin, 30, 1, 1).Center,
             Scene.CarryExchange => HudInventoryLayout.Cell(origin, 2, 1, 1).Center,
             Scene.CarrySlot => HudInventoryLayout.Equipment(origin, (int)EquipmentSlot.Weapon).Center,

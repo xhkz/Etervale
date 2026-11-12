@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using PristonTale.Engine3D.Rendering;
 using PristonTale.Gameplay.Screens.Framework;
 using PristonTale.Gameplay.UI.Chat;
 using PristonTale.Gameplay.UI.HelpPet;
@@ -319,7 +320,7 @@ public sealed partial class GameplayHud : IDisposable
             _syncedSkills = null;
             _skillHud.SetClass(value);
             _skills.SetClass(value);
-            _status.ClassName = DataText.ClassTitle(value, 0);
+            _status.Class = value;
             _status.Invalidate();
         }
     }
@@ -406,6 +407,7 @@ public sealed partial class GameplayHud : IDisposable
 
     internal void Update(OwnerState state, KeyboardState keyboard, MouseState mouse, double elapsedSeconds = 1)
     {
+        _sprites.SetScale(Layout().Scale);
         _sprites.Update();
         _icons.Update();
         _progression.Update();
@@ -723,7 +725,7 @@ public sealed partial class GameplayHud : IDisposable
 
         _painter.Flush();
         var left = _bindings.LeftSkillId == HudSkillBindings.BasicAttackId;
-        _bar.Draw(_painter, layout, _state, new HudBarView(World.TimeOfDay, World.Running, _mapVisible, left, RightAttackEnabled,
+        _bar.Draw(_painter, layout, _state, new HudBarView(World.TimeOfDay, World.Running, CameraMode, _mapVisible, left, RightAttackEnabled,
             _hoveredButton, pressed && _hoveredButton is not null, _hoveredToggle));
         _inventoryPanel.DrawBelt(_painter, HudInventoryLayout.Origin(layout), _state, _inventory, _icons);
         _skillHud.DrawSockets(_painter, layout.BottomOffset, _bindings.LeftSkillId, _bindings.RightSkillId, Cooldowns, SkillClockMs);

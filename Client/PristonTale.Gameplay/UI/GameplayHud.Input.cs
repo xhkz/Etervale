@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using PristonTale.Engine3D.Rendering;
 using PristonTale.Gameplay.Screens.Framework;
 using PristonTale.Gameplay.UI.Chat;
 using PristonTale.Gameplay.UI.Inventory;
@@ -98,6 +99,11 @@ public sealed partial class GameplayHud
         {
             RunToggleRequested?.Invoke();
             HelpPetKey("RunAndWalk");
+        }
+
+        if (Pressed(keyboard, Keys.Z))
+        {
+            CycleCameraMode();
         }
 
         if (Pressed(keyboard, Keys.Space))
@@ -281,7 +287,13 @@ public sealed partial class GameplayHud
             return;
         }
 
-        ClickPanels(state, layout, pointer);
+        if (_hoveredToggle == HudToggle.Camera)
+        {
+            CycleCameraMode();
+            return;
+        }
+
+        ClickPanels(state, layout, pointer, keyboard.IsKeyDown(HudStatusPanel.QuickKey) && !_chat.KeyboardCaptured);
     }
 
     private bool ClickNpc(OwnerState state, HudLayout layout, Point pointer)
@@ -343,7 +355,7 @@ public sealed partial class GameplayHud
         }
     }
 
-    private void ClickPanels(OwnerState state, HudLayout layout, Point pointer)
+    private void ClickPanels(OwnerState state, HudLayout layout, Point pointer, bool quickAllocate)
     {
         if (_inventorySlide.FullyOpen && HudInventoryLayout.Close(PanelOrigin(layout, _inventorySlide)).Contains(pointer))
         {
@@ -367,7 +379,7 @@ public sealed partial class GameplayHud
                     if (HudStatusPanel.AllocateButton(origin, index).Contains(pointer))
                     {
                         _progression.Submit(new ProgressionCommand(Guid.NewGuid(), state.ProgressionRevision,
-                            ProgressionAction.AllocateAttribute, (CharacterAttribute)index, 1));
+                            ProgressionAction.AllocateAttribute, (CharacterAttribute)index, HudStatusPanel.AllocateAmount(state.StatPoints, quickAllocate)));
                     }
                 }
             }
@@ -523,4 +535,12 @@ public sealed partial class GameplayHud
     private static readonly Keys[] BeltKeys = [Keys.D1, Keys.D2, Keys.D3];
 
     private bool Pressed(KeyboardState state, Keys key) => state.IsKeyDown(key) && !_previousKeyboard.IsKeyDown(key);
+
+    private PristonCameraMode CameraMode => _context.Presentation.Requested.CameraMode;
+
+    private void CycleCameraMode()
+    {
+        var next = CameraMode == PristonCameraMode.Lock ? PristonCameraMode.Manual : CameraMode + 1;
+        _context.Presentation.Requested = _context.Presentation.Requested with { CameraMode = next };
+    }
 }

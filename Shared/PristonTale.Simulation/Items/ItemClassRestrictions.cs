@@ -17,6 +17,15 @@ public static class ItemClassRestrictions
     private static readonly (string Family, JobBitCode Owner)[] ClassWeapons =
         [("WD1", JobBitCode.Assassin), ("WN1", JobBitCode.Shaman), ("WV1", JobBitCode.MartialArtist)];
 
+    private const string ArmorFamily = "DA1";
+    private const string RobeFamily = "DA2";
+    private const string OrbFamily = "OM1";
+
+    // Body armours are made for the fighting classes; robes and orbs for the casters.
+    public static bool IsArmor(string key) => key.StartsWith(ArmorFamily, StringComparison.OrdinalIgnoreCase);
+    public static bool IsRobe(string key) => key.StartsWith(RobeFamily, StringComparison.OrdinalIgnoreCase);
+    public static bool IsOrb(string key) => key.StartsWith(OrbFamily, StringComparison.OrdinalIgnoreCase);
+
     // The classes whose body armour is a robe.
     public static bool WearsRobe(PlayerClass playerClass) => (JobBits.Of(playerClass) & Casters) != 0;
 
@@ -35,9 +44,9 @@ public static class ItemClassRestrictions
             return (uint)(All & ~JobBitCode.MartialArtist);
         }
 
-        bool armor = key.StartsWith("DA1", StringComparison.OrdinalIgnoreCase);
-        bool robe = key.StartsWith("DA2", StringComparison.OrdinalIgnoreCase);
-        if (key.StartsWith("OM1", StringComparison.OrdinalIgnoreCase))
+        bool armor = IsArmor(key);
+        bool robe = IsRobe(key);
+        if (IsOrb(key))
         {
             return (uint)Casters;
         }

@@ -2,6 +2,7 @@ using System.Numerics;
 using PristonTale.Application.GameMasters;
 using PristonTale.Application.Sessions;
 using PristonTale.Persistence.Abstractions.Characters;
+using PristonTale.Simulation.Characters;
 using PristonTale.Simulation.Items;
 using PristonTale.Simulation.Items.Usable;
 using PristonTale.Simulation.Modifiers;
@@ -324,6 +325,21 @@ public sealed partial class WorldServer
             }
 
             return character.Experience;
+        });
+    }
+
+    // Sets a character's five attributes; false when the character is not playing.
+    public Task<bool> SetAttributesAsync(ulong entityId, CharacterAttributes attributes)
+    {
+        return EnqueueAsync(entityId, () =>
+        {
+            if (!_connections.TryGetValue(entityId, out var connection))
+            {
+                return false;
+            }
+
+            connection.Player.Character.SetAttributes(attributes);
+            return true;
         });
     }
 

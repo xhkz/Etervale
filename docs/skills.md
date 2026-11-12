@@ -236,7 +236,8 @@ means absent); `SkillRule.At` clamps the rank into the table. Distances are worl
 - Presentation: `projectile` (hits land after the flight), `projectileArc` (lob height at mid flight), `castEffect`,
   `impactEffect`, `impactNeedsTarget` (no impact effect when the cast struck no one: Divine Lightning's bolts fall only on
   the monsters it hit), `projectileEffect`, `buffEffect` (aura while the status runs), `companionEffect` (familiar or counter
-  strike), `castSound`, `impactSound`, `companionSound` (game-data paths under `wav/`), `keepIcon` (buff-bar icon).
+  strike), `castSound`, `impactSound`, `companionSound` (game-data paths under `wav/`), `keepIcon` (buff-bar icon),
+  `castSoundAtRelease` and `castEffectAtRelease` (the cast sound or effect waits for the release, below).
 - Presentation per hit and on actors (`SkillRulePresentation.cs`, ignored by the server): `impactSounds` with
   `impactSoundOrder` (`Sequence`: impact n of the cast plays entry n, wrapping; `Random`; `Final`: only the cast's last
   impact, `SkillFormulas.HitCount`), played on landed hits instead of `impactSound`; `impactEffects` (impact n plays entry
@@ -461,7 +462,14 @@ Presentation (`SkillPresentation`):
 - Own events run at once; another entity's events wait its playback delay (`ISkillSceneHost.PlaybackDelayMsOf`, the
   snapshot buffer's adaptive 150 to 600 ms) to match its interpolated motion.
 - `Start`: plays the motion plan at a rate that fits the server's `DurationMs` (weapon clips: per loop), spawns
-  `castEffect`, plays `castSound`, launches `projectileEffect` at `HitAtMs` over the shared flight time and arc.
+  `castEffect` and plays `castSound` unless they wait for the release.
+- Release (`SkillReleases`): the caster's drawn clip passing its first event frame releases the cast, once per pass of
+  the clip (each loop of a weapon clip), as the original does: `projectileEffect` leaves over the shared flight time
+  and arc, and `castSoundAtRelease` and `castEffectAtRelease` play then. The clip watched is the first to start after
+  the cast, an attack clip for a weapon-clip skill and a skill clip for a skill clip. A pass not released by its
+  time on the server's timeline (the cast's start, its share of `DurationMs`, plus `HitAtMs`) releases then, 250 ms
+  later when the caster's clip is drawn. An impact that lands before its projectile left skips that launch. While a
+  cast runs its clip throws no basic shot (`PlayerShots`). A charge skill has no `projectileEffect`.
 - `Impact`: familiar/counter strikes fly `companionEffect` from above the caster; chain, familiar and ally impacts
   play the secondary effect; otherwise `impactEffect` (the mode's or `charge.full`'s when set) at the target or caster,
   skipped for entity-targeted rules that hit nothing. `Release` seeks the clip to `fullFrame`; `Cancel` stops effects.

@@ -69,6 +69,7 @@ public sealed partial class GameScene
             && _lastMouseState.RightButton == ButtonState.Released && TryPickAttackTarget(mouse, rightButton: true))
         {
             _hasMoveTarget = false;
+            _camera.AutoFollow = false;
         }
         else if (!WorldClicksBlocked && !RightAttackEnabled && mouse.RightButton == ButtonState.Pressed
             && _lastMouseState.RightButton == ButtonState.Released && !SelfCasting)
@@ -89,6 +90,7 @@ public sealed partial class GameScene
             EndSkillTrace();
             if (TryPickLoot(mouse))
             {
+                _camera.AutoFollow = false;
             }
             else if (!SelfCasting && TryCastSkillClick(mouse, rightButton: false))
             {
@@ -96,9 +98,11 @@ public sealed partial class GameScene
             else if (TryPickAttackTarget(mouse))
             {
                 _hasMoveTarget = false;
+                _camera.AutoFollow = false;
             }
             else if (SetMoveTarget(mouse))
             {
+                _camera.AutoFollow = true;
                 // A ground click during a skill motion is kept: the walk starts once the skill ends.
                 CancelPendingCast();
                 ClearAttackTarget();

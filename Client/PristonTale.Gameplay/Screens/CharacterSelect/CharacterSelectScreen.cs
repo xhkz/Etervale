@@ -48,6 +48,9 @@ public sealed class CharacterSelectScreen : GameScreen
 
     private LoginAudio _audio;
     private MouseState _lastMouse;
+    // This frame's UI space (CharSelectLayout.Ui) and the pointer in it.
+    private Viewport _ui;
+    private Point _pointer;
     private KeyboardState _lastKeyboard;
     private double _lastClickSeconds = -1d;
     private int _lastClickIndex = -1;
@@ -149,6 +152,9 @@ public sealed class CharacterSelectScreen : GameScreen
 
         var mouse = Mouse.GetState();
         var keyboard = Keyboard.GetState();
+        var window = Context.GraphicsDevice.Viewport;
+        _ui = CharSelectLayout.Ui(window);
+        _pointer = HudLayout.Of(window).ToLogical(mouse.Position);
         // Drained every frame, so keys typed before the name box opens never reach it.
         var typed = Context.TypedText.Drain();
 
@@ -280,7 +286,7 @@ public sealed class CharacterSelectScreen : GameScreen
     {
         var cursor = new Vector2(mouse.X, mouse.Y);
         _hoveredIndex = _scene.PickRoster(cursor, Context.GraphicsDevice.Viewport);
-        _hoverNewCharacter = HasFreeSlot && CharSelectLayout.NewCharHotspot(Context.GraphicsDevice.Viewport).Contains(mouse.X, mouse.Y);
+        _hoverNewCharacter = HasFreeSlot && CharSelectLayout.NewCharHotspot(_ui).Contains(_pointer);
         _scene.SetRosterHighlight(_hoveredIndex, _selectedIndex);
 
         if (!Clicked(mouse))
@@ -294,7 +300,7 @@ public sealed class CharacterSelectScreen : GameScreen
             return;
         }
 
-        if (HandleSelectButtons(cursor))
+        if (HandleSelectButtons(_pointer.ToVector2()))
         {
             return;
         }
@@ -325,7 +331,7 @@ public sealed class CharacterSelectScreen : GameScreen
 
     private bool HandleSelectButtons(Vector2 cursor)
     {
-        var viewport = Context.GraphicsDevice.Viewport;
+        var viewport = _ui;
         var y = CharSelectLayout.ButtonRowY(viewport);
         var hasChars = _scene.RosterCount > 0;
 
@@ -451,14 +457,14 @@ public sealed class CharacterSelectScreen : GameScreen
 
     private void UpdateRaceSelect(MouseState mouse)
     {
-        var cursor = new Vector2(mouse.X, mouse.Y);
-        var viewport = Context.GraphicsDevice.Viewport;
+        var cursor = _pointer.ToVector2();
+        var viewport = _ui;
         _raceHovered = -1;
-        if (CharSelectLayout.TempscronMark(viewport).Contains(mouse.X, mouse.Y))
+        if (CharSelectLayout.TempscronMark(viewport).Contains(_pointer))
         {
             _raceHovered = 0;
         }
-        else if (CharSelectLayout.MorionMark(viewport).Contains(mouse.X, mouse.Y))
+        else if (CharSelectLayout.MorionMark(viewport).Contains(_pointer))
         {
             _raceHovered = 1;
         }
@@ -537,7 +543,7 @@ public sealed class CharacterSelectScreen : GameScreen
             return;
         }
 
-        if (HandleCreateButtons(cursor))
+        if (HandleCreateButtons(_pointer.ToVector2()))
         {
             return;
         }
@@ -587,7 +593,7 @@ public sealed class CharacterSelectScreen : GameScreen
         _faceHovered = -1;
         for (var index = 0; index < CharSelectLayout.FacesPerJob; index++)
         {
-            if (CharSelectLayout.FaceThumbHit(Context.GraphicsDevice.Viewport, index).Contains(mouse.X, mouse.Y))
+            if (CharSelectLayout.FaceThumbHit(_ui, index).Contains(_pointer))
             {
                 _faceHovered = index;
                 break;
@@ -598,11 +604,11 @@ public sealed class CharacterSelectScreen : GameScreen
         {
             return;
         }
-        var cursor = new Vector2(mouse.X, mouse.Y);
+        var cursor = _pointer.ToVector2();
 
         for (var i = 0; i < CharSelectLayout.FacesPerJob; i++)
         {
-            if (CharSelectLayout.FaceThumbHit(Context.GraphicsDevice.Viewport, i).Contains((int)cursor.X, (int)cursor.Y))
+            if (CharSelectLayout.FaceThumbHit(_ui, i).Contains(_pointer))
             {
                 if (_faceIndex != i)
                 {
@@ -621,7 +627,7 @@ public sealed class CharacterSelectScreen : GameScreen
 
     private bool HandleCreateButtons(Vector2 cursor)
     {
-        var viewport = Context.GraphicsDevice.Viewport;
+        var viewport = _ui;
         var y = CharSelectLayout.ButtonRowY(viewport);
 
         if (InButton(cursor, _assets.BtSelect, CharSelectLayout.ThreeButtonOkX(viewport), y, CharSelectLayout.ButtonKind.Select))
@@ -775,8 +781,10 @@ public sealed class CharacterSelectScreen : GameScreen
             return null;
         }
 
-        var size = CharSelectLayout.FacePortrait(viewport).Size;
-        return _portrait.Render(_renderer, _scene.FacePreviewHandles, size.X, size.Y);
+        // Drawn at the UI's scale, so rendered at that many window pixels.
+        var scale = HudLayout.Of(viewport).Scale;
+        var size = CharSelectLayout.FacePortrait(CharSelectLayout.Ui(viewport)).Size;
+        return _portrait.Render(_renderer, _scene.FacePreviewHandles, size.X * scale, size.Y * scale);
     }
 
     private CharSelectViewModel BuildViewModel()

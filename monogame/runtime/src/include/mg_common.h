@@ -22,6 +22,9 @@
 #include <optional> 
 
 
+// Etervale fork (monogame/issues/021-retina-pixels.md): pixels per point of the main display (1 outside macOS).
+float mg_display_pixel_density();
+
 #if defined(_WIN32)
 #define MG_GENERATE_TRAP() __debugbreak()
 #else

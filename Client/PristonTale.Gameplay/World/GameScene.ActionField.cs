@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using PristonTale.Contracts.Motion;
 using PristonTale.Engine3D;
+using PristonTale.Engine3D.Rendering;
 using PristonTale.Gameplay.UI.Widgets;
 using PristonTale.Gameplay.World.Remote;
 using PristonTale.Simulation.Skills;
@@ -56,6 +57,10 @@ public sealed partial class GameScene
 
     private bool InActionField => ActionCamera is not null;
 
+    // The auto camera turns only while the player moved since the last frame.
+    private const float MovedSquared = 1e-4f;
+    private Vector2 _cameraPlanar;
+
     private void UpdateCamera(GameTime gameTime)
     {
         var view = ActionCamera;
@@ -72,8 +77,12 @@ public sealed partial class GameScene
                 _camera.SnapFollow(_playerBody.Position, _fieldCollision);
             }
 
+            var planar = _playerBody.PlanarPosition;
+            var moving = Vector2.DistanceSquared(planar, _cameraPlanar) > MovedSquared;
+            _cameraPlanar = planar;
+            _camera.Mode = _presentation?.Requested.CameraMode ?? PristonCameraMode.Auto;
             _camera.Update(gameTime, _graphicsDevice, _playerBody.Position, _playerForward, _fieldCollision, PointerCaptured, CameraInputEnabled,
-                keysEnabled: !KeyboardCaptured);
+                keysEnabled: !KeyboardCaptured, moving: moving);
             return;
         }
 

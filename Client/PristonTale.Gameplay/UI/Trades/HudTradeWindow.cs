@@ -290,7 +290,7 @@ public sealed class HudTradeWindow : IHudServiceWindow
             (_described, _description) = (item, HudItemDetailTooltip.Lines(counts.Named(item), state, null, null));
         }
 
-        HudItemDetailTooltip.Draw(painter, layout, pointer, _description);
+        HudItemDetailTooltip.Draw(painter, layout, pointer, _description, catalogKey: item.CatalogKey);
     }
 
     private void DrawItems(HudPainter painter, HudItemIcons icons, IReadOnlyList<OwnedItemView> items, Rectangle grid, HudItemCounts counts)

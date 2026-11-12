@@ -10,7 +10,8 @@ using PristonTale.Contracts.Characters;
 namespace PristonTale.Gameplay.World;
 
 // The basic shots of every drawn player's bow, javelin or staff (PlayerShots): a swing names the target, the attack
-// clip's first event throws the shot, and a javelin in flight is not drawn in its thrower's hand.
+// clip's first event throws the shot, and a javelin in flight is not drawn in its thrower's hand. The same release
+// frames release skill casts (SkillPresentation.ObserveClip) and sound swings (GameScene.Audio).
 public sealed partial class GameScene
 {
     private readonly PlayerShots _shots = new();
@@ -56,7 +57,7 @@ public sealed partial class GameScene
         }
 
         var weapon = handles.Weapon.IsValid && _renderer.TryGetActorWorld(handles.Weapon, out var world) ? world : Matrix.CreateTranslation(position + Vector3.Up * 28f);
-        _shots.Hold(_skillFx, entityId, motion, ticks, weaponKey ?? "", weapon, glow, position, staffCaster, _shotTarget);
+        ObserveSwingRelease(entityId, _shots.Hold(_skillFx, entityId, motion, ticks, weaponKey ?? "", weapon, glow, position, staffCaster, _shotTarget));
     }
 
     // Shots aim at the local player's drawn feet, which sit the visual offset above its body.

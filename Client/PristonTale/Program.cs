@@ -2,6 +2,7 @@ using System;
 using PristonTale;
 using PristonTale.Display;
 using PristonTale.Engine3D.Diagnostics;
+using PristonTale.Engine3D.Rendering;
 
 if (args.Length == 2 && args[0] == "--validate-display")
 {
@@ -16,18 +17,14 @@ if (args.Length == 2 && args[0] == "--validate-display")
     return 0;
 }
 
-string settingsPath = null;
-if (args.Length == 2 && args[0] == "--settings")
+if (!ClientLaunchOptions.TryParse(args, out var options, out var error))
 {
-    settingsPath = args[1];
-}
-else if (args.Length != 0)
-{
-    Console.Error.WriteLine("Usage: PristonTale [--settings PATH | --validate-display REPORT.json]");
+    Console.Error.WriteLine(error);
+    Console.Error.WriteLine(ClientLaunchOptions.Usage);
     return 1;
 }
 
 using var log = ClientLogFile.Open(AppContext.BaseDirectory);
-using var game = new Game1(settingsPath);
+using var game = new Game1(options);
 game.Run();
 return 0;

@@ -45,7 +45,8 @@ public interface ISkillSceneHost : IVfxAnchors
 
 // Turns the server's skill timeline into motions, effects, sounds, lights, floating numbers and the buff and
 // cooldown state the HUD shows. Events of other entities wait for their caster's playback delay, so their effects line
-// up with the interpolated motion; the local player's events play at once.
+// up with the interpolated motion; the local player's events play at once. A cast's projectile, and a release sound or
+// effect (SkillRule.CastSoundAtRelease, CastEffectAtRelease), leave at each release of its clip (SkillReleases).
 public sealed class SkillPresentation : IVfxServices, IDisposable
 {
     public const string ReviveEffect = "vfx.priestess.resurrection.rise";
@@ -61,7 +62,12 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
     private readonly SkillSoundBank _sounds;
     private readonly IClientLog _log;
     private readonly List<Pending> _pending = new(32);
-    private readonly Dictionary<ulong, VfxHandle> _projectiles = new();
+    // Projectiles in flight by caster, oldest first: each impact of the caster ends the oldest.
+    private readonly List<(ulong CasterId, VfxHandle Effect)> _projectiles = new();
+    private readonly SkillReleases _releases = new();
+    // Impacts of a caster's projectile that landed before the projectile was released: that many launches are skipped.
+    private readonly Dictionary<ulong, int> _landedEarly = new();
+    private double _nowMs;
     private readonly List<(ulong CasterId, VfxHandle Effect)> _castEffects = new();
     // Impacts each caster's current cast has had (per-hit sounds and effects).
     private readonly Dictionary<ulong, int> _impacts = new();
@@ -141,6 +147,7 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
             _sounds.Preload(Library.Names.SelectMany(name => Library.TryGet(name, out var effect) ? effect.Definition.Sounds.SelectMany(sound => sound.AllPaths) : []));
         }
 
+        _nowMs = nowMs;
         _sounds.Update();
         for (var index = 0; index < _pending.Count; index++)
         {
@@ -152,6 +159,11 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
 
             _pending.RemoveAt(index--);
             Run(pending, nowMs);
+        }
+
+        while (_releases.NextLate(nowMs, out var late, out var lateRule))
+        {
+            ReleasePass(late, lateRule);
         }
 
         KeepAuras(nowMs);
@@ -172,6 +184,8 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
     {
         _pending.Clear();
         _projectiles.Clear();
+        _releases.Clear();
+        _landedEarly.Clear();
         _castEffects.Clear();
         _impacts.Clear();
         Looks.Clear();
@@ -225,7 +239,7 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
                         Cancel(skillEvent.CasterId);
                         break;
                     case SkillEventPhase.Release:
-                        Release(skillEvent, rule, nowMs);
+                        Release(skillEvent, rule);
                         break;
                 }
 
@@ -234,9 +248,6 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
                 var loops = Math.Max(1, rule.At(rule.Loops, skillEvent.Rank));
                 _host.PlaySkillMotion(skillEvent.CasterId, SkillFormulas.Plan(rule, skillEvent.Rank), skillEvent.DurationMs / loops, MotionRate(rule, skillEvent),
                     pending.Loop);
-                break;
-            case PendingKind.Launch:
-                Launch(skillEvent, rule);
                 break;
         }
     }
@@ -253,18 +264,66 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
         }
 
         _impacts[skillEvent.CasterId] = 0;
+        _landedEarly.Remove(skillEvent.CasterId);
         Looks.Cast(skillEvent, rule, nowMs);
+        _releases.Begin(skillEvent, rule, nowMs, loops, plan.Motion == SkillMotion.Attack, Releases(rule));
+        if (!rule.CastEffectAtRelease)
+        {
+            SpawnCastEffect(skillEvent, rule);
+        }
+
+        if (!rule.CastSoundAtRelease)
+        {
+            _sounds.Play(rule.CastSound, Position(skillEvent.CasterId, skillEvent.Position), _host.ListenerPosition);
+        }
+    }
+
+    private static bool Releases(SkillRule rule) => rule.Projectile && rule.ProjectileEffect.Length > 0 || rule.CastSoundAtRelease || rule.CastEffectAtRelease;
+
+    private void SpawnCastEffect(SkillEventInfo skillEvent, SkillRule rule)
+    {
         var position = Position(skillEvent.CasterId, skillEvent.Position);
-        var facing = -skillEvent.Facing;
-        if (rule.CastEffect.Length > 0 && Spawn(rule.CastEffect, skillEvent.CasterId, skillEvent.TargetId, position, facing) is { Spawned: true } cast)
+        if (rule.CastEffect.Length > 0 && Spawn(rule.CastEffect, skillEvent.CasterId, skillEvent.TargetId, position, -skillEvent.Facing) is { Spawned: true } cast)
         {
             _castEffects.Add((skillEvent.CasterId, cast));
         }
+    }
 
-        _sounds.Play(rule.CastSound, position, _host.ListenerPosition);
+    // One player's drawn clip this frame (restarted: a new clip, or the same one from its start, since the last frame):
+    // it releases the player's running cast (SkillReleases.Observe).
+    public CastClip ObserveClip(ulong casterId, in ClipEventCursor clip, bool restarted)
+    {
+        var meaning = _releases.Observe(casterId, clip, restarted, _nowMs, out var skillEvent, out var rule, out var releases);
+        for (var pass = 0; pass < releases; pass++)
+        {
+            ReleasePass(skillEvent, rule);
+        }
+
+        return meaning;
+    }
+
+    private void ReleasePass(SkillEventInfo skillEvent, SkillRule rule)
+    {
+        if (rule.CastEffectAtRelease)
+        {
+            SpawnCastEffect(skillEvent, rule);
+        }
+
+        if (rule.CastSoundAtRelease)
+        {
+            _sounds.Play(rule.CastSound, Position(skillEvent.CasterId, skillEvent.Position), _host.ListenerPosition);
+        }
+
         if (rule.Projectile && rule.ProjectileEffect.Length > 0)
         {
-            _pending.Add(new Pending(nowMs + skillEvent.HitAtMs, PendingKind.Launch, skillEvent, 0));
+            if (_landedEarly.TryGetValue(skillEvent.CasterId, out var early) && early > 0)
+            {
+                _landedEarly[skillEvent.CasterId] = early - 1;
+            }
+            else
+            {
+                Launch(skillEvent, rule);
+            }
         }
     }
 
@@ -281,12 +340,12 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
         if (Spawn(rule.ProjectileEffect, skillEvent.CasterId, skillEvent.TargetId, from, -skillEvent.Facing) is { Spawned: true } projectile)
         {
             projectile.Travel(from, to, MathF.Max(0.05f, seconds), rule.ProjectileArc);
-            _projectiles[skillEvent.CasterId] = projectile;
+            _projectiles.Add((skillEvent.CasterId, projectile));
         }
     }
 
     // The charge ended early: the clip jumps to the full frame and plays the rest in the time the server left.
-    private void Release(SkillEventInfo skillEvent, SkillRule rule, double nowMs)
+    private void Release(SkillEventInfo skillEvent, SkillRule rule)
     {
         if (rule.Charge is not { } charge)
         {
@@ -299,10 +358,6 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
             ? Math.Clamp(remainingFrames * GameUnits.FrameMs / skillEvent.DurationMs, 0.1f, 8f)
             : charge.ReleaseSpeed / SkillFormulas.FrameStepAtRateOne;
         _host.SeekSkillMotion(skillEvent.CasterId, charge.FullFrame, rate);
-        if (rule.Projectile && rule.ProjectileEffect.Length > 0)
-        {
-            _pending.Add(new Pending(nowMs + skillEvent.HitAtMs, PendingKind.Launch, skillEvent, 0));
-        }
     }
 
     // A familiar's strike or a shield's counter: the strike effect from the caster to the struck target.
@@ -375,9 +430,9 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
             return;
         }
 
-        if (_projectiles.Remove(skillEvent.CasterId, out var projectile))
+        if (!StopProjectiles(skillEvent.CasterId, all: false) && rule.Projectile && rule.ProjectileEffect.Length > 0)
         {
-            projectile.Stop();
+            _landedEarly[skillEvent.CasterId] = _landedEarly.GetValueOrDefault(skillEvent.CasterId) + 1;
         }
 
         var targetsEntity = rule.Kind is SkillKind.WeaponAttack or SkillKind.MagicBolt or SkillKind.Heal
@@ -462,10 +517,9 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
     private void Cancel(ulong casterId)
     {
         Looks.Cancel(casterId);
-        if (_projectiles.Remove(casterId, out var projectile))
-        {
-            projectile.Stop();
-        }
+        _releases.End(casterId);
+        _landedEarly.Remove(casterId);
+        StopProjectiles(casterId, all: true);
 
         for (var index = _castEffects.Count - 1; index >= 0; index--)
         {
@@ -480,6 +534,33 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
                 _castEffects.RemoveAt(index);
             }
         }
+    }
+
+    // Stops the caster's oldest projectile (all: every one) and forgets those that ended by themselves; true when one
+    // of the caster's was stopped.
+    private bool StopProjectiles(ulong casterId, bool all)
+    {
+        var stopped = false;
+        for (var index = 0; index < _projectiles.Count; index++)
+        {
+            var (caster, effect) = _projectiles[index];
+            if (!effect.Alive)
+            {
+                _projectiles.RemoveAt(index--);
+                continue;
+            }
+
+            if (caster != casterId || stopped && !all)
+            {
+                continue;
+            }
+
+            effect.Stop();
+            _projectiles.RemoveAt(index--);
+            stopped = true;
+        }
+
+        return stopped;
     }
 
     private void ObserveCombat(CombatEventInfo combat)
@@ -661,8 +742,7 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
     private enum PendingKind : byte
     {
         Event,
-        Loop,
-        Launch
+        Loop
     }
 
     private readonly record struct Pending(double AtMs, PendingKind Kind, SkillEventInfo Event, int Loop);

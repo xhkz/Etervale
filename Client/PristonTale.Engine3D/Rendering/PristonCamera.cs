@@ -1,12 +1,29 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using PristonTale.Contracts.Units;
 using PristonTale.Engine3D.Physics;
 
 namespace PristonTale.Engine3D.Rendering;
 
 public sealed class PristonCamera
 {
+    // Auto mode, in the original's angle units on its 70 Hz tick: while the character moves, a gap to its facing under a
+    // quarter turn plus 180 closes by a 64th of itself, at least 4, and stops within 256 of the facing.
+    private const float FollowReachAngles = GameUnits.AngleTurn / 4 + 180;
+    private const float FollowStopAngles = 256;
+    private const float FollowMinStepAngles = 4;
+    private const float FollowStepDivisor = 64;
+    private const float MostFollowBacklogSeconds = 0.25f;
+
+    // Lock mode: the original's 440 units away (600 in a window wider than 4:3) at 45 degrees less 128 of pitch, turned to
+    // the heading of 45 degrees on entering it.
+    private const float LockDistance = 440;
+    private const float LockWideDistance = 600;
+    private const float NarrowAspect = 4f / 3f;
+    private const int LockPitchAngles = GameUnits.AngleTurn / 8 - 128;
+    private const int LockHeadingAngles = GameUnits.AngleTurn / 8;
+
     private readonly PristonCameraSettings _settings;
     private readonly float _fieldOfViewRadians;
 
@@ -20,6 +37,8 @@ public sealed class PristonCamera
     private int _projectionHeight = -1;
     private float _projectionFieldOfView = float.NaN;
     private bool _hasPosition;
+    private bool _locked;
+    private float _turnSeconds;
     private readonly PristonCameraWave _wave = new();
 
     public PristonCamera(Vector3 target, Vector3 forward, PristonCameraSettings settings = null)
@@ -35,6 +54,12 @@ public sealed class PristonCamera
     public Vector3 FlatForward { get; private set; } = Vector3.Forward;
     public Vector3 Target { get; private set; }
 
+    public PristonCameraMode Mode { get; set; } = PristonCameraMode.Manual;
+
+    // Auto mode turns only while this holds: turning the camera by hand or picking a target clears it, and a walk click
+    // sets it again.
+    public bool AutoFollow { get; set; } = true;
+
     public void Reset(Vector3 target, Vector3 forward)
     {
         _distance = _settings.DefaultDistance;
@@ -43,6 +68,9 @@ public sealed class PristonCamera
         _yaw = WorldSpace.RenderYaw(normalized);
         _hasPosition = false;
         _hasMouse = false;
+        _locked = false;
+        _turnSeconds = 0f;
+        AutoFollow = true;
         _wave.Stop();
         UpdateFollow(target, 0f);
     }
@@ -81,12 +109,64 @@ public sealed class PristonCamera
     }
 
     public void Update(GameTime gameTime, GraphicsDevice graphicsDevice, Vector3 target, Vector3 forward,
-        IPristonCollisionQuery collisionWorld, bool pointerCaptured = false, bool inputEnabled = true, bool keysEnabled = true)
+        IPristonCollisionQuery collisionWorld, bool pointerCaptured = false, bool inputEnabled = true, bool keysEnabled = true, bool moving = false)
     {
+        var seconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
         UpdateOrbit(Mouse.GetState(), keysEnabled ? Keyboard.GetState() : default, pointerCaptured, graphicsDevice.Viewport.Bounds,
-            (float)gameTime.ElapsedGameTime.TotalSeconds, inputEnabled);
+            seconds, inputEnabled);
         EnsureProjection(graphicsDevice, _fieldOfViewRadians);
-        UpdateFollow(target, (float)gameTime.ElapsedGameTime.TotalSeconds, collisionWorld);
+        HoldLock(graphicsDevice.Viewport.AspectRatio);
+        TurnBehind(forward, moving, seconds);
+        UpdateFollow(target, seconds, collisionWorld);
+    }
+
+    internal void HoldLock(float aspect)
+    {
+        if (Mode != PristonCameraMode.Lock)
+        {
+            _locked = false;
+            return;
+        }
+
+        if (!_locked)
+        {
+            _locked = true;
+            // A render yaw is pi less the heading (WorldSpace).
+            _yaw = MathF.PI - GameUnits.FromAngle(LockHeadingAngles);
+        }
+
+        _distance = MathHelper.Clamp(aspect > NarrowAspect ? LockWideDistance : LockDistance, _settings.MinDistance, _settings.MaxDistance);
+        _pitch = MathHelper.Clamp(GameUnits.FromAngle(LockPitchAngles), _settings.MinPitch, _settings.MaxPitch);
+    }
+
+    internal void TurnBehind(Vector3 forward, bool moving, float deltaSeconds)
+    {
+        if (Mode != PristonCameraMode.Auto || !AutoFollow || !moving || !float.IsFinite(deltaSeconds) || deltaSeconds <= 0f)
+        {
+            _turnSeconds = 0f;
+            return;
+        }
+
+        _turnSeconds = MathF.Min(_turnSeconds + deltaSeconds, MostFollowBacklogSeconds);
+        var behind = WorldSpace.RenderYaw(NormalizedForward(forward));
+        while (_turnSeconds >= GameUnits.TickSeconds)
+        {
+            _turnSeconds -= GameUnits.TickSeconds;
+            _yaw = FollowTurn(_yaw, behind);
+        }
+    }
+
+    internal static float FollowTurn(float yaw, float behind)
+    {
+        var gap = MathHelper.WrapAngle(yaw - behind) / GameUnits.RadiansPerAngle;
+        var size = MathF.Abs(gap);
+        if (size >= FollowReachAngles || size <= FollowStopAngles)
+        {
+            return yaw;
+        }
+
+        var step = MathF.Max(size / FollowStepDivisor, FollowMinStepAngles);
+        return yaw - MathF.Sign(gap) * step * GameUnits.RadiansPerAngle;
     }
 
     public void UpdateOrbit(MouseState mouse, bool pointerCaptured = false, Rectangle viewport = default, float deltaSeconds = 0f, bool inputEnabled = true)
@@ -108,24 +188,35 @@ public sealed class PristonCamera
             return;
         }
 
+        var locked = Mode == PristonCameraMode.Lock;
         if (!pointerCaptured && mouse.MiddleButton == ButtonState.Pressed && _lastMouse.MiddleButton == ButtonState.Pressed)
         {
             var dx = mouse.X - _lastMouse.X;
             var dy = mouse.Y - _lastMouse.Y;
             _yaw -= dx * _settings.MouseOrbitSensitivity;
-            _pitch = MathHelper.Clamp(_pitch + dy * _settings.MouseOrbitSensitivity, _settings.MinPitch, _settings.MaxPitch);
+            if (!locked)
+            {
+                _pitch = MathHelper.Clamp(_pitch + dy * _settings.MouseOrbitSensitivity, _settings.MinPitch, _settings.MaxPitch);
+            }
+
+            if (dx != 0 || (dy != 0 && !locked))
+            {
+                AutoFollow = false;
+            }
         }
 
-        if (!pointerCaptured && mouse.MiddleButton == ButtonState.Released && viewport.Contains(mouse.Position)
+        if (!locked && !pointerCaptured && mouse.MiddleButton == ButtonState.Released && viewport.Contains(mouse.Position)
             && viewport.Width > _settings.EdgeOrbitWidth * 2 && float.IsFinite(deltaSeconds) && deltaSeconds > 0f)
         {
             if (mouse.X < viewport.Left + _settings.EdgeOrbitWidth)
             {
                 _yaw -= _settings.EdgeOrbitRadiansPerSecond * deltaSeconds;
+                AutoFollow = false;
             }
             else if (mouse.X > viewport.Right - _settings.EdgeOrbitWidth)
             {
                 _yaw += _settings.EdgeOrbitRadiansPerSecond * deltaSeconds;
+                AutoFollow = false;
             }
         }
 
@@ -133,19 +224,25 @@ public sealed class PristonCamera
         {
             var orbit = _settings.EdgeOrbitRadiansPerSecond * deltaSeconds;
             if (keyboard.IsKeyDown(Keys.Left))
+            {
                 _yaw -= orbit;
+                AutoFollow = false;
+            }
             else if (keyboard.IsKeyDown(Keys.Right))
+            {
                 _yaw += orbit;
+                AutoFollow = false;
+            }
 
             var zoom = _settings.KeyboardZoomUnitsPerSecond * deltaSeconds;
-            if (keyboard.IsKeyDown(Keys.Up))
+            if (!locked && keyboard.IsKeyDown(Keys.Up))
                 _distance = MathHelper.Clamp(_distance - zoom, _settings.MinDistance, _settings.MaxDistance);
-            else if (keyboard.IsKeyDown(Keys.Down))
+            else if (!locked && keyboard.IsKeyDown(Keys.Down))
                 _distance = MathHelper.Clamp(_distance + zoom, _settings.MinDistance, _settings.MaxDistance);
         }
 
         var scroll = mouse.ScrollWheelValue - _lastMouse.ScrollWheelValue;
-        if (!pointerCaptured && scroll != 0)
+        if (!locked && !pointerCaptured && scroll != 0)
         {
             _distance = MathHelper.Clamp(_distance - scroll * _settings.MouseZoomSensitivity, _settings.MinDistance, _settings.MaxDistance);
         }

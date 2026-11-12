@@ -491,6 +491,19 @@ public sealed partial class PlayerCharacter
         return true;
     }
 
+    // A game master's attributes, set outright; the unallocated points stay as they are.
+    public void SetAttributes(CharacterAttributes attributes)
+    {
+        if (attributes is null || attributes.Strength < 0 || attributes.Spirit < 0 || attributes.Talent < 0 || attributes.Agility < 0
+            || attributes.Health < 0)
+        {
+            throw new ArgumentException("Attributes must not be negative.");
+        }
+
+        Attributes = attributes;
+        Recompute();
+    }
+
     // Sets the attributes and the unallocated points of a stat reset; the total of both must not change.
     public void RedistributeAttributes(CharacterAttributes attributes, int statPoints)
     {

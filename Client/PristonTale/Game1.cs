@@ -28,10 +28,10 @@ public class Game1 : Game
     private PresentationController _presentationController;
     private Task _shutdown;
 
-    public Game1(string settingsPath = null)
+    public Game1(ClientLaunchOptions options)
     {
-        _settingsStore = new ClientSettingsStore(settingsPath ?? ClientSettingsStore.DefaultPath, ConsoleClientLog.Instance);
-        _presentation.Requested = _settingsStore.Load();
+        _settingsStore = new ClientSettingsStore(options.SettingsPath ?? ClientSettingsStore.DefaultPath, ConsoleClientLog.Instance);
+        _presentation.Requested = options.Apply(_settingsStore.Load());
         _graphics = new GraphicsDeviceManager(this)
         {
             PreferredBackBufferWidth = _presentation.Requested.WindowWidth,

@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PristonTale.Simulation.Characters;
 using PristonTale.Contracts.Characters;
+using PristonTale.Gameplay.UI;
 
 namespace PristonTale.Gameplay.Screens.CharacterSelect;
 
@@ -42,6 +43,9 @@ internal sealed class CharacterSelectView
     private const float InfoPanelValueScale = 0.45f;
     private const float InfoPanelValueBaselineAdjustment = -2f;
 
+    private readonly record struct TextRun(string Text, Vector2 Position, Color Color, float Scale);
+
+    private readonly List<TextRun> _text = new(16);
     private readonly SpriteBatch _sb;
     private readonly SpriteFont _font;
     private readonly CharSelectAssets _assets;
@@ -55,9 +59,14 @@ internal sealed class CharacterSelectView
         _camera = camera;
     }
 
-    public void Draw(Viewport viewport, CharSelectViewModel m)
+    // window: the back buffer's viewport; the 2D parts are drawn in its UI space (CharSelectLayout.Ui) at the HUD's scale.
+    public void Draw(Viewport window, CharSelectViewModel m)
     {
-        _sb.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.LinearClamp);
+        var layout = HudLayout.Of(window);
+        var viewport = CharSelectLayout.Ui(window);
+        // Images at whole multiples stay crisp with point sampling; the text, drawn below its baked size, is filtered.
+        var transform = Matrix.CreateScale(layout.Scale);
+        _sb.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.PointClamp, transformMatrix: transform);
 
         DrawFrame(viewport);
         DrawTitle(viewport, m.StateIndex);
@@ -70,7 +79,7 @@ internal sealed class CharacterSelectView
                 DrawRaceSelect(viewport, m);
                 break;
             case 2:
-                DrawJobSelect(viewport, m);
+                DrawJobSelect(window, viewport, layout.Scale, m);
                 break;
             default:
                 DrawFaceSelect(viewport, m);
@@ -79,11 +88,18 @@ internal sealed class CharacterSelectView
 
         if (!string.IsNullOrEmpty(m.ErrorMessage))
         {
-            _sb.DrawString(_font, m.ErrorMessage,
-                new Vector2(viewport.Width / 2f - 128f, viewport.Height / 2f + viewport.Height / 6f), Color.Gold);
+            _text.Add(new TextRun(m.ErrorMessage, new Vector2(viewport.Width / 2f - 128f, viewport.Height / 2f + viewport.Height / 6f), Color.Gold, 1f));
         }
 
         _sb.End();
+        _sb.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.LinearClamp, transformMatrix: transform);
+        foreach (var run in _text)
+        {
+            _sb.DrawString(_font, run.Text, run.Position, run.Color, 0f, Vector2.Zero, run.Scale, SpriteEffects.None, 0f);
+        }
+
+        _sb.End();
+        _text.Clear();
     }
 
     private void DrawFrame(Viewport viewport)
@@ -201,15 +217,16 @@ internal sealed class CharacterSelectView
         DrawThreeButtons(viewport);
     }
 
-    private void DrawJobSelect(Viewport viewport, CharSelectViewModel m)
+    // The labels sit over the jobs' heads, projected in window pixels and divided by the UI's scale.
+    private void DrawJobSelect(Viewport window, Viewport viewport, int scale, CharSelectViewModel m)
     {
         for (var index = 0; index < m.JobCount; index++)
         {
             var job = m.Jobs[index];
             if (_assets.TryClassLabel(job.Class, job.Hovered || job.Selected, out var label) && label != null)
             {
-                var head = viewport.Project(job.HeadWorld, _camera.Projection, _camera.View, Matrix.Identity);
-                _sb.Draw(label, new Vector2(head.X - 64f, head.Y - 30f), Color.White);
+                var head = window.Project(job.HeadWorld, _camera.Projection, _camera.View, Matrix.Identity);
+                _sb.Draw(label, new Vector2(head.X / scale - 64f, head.Y / scale - 30f), Color.White);
             }
 
             if (job.Hovered && !job.Selected)
@@ -338,8 +355,7 @@ internal sealed class CharacterSelectView
         SmallValue(info.ClassName, valueX, top + 80, new Color(255, 250, 235));
     }
 
-    private void SmallValue(string text, float x, float y, Color color) =>
-        _sb.DrawString(_font, text, new Vector2(x, y), color, 0f, Vector2.Zero, InfoPanelValueScale, SpriteEffects.None, 0f);
+    private void SmallValue(string text, float x, float y, Color color) => _text.Add(new TextRun(text, new Vector2(x, y), color, InfoPanelValueScale));
 
     private void DrawRaceMark(Rectangle rectangle, Texture2D mark, Texture2D logo)
     {

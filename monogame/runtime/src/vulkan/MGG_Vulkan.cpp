@@ -1212,9 +1212,10 @@ void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_GraphicsAdapt
 			SDL_DisplayMode mode;
 			if (SDL_GetDisplayMode(displayIndex, i, &mode) == 0)
 			{
+				// Etervale fork (issue 021): display modes in pixels.
 				MGG_DisplayMode displayMode;
-				displayMode.width = mode.w;
-				displayMode.height = mode.h;
+				displayMode.width = (int)lroundf(mode.w * mg_display_pixel_density());
+				displayMode.height = (int)lroundf(mode.h * mg_display_pixel_density());
 				displayMode.format = MGSurfaceFormat::Color;
 
 				bool found = false;
@@ -1238,8 +1239,8 @@ void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_GraphicsAdapt
 	SDL_DisplayMode currentMode;
 	if (SDL_GetCurrentDisplayMode(displayIndex, &currentMode) == 0)
 	{
-		info.CurrentDisplayMode.width = currentMode.w;
-		info.CurrentDisplayMode.height = currentMode.h;
+		info.CurrentDisplayMode.width = (int)lroundf(currentMode.w * mg_display_pixel_density());
+		info.CurrentDisplayMode.height = (int)lroundf(currentMode.h * mg_display_pixel_density());
 		info.CurrentDisplayMode.format = MGSurfaceFormat::Color;
 	}
 	else
@@ -1248,8 +1249,8 @@ void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_GraphicsAdapt
 		SDL_DisplayMode desktopMode;
 		if (SDL_GetDesktopDisplayMode(displayIndex, &desktopMode) == 0)
 		{
-			info.CurrentDisplayMode.width = desktopMode.w;
-			info.CurrentDisplayMode.height = desktopMode.h;
+			info.CurrentDisplayMode.width = (int)lroundf(desktopMode.w * mg_display_pixel_density());
+			info.CurrentDisplayMode.height = (int)lroundf(desktopMode.h * mg_display_pixel_density());
 			info.CurrentDisplayMode.format = MGSurfaceFormat::Color;
 		}
 		else
@@ -7171,7 +7172,7 @@ MG_EXPORT void MGG_GraphicsDevice_GetNativeHandles(const MGG_GraphicsDevice* dev
 // MGG.EnsureRuntimeVersion) checks before anything else: a library built from other sources (the official package, or
 // a stale build of the fork) would fail later at the first missing export, or worse, call an export whose arguments
 // changed. Bumped with every change of an exported function (monogame/issues/002-runtime-version.md).
-#define MGVK_ETERVALE_RUNTIME_VERSION 7
+#define MGVK_ETERVALE_RUNTIME_VERSION 8
 
 MG_EXPORT mgint MGG_Etervale_RuntimeVersion()
 {

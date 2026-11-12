@@ -29,6 +29,8 @@ public static class HudArt
     public const string RunInfo = Inter + "ButtonInfo/Run.bmp";
     public const string WalkInfo = Inter + "ButtonInfo/Walk.bmp";
     public const string CameraHandInfo = Inter + "ButtonInfo/Camera_Hand.bmp";
+    public const string CameraAutoInfo = Inter + "ButtonInfo/Camera_Auto.bmp";
+    public const string CameraFixedInfo = Inter + "ButtonInfo/Camera_Fix.bmp";
     public const string MapOnInfo = Inter + "ButtonInfo/MapOn.bmp";
     public const string MapOffInfo = Inter + "ButtonInfo/MapOff.bmp";
     public const string SystemMenu = Inter + "ExitMenu.tga";
@@ -102,6 +104,10 @@ public static class HudArt
         Sin + "Items/ItemInfoBox/BoxBottomLeft.tga", Sin + "Items/ItemInfoBox/BoxBottomCenter.tga", Sin + "Items/ItemInfoBox/BoxBottomRight.tga"
     ];
 
+    // By ItemNameMark, after None: the one- and two-handed weapon, the fighter's armour and the caster's robe or orb.
+    public static readonly string[] NameMarks =
+        [Sin + "Items/Weapon_Onehand.bmp", Sin + "Items/Weapon_Twohand.bmp", Sin + "Items/Weapon_Knight.bmp", Sin + "Items/Weapon_Wizard.bmp"];
+
     public const string HelpTopLeft = Sin + "help/HelpBoxCorner.tga";
     public const string HelpTop = Sin + "help/HelpBoxLine.tga";
     public const string HelpTopRight = Sin + "help/box3.tga";
@@ -150,14 +156,14 @@ public static class HudArt
     public static readonly string[] Static =
     [
         Menu1, Menu2, GrowLeft, GrowMiddle, GrowRight, Life, Mana, Stamina, Experience, Time, Sun, Moon,
-        Walk, CameraAuto, CameraFixed, MapOn, RunInfo, WalkInfo, CameraHandInfo, MapOnInfo, MapOffInfo,
+        Walk, CameraAuto, CameraFixed, MapOn, RunInfo, WalkInfo, CameraHandInfo, CameraAutoInfo, CameraFixedInfo, MapOnInfo, MapOffInfo,
         SystemMenu, SystemSettings, SystemHelp, SystemExit, RestartMain, RestartField, RestartTown, RestartExit, SelectJobGray, SelectJob,
         .. MenuButtons, .. MenuButtonsDown, .. MenuInfo,
         SkillNormal, SkillWindow, SkillWindowSecond, SkillPageForward, SkillPageBack, SkillSelect, SkillGauge, SkillGaugeBack, SkillGaugePassive, SkillTraining, SkillTrainingTop, .. ShortKeys,
         Inventory, PuzzleBoard, CoverLarge, CoverMiddle, CoverSmall, PotionBack, SideLeft, SideRight, .. PageHints, .. PairHints, CloseHint,
         QuestBoxButton, QuestBoxButtonOpen, QuestBoxTile, QuestBoxHint, QuestBoxCloseHint, QuestBoxGlow,
         Status, StatusPoint, StatusArrow, StatusArrowDown,
-        .. InfoBox,
+        .. InfoBox, .. NameMarks,
         HelpTopLeft, HelpTop, HelpTopRight, HelpLeft, HelpCenter, HelpRight, HelpBottomLeft, HelpBottom, HelpBottomRight, HelpLine,
         HelpTitle, HelpButton, ScrollBar, ScrollButton, .. GuideBox,
         MessageBox, NoticeLeft, NoticeCenter, NoticeRight, OkGray, OkYellow, YesGray, YesYellow, NoGray, NoYellow,

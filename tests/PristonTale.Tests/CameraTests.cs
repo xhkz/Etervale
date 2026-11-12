@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using PristonTale.Contracts.Units;
 using PristonTale.Engine3D.Formats;
 using PristonTale.Engine3D.Physics;
 using PristonTale.Engine3D.Rendering;
@@ -22,6 +23,9 @@ internal static class CameraTests
         yield return ("camera arrows orbit horizontally and vertically", KeyboardOrbitAsync);
         yield return ("camera follow is time based and teleport reanchoring preserves framing", FollowAsync);
         yield return ("camera uses middle drag and respects UI pointer ownership", InputAsync);
+        yield return ("auto camera turns behind the moving character on the original's tick", AutoFollowAsync);
+        yield return ("turning the camera by hand pauses the auto camera, zooming does not", AutoFollowPauseAsync);
+        yield return ("locked camera holds the original's distance and pitch and ignores zoom", LockAsync);
     }
 
     private static PristonCamera CreateCamera()
@@ -274,6 +278,140 @@ internal static class CameraTests
         responsive.UpdateFollow(Vector3.Zero, 0);
         Assert.True(responsive.Position.Length() < frameDistance - 1f, "up arrow zoom is too slow for a frame-sized update");
         return Task.CompletedTask;
+    }
+
+    private static Task AutoFollowAsync()
+    {
+        foreach (var rate in new[] { 30, 60, 144 })
+        {
+            var camera = CreateCamera();
+            camera.Mode = PristonCameraMode.Auto;
+            var start = Yaw(camera);
+            var behind = MathHelper.WrapAngle(start + MathF.PI / 2f);
+            for (var frame = 0; frame < rate / 2; frame++)
+            {
+                camera.TurnBehind(Forward(behind), moving: true, 1f / rate);
+            }
+
+            var expected = start;
+            for (var tick = 0; tick < GameUnits.TicksPerSecond / 2; tick++)
+            {
+                expected = PristonCamera.FollowTurn(expected, behind);
+            }
+
+            camera.UpdateFollow(Vector3.Zero, 0);
+            Assert.Near(0f, MathHelper.WrapAngle(Yaw(camera) - expected), 16 * GameUnits.RadiansPerAngle);
+
+            for (var frame = 0; frame < rate * 5; frame++)
+            {
+                camera.TurnBehind(Forward(behind), moving: true, 1f / rate);
+            }
+
+            camera.UpdateFollow(Vector3.Zero, 0);
+            var gap = MathF.Abs(MathHelper.WrapAngle(behind - Yaw(camera))) / GameUnits.RadiansPerAngle;
+            Assert.True(gap is > 252f and <= 256f, $"auto camera stopped {gap} angle units from the facing, not within the original's 256");
+        }
+
+        foreach (var (mode, moving, follow, turn, message) in new[]
+        {
+            (PristonCameraMode.Auto, false, true, MathF.PI / 2f, "a standing character turned the camera"),
+            (PristonCameraMode.Manual, true, true, MathF.PI / 2f, "manual mode turned the camera"),
+            (PristonCameraMode.Lock, true, true, MathF.PI / 2f, "lock mode turned the camera"),
+            (PristonCameraMode.Auto, true, false, MathF.PI / 2f, "a paused auto camera turned"),
+            (PristonCameraMode.Auto, true, true, MathF.PI, "a character walking back toward the camera spun it round")
+        })
+        {
+            var camera = CreateCamera();
+            camera.Mode = mode;
+            camera.AutoFollow = follow;
+            var start = Yaw(camera);
+            camera.TurnBehind(Forward(start + turn), moving, 1f);
+            camera.UpdateFollow(Vector3.Zero, 0);
+            Assert.True(MathF.Abs(MathHelper.WrapAngle(Yaw(camera) - start)) < 0.0001f, message);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static Task AutoFollowPauseAsync()
+    {
+        var viewport = new Rectangle(0, 0, 800, 600);
+        var turns = new (string Name, Action<PristonCamera> Turn)[]
+        {
+            ("arrow", camera => camera.UpdateOrbit(Mouse(400, 300), new KeyboardState(Keys.Left), deltaSeconds: 0.1f)),
+            ("edge", camera => camera.UpdateOrbit(Mouse(0, 300), viewport: viewport, deltaSeconds: 0.1f)),
+            ("drag", camera =>
+            {
+                camera.UpdateOrbit(Mouse(400, 300, middle: ButtonState.Pressed));
+                camera.UpdateOrbit(Mouse(420, 300, middle: ButtonState.Pressed));
+            })
+        };
+        foreach (var (name, turn) in turns)
+        {
+            var camera = CreateCamera();
+            camera.Mode = PristonCameraMode.Auto;
+            camera.UpdateOrbit(Mouse(400, 300));
+            turn(camera);
+            Assert.True(!camera.AutoFollow, $"turning the camera by {name} kept the auto camera following");
+        }
+
+        var zoomed = CreateCamera();
+        zoomed.Mode = PristonCameraMode.Auto;
+        zoomed.UpdateOrbit(Mouse(400, 300));
+        zoomed.UpdateOrbit(Mouse(400, 300, wheel: 120), new KeyboardState(Keys.Up), deltaSeconds: 0.1f);
+        Assert.True(zoomed.AutoFollow, "zooming paused the auto camera");
+        return Task.CompletedTask;
+    }
+
+    private static Task LockAsync()
+    {
+        var camera = CreateCamera();
+        camera.Mode = PristonCameraMode.Lock;
+        camera.HoldLock(16f / 9f);
+        camera.UpdateFollow(Vector3.Zero, 0);
+        Assert.Near(600, Vector3.Distance(camera.Position, camera.Target), 0.01f);
+        Assert.Near(GameUnits.FromAngle(GameUnits.AngleTurn / 8 - 128), Pitch(camera), 0.0001f);
+        Assert.Near(0f, MathHelper.WrapAngle(Yaw(camera) - LockYaw), 0.0001f);
+        camera.HoldLock(4f / 3f);
+        camera.UpdateFollow(Vector3.Zero, 0);
+        Assert.Near(440, Vector3.Distance(camera.Position, camera.Target), 0.01f);
+
+        var viewport = new Rectangle(0, 0, 800, 600);
+        var held = camera.Position;
+        camera.UpdateOrbit(Mouse(400, 300));
+        camera.UpdateOrbit(Mouse(400, 300, wheel: 120), new KeyboardState(Keys.Up), viewport: viewport, deltaSeconds: 1f);
+        camera.UpdateOrbit(Mouse(0, 300, wheel: 120), viewport: viewport, deltaSeconds: 1f);
+        camera.UpdateOrbit(Mouse(0, 300, middle: ButtonState.Pressed, wheel: 120));
+        camera.UpdateOrbit(Mouse(0, 340, middle: ButtonState.Pressed, wheel: 120));
+        camera.UpdateFollow(Vector3.Zero, 0);
+        Assert.True(Vector3.Distance(held, camera.Position) < 0.001f, "the wheel, the zoom keys, a tilt or the screen edge moved the locked camera");
+
+        camera.UpdateOrbit(Mouse(0, 340), new KeyboardState(Keys.Left), deltaSeconds: 0.5f);
+        camera.HoldLock(4f / 3f);
+        camera.UpdateFollow(Vector3.Zero, 0);
+        var turned = Yaw(camera);
+        Assert.True(MathF.Abs(MathHelper.WrapAngle(turned - LockYaw)) > 0.1f, "the arrows did not turn the locked camera");
+
+        camera.Mode = PristonCameraMode.Manual;
+        camera.HoldLock(4f / 3f);
+        camera.Mode = PristonCameraMode.Lock;
+        camera.HoldLock(4f / 3f);
+        camera.UpdateFollow(Vector3.Zero, 0);
+        Assert.Near(0f, MathHelper.WrapAngle(Yaw(camera) - LockYaw), 0.0001f);
+        return Task.CompletedTask;
+    }
+
+    // Lock turns to the heading of 45 degrees; a render yaw is pi less the heading.
+    private static readonly float LockYaw = MathF.PI - GameUnits.FromAngle(GameUnits.AngleTurn / 8);
+
+    private static Vector3 Forward(float yaw) => new(MathF.Sin(yaw), 0f, MathF.Cos(yaw));
+
+    private static float Yaw(PristonCamera camera) => MathF.Atan2(camera.FlatForward.X, camera.FlatForward.Z);
+
+    private static float Pitch(PristonCamera camera)
+    {
+        var look = Vector3.Normalize(camera.Target - camera.Position);
+        return MathF.Asin(-look.Y);
     }
 
     private static MouseState Mouse(int x, int y, ButtonState middle = ButtonState.Released, ButtonState right = ButtonState.Released, int wheel = 0)

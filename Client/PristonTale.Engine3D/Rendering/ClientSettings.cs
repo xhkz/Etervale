@@ -40,6 +40,10 @@ public sealed record ClientSettings
     public string ServerAddress { get; init; } = "localhost";
     public string Language { get; init; } = EnglishLanguage;
     public int Monitor { get; init; } = -1;
+    public const int MinimumWindowWidth = 800;
+    public const int MinimumWindowHeight = 600;
+    public const int MaximumWindowSide = 16384;
+
     public int WindowWidth { get; init; } = 1280;
     public int WindowHeight { get; init; } = 720;
     public WindowMode WindowMode { get; init; }
@@ -78,6 +82,8 @@ public sealed record ClientSettings
     public bool ClassicNamePlates { get; init; }
     // The level guide's notice on reaching a level it has a guide for (its On/Off switch in the guide window).
     public bool LevelGuide { get; init; } = true;
+    // The bar's camera button and the Z key cycle it.
+    public PristonCameraMode CameraMode { get; init; } = PristonCameraMode.Auto;
     // The weather the server sends: clouds, rain, lightning and their sounds; off keeps the sky clear.
     public bool WeatherEnabled { get; init; } = true;
     // The physical sky (sun, moon, stars, volumetric clouds) instead of the original's painted domes, and its clouds.
@@ -119,8 +125,8 @@ public sealed record ClientSettings
             ServerAddress = string.IsNullOrWhiteSpace(ServerAddress) ? defaults.ServerAddress : ServerAddress,
             Language = NormalizeLanguage(Language),
             Monitor = Monitor >= -1 ? Monitor : defaults.Monitor,
-            WindowWidth = WindowWidth is >= 800 and <= 16384 ? WindowWidth : defaults.WindowWidth,
-            WindowHeight = WindowHeight is >= 600 and <= 16384 ? WindowHeight : defaults.WindowHeight,
+            WindowWidth = WindowWidth is >= MinimumWindowWidth and <= MaximumWindowSide ? WindowWidth : defaults.WindowWidth,
+            WindowHeight = WindowHeight is >= MinimumWindowHeight and <= MaximumWindowSide ? WindowHeight : defaults.WindowHeight,
             WindowMode = Enum.IsDefined(WindowMode) ? WindowMode : defaults.WindowMode,
             RefreshRate = RefreshRate is >= 0 and <= 1000 ? RefreshRate : defaults.RefreshRate,
             MaxFps = IsValidFps(MaxFps) ? MaxFps : defaults.MaxFps,
@@ -132,6 +138,7 @@ public sealed record ClientSettings
             ShadowUpdateRate = ShadowUpdateRate is 0 or 30 or 60 or 120 ? ShadowUpdateRate : defaults.ShadowUpdateRate,
             DistanceFog = Enum.IsDefined(DistanceFog) ? DistanceFog : defaults.DistanceFog,
             CloudQuality = Enum.IsDefined(CloudQuality) ? CloudQuality : defaults.CloudQuality,
+            CameraMode = Enum.IsDefined(CameraMode) ? CameraMode : defaults.CameraMode,
             DebugView = Enum.IsDefined(DebugView) ? DebugView : defaults.DebugView,
             Quality = Enum.IsDefined(Quality) ? Quality : defaults.Quality,
             AntiAliasing = Enum.IsDefined(AntiAliasing) ? AntiAliasing : defaults.AntiAliasing,

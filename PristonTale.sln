@@ -64,6 +64,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PristonTale.Assets", "Share
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PristonTale.DataImport", "tools\PristonTale.DataImport\PristonTale.DataImport.csproj", "{BB4350D9-88F7-4058-9108-2C180BF303DC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PristonTale.HudUpscale", "tools\PristonTale.HudUpscale\PristonTale.HudUpscale.csproj", "{61939AC8-AED6-4AD2-8F37-C3114CAD404B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -374,6 +376,18 @@ Global
 		{BB4350D9-88F7-4058-9108-2C180BF303DC}.Release|x64.Build.0 = Release|Any CPU
 		{BB4350D9-88F7-4058-9108-2C180BF303DC}.Release|x86.ActiveCfg = Release|Any CPU
 		{BB4350D9-88F7-4058-9108-2C180BF303DC}.Release|x86.Build.0 = Release|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Debug|x64.Build.0 = Debug|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Debug|x86.Build.0 = Debug|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Release|x64.ActiveCfg = Release|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Release|x64.Build.0 = Release|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Release|x86.ActiveCfg = Release|Any CPU
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -404,5 +418,6 @@ Global
 		{FC020ECD-0C75-4C0B-83E1-B56A2FAA4A28} = {4F52FD11-658E-A102-6CD3-7D7C16FFA15B}
 		{68321899-78E6-4C8A-AF55-50E6E0529FFB} = {4F52FD11-658E-A102-6CD3-7D7C16FFA15B}
 		{BB4350D9-88F7-4058-9108-2C180BF303DC} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
+		{61939AC8-AED6-4AD2-8F37-C3114CAD404B} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 	EndGlobalSection
 EndGlobal

@@ -1,5 +1,8 @@
 using System.Globalization;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using PristonTale.Contracts.Characters;
+using PristonTale.Gameplay.Localization;
 using PristonTale.Gameplay.UI.Rendering;
 using PristonTale.Simulation.Characters;
 using PristonTale.Gameplay.UI.Clans;
@@ -37,13 +40,19 @@ public sealed class HudStatusPanel
     private OwnerState _state;
 
     public string Name { get; set; } = "";
-    public string ClassName { get; set; } = "";
+    public PlayerClass Class { get; set; }
 
     // The local player's clan, empty without one.
     public string ClanName { get; set; } = "";
 
     private string _clanFitted = "";
     private string _clanShown = "";
+
+    // Holding QuickKey while clicking an arrow spends QuickPoints at once, while at least that many are left.
+    public const Keys QuickKey = Keys.B;
+    public const int QuickPoints = 10;
+
+    public static int AllocateAmount(int statPoints, bool quick) => quick && statPoints >= QuickPoints ? QuickPoints : 1;
 
     public static Rectangle AllocateButton(Point origin, int index) => new(origin.X + 566, origin.Y + PointButtonY[index] + 1, 18, 17);
     public static Rectangle Close(Point origin) => new(origin.X + 251, origin.Y + 565, 20, 20);
@@ -108,7 +117,7 @@ public sealed class HudStatusPanel
         }
 
         _state = state;
-        _text[0] = ClassName;
+        _text[0] = Title(Class, state);
         _text[1] = Name;
         _text[2] = state.Level.ToString();
         _text[ExperienceIndex] = ExperienceText(state.Experience, state.Level);
@@ -136,6 +145,9 @@ public sealed class HudStatusPanel
     }
 
     public void Invalidate() => _state = null;
+
+    // The title of the character's current tier, which a rank-up raises.
+    public static string Title(PlayerClass playerClass, OwnerState state) => DataText.ClassTitle(playerClass, state.Tier);
 
     public static string ExperienceText(ulong experience, int level) =>
         level > MillionsAboveLevel ? $"{experience / Million}M" : experience.ToString(CultureInfo.InvariantCulture);

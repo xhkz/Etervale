@@ -6,6 +6,7 @@ using PristonTale.Contracts.Social;
 using PristonTale.Contracts.Texts;
 using PristonTale.Gameplay.Audio;
 using PristonTale.Gameplay.Localization;
+using PristonTale.Gameplay.UI.Rendering;
 using PristonTale.Simulation.World.Bellatra;
 
 namespace PristonTale.Gameplay.UI.Bellatra;
@@ -140,9 +141,9 @@ public sealed class HudBellatraShow
         _effects.Advance(elapsedSeconds);
     }
 
-    public void Draw(SpriteBatch batch, Func<string, Texture2D> texture, Texture2D pixel, SpriteFont font, float textScale)
+    public void Draw(SpriteBatch batch, HudSprites art, Texture2D pixel, SpriteFont font, float textScale)
     {
-        _effects.Draw(batch, texture, pixel, font, textScale);
+        _effects.Draw(batch, art, pixel, font, textScale);
         if (_table.Length > 0 && _effects.IsHolding(BellatraEffect.CloseScreen))
         {
             DrawTable(batch, font, textScale);

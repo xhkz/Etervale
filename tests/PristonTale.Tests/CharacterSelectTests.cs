@@ -23,6 +23,7 @@ internal static class CharacterSelectTests
         yield return ("a new or moved character takes the account's lowest free slot, none past the sixth", FreeSlotAsync);
         yield return ("character-select roster and class positions preserve the original ordering", OriginalPlacementAsync);
         yield return ("character-select face layout scales the authored canvas uniformly", FaceLayoutAsync);
+        yield return ("character-select windows and buttons scale with the HUD: laid out in the window divided by its scale", UiScaleAsync);
         yield return ("the Assassin, the Shaman and the Martial Artist use the original creation definitions and class facts", ExtendedClassDefinitionsAsync);
         yield return ("a text box takes the window's typed text, so a held Backspace or key repeats, and only while focused", TypedTextAsync);
     }
@@ -160,6 +161,26 @@ internal static class CharacterSelectTests
         Assert.True(bottom == new Microsoft.Xna.Framework.Rectangle(top.X, top.Bottom, expectedTopWidth, expectedBottomHeight), "face panel pieces are separated or distorted");
         Assert.True(top.Contains(portrait.Left, portrait.Top) && bottom.Contains(portrait.Right - 1, portrait.Bottom - 1), "portrait escaped the face panel");
         Assert.True(input.Y >= bottom.Top && input.Y < bottom.Bottom, "name input is not inside the face panel");
+        return Task.CompletedTask;
+    }
+
+    private static Task UiScaleAsync()
+    {
+        var small = new Viewport(0, 0, 800, 600);
+        Assert.True(CharSelectLayout.Ui(small).Width == 800 && CharSelectLayout.Ui(small).Height == 600, "800x600 is not laid out as it was");
+
+        var window = new Viewport(0, 0, 5120, 2594);
+        var layout = PristonTale.Gameplay.UI.HudLayout.Of(window);
+        var ui = CharSelectLayout.Ui(window);
+        Assert.True(layout.Scale == 4 && ui.Width == 1280 && ui.Height == 648, $"a 5120x2594 window's UI space is {ui.Width}x{ui.Height} at {layout.Scale}");
+
+        // The Confirm button's bottom edge sits at the window's bottom less 40 UI units times the scale, and a pointer on it
+        // in window pixels lands on it in UI space.
+        var y = CharSelectLayout.ButtonRowY(ui);
+        Assert.True(y * layout.Scale == window.Height - 40 * layout.Scale - window.Height % layout.Scale, "the button row is not 40 units from the bottom");
+        var button = new Microsoft.Xna.Framework.Rectangle(CharSelectLayout.TwoButtonPrimaryX(ui) + 10, y, 100, 20);
+        var pointer = layout.ToLogical(new Microsoft.Xna.Framework.Point((button.X + 50) * layout.Scale + 3, (button.Y + 10) * layout.Scale + 3));
+        Assert.True(button.Contains(pointer), "a pointer on the scaled button misses it");
         return Task.CompletedTask;
     }
 

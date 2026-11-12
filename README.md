@@ -144,6 +144,9 @@ Run the client in another terminal and log in with the account you created:
 dotnet run --project Client/PristonTale -c Release --no-build
 ```
 
+`-- --resolution 2560x1440` after it (or `make run-client RESOLUTION=2560x1440`) opens the window at that size for this
+start, in pixels; the settings file keeps its own size.
+
 The client connects over TLS to `serverAddress` in `client-settings.json` beside its executable (`localhost` by
 default; `host`, `host:port` or `tcp://host:port`, port 10009 when left out). On its first start the server creates a
 self-signed certificate at `data/server-certificate.pfx` and logs its SHA-256; a client on the same machine accepts it,

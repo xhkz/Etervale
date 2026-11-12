@@ -13,6 +13,60 @@
 #include <combaseapi.h>
 #endif
 
+#if defined(__APPLE__)
+#include <CoreGraphics/CoreGraphics.h>
+#endif
+
+// Etervale fork (monogame/issues/021-retina-pixels.md): on macOS the window asks for the display's full (Retina)
+// resolution, and every size, position and mouse coordinate the runtime exchanges is in pixels. SDL works in points
+// there, so the runtime converts at its edge: a window's sizes and mouse by that window's density (pixels per point),
+// window positions and display modes by the main display's. Elsewhere SDL's units are already pixels (density 1).
+float mg_display_pixel_density()
+{
+#if defined(__APPLE__)
+    CGDisplayModeRef mode = CGDisplayCopyDisplayMode(CGMainDisplayID());
+    if (mode != nullptr)
+    {
+        size_t points = CGDisplayModeGetWidth(mode);
+        size_t pixels = CGDisplayModeGetPixelWidth(mode);
+        CGDisplayModeRelease(mode);
+        if (points > 0 && pixels > 0)
+            return (float)pixels / (float)points;
+    }
+#endif
+    return 1.0f;
+}
+
+static float MGP_PixelDensity(SDL_Window* window)
+{
+#if defined(__APPLE__)
+    int points = 0;
+    int pixels = 0;
+    int height = 0;
+    if (window != nullptr)
+    {
+        SDL_GetWindowSize(window, &points, &height);
+        SDL_GetWindowSizeInPixels(window, &pixels, &height);
+    }
+    if (points > 0 && pixels > 0)
+        return (float)pixels / (float)points;
+    return mg_display_pixel_density();
+#else
+    (void)window;
+    return 1.0f;
+#endif
+}
+
+static int MGP_ToPixels(int points, float density)
+{
+    return (int)lroundf((float)points * density);
+}
+
+static int MGP_ToPoints(int pixels, float density)
+{
+    return (int)lroundf((float)pixels / density);
+}
+
 
 struct MGP_Platform
 {
@@ -515,8 +569,11 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
         case SDL_EventType::SDL_MOUSEMOTION:
             event_.Type = MGEventType::MouseMove;
             event_.MouseMove.Window = MGP_WindowFromId(platform, ev.motion.windowID);
-            event_.MouseMove.X = ev.motion.x;
-            event_.MouseMove.Y = ev.motion.y;
+            {
+                float density = MGP_PixelDensity(SDL_GetWindowFromID(ev.motion.windowID));
+                event_.MouseMove.X = MGP_ToPixels(ev.motion.x, density);
+                event_.MouseMove.Y = MGP_ToPixels(ev.motion.y, density);
+            }
             return true;
 
         case SDL_EventType::SDL_MOUSEWHEEL:
@@ -530,8 +587,11 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
         case SDL_EventType::SDL_MOUSEBUTTONDOWN:
             event_.Type = ev.type == SDL_EventType::SDL_MOUSEBUTTONDOWN ? MGEventType::MouseButtonDown : MGEventType::MouseButtonUp;
             event_.MouseButton.Window = MGP_WindowFromId(platform, ev.button.windowID);
-            event_.MouseButton.X = ev.button.x;
-            event_.MouseButton.Y = ev.button.y;
+            {
+                float density = MGP_PixelDensity(SDL_GetWindowFromID(ev.button.windowID));
+                event_.MouseButton.X = MGP_ToPixels(ev.button.x, density);
+                event_.MouseButton.Y = MGP_ToPixels(ev.button.y, density);
+            }
             switch (ev.button.button)
             {
                 default:
@@ -649,8 +709,11 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
             case SDL_WINDOWEVENT_RESIZED:
             case SDL_WINDOWEVENT_SIZE_CHANGED:
                 event_.Type = MGEventType::WindowResized;
-                event_.Window.Data1 = ev.window.data1;
-                event_.Window.Data2 = ev.window.data2;
+                {
+                    float density = MGP_PixelDensity(SDL_GetWindowFromID(ev.window.windowID));
+                    event_.Window.Data1 = MGP_ToPixels(ev.window.data1, density);
+                    event_.Window.Data2 = MGP_ToPixels(ev.window.data2, density);
+                }
                 return true;
                 break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
@@ -661,8 +724,8 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
                 return true;
             case SDL_WINDOWEVENT_MOVED:
                 event_.Type = MGEventType::WindowMoved;
-                event_.Window.Data1 = ev.window.data1;
-                event_.Window.Data2 = ev.window.data2;
+                event_.Window.Data1 = MGP_ToPixels(ev.window.data1, mg_display_pixel_density());
+                event_.Window.Data2 = MGP_ToPixels(ev.window.data2, mg_display_pixel_density());
                 return true;
             case SDL_WINDOWEVENT_CLOSE:
                 event_.Type = MGEventType::WindowClose;
@@ -796,6 +859,9 @@ static mgbyte MGP_Window_CreateNativeWindowInternal(
 
 #if defined(MG_VULKAN) || defined(MG_DIRECTX12)
 	flags |= SDL_WINDOW_VULKAN;
+#if defined(__APPLE__)
+	flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
 #elif defined(MG_OPENGL)
 
     if (!MGP_Window_DetectOpenGLVersion(window->contextMajorVersion, window->contextMinorVersion))
@@ -831,7 +897,9 @@ static mgbyte MGP_Window_CreateNativeWindowInternal(
 
     title = title ? title : "";
 
-	window->window = SDL_CreateWindow((const char*)title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags);
+	float density = mg_display_pixel_density();
+	window->window = SDL_CreateWindow((const char*)title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		MGP_ToPoints(width, density), MGP_ToPoints(height, density), flags);
 
 	if (window->window == nullptr)
 	{
@@ -1113,12 +1181,15 @@ void MGP_Window_GetPosition(MGP_Window* window, mgint& x, mgint& y)
 {
 	assert(window != nullptr);
 	SDL_GetWindowPosition(window->window, &x, &y);
+	x = MGP_ToPixels(x, mg_display_pixel_density());
+	y = MGP_ToPixels(y, mg_display_pixel_density());
 }
 
 void MGP_Window_SetPosition(MGP_Window* window, mgint x, mgint y)
 {
 	assert(window != nullptr);
-	SDL_SetWindowPosition(window->window, x, y);
+	float density = mg_display_pixel_density();
+	SDL_SetWindowPosition(window->window, MGP_ToPoints(x, density), MGP_ToPoints(y, density));
 }
 
 void MGP_Window_SetClientSize(MGP_Window* window, mgint width, mgint height)
@@ -1132,6 +1203,9 @@ void MGP_Window_SetClientSize(MGP_Window* window, mgint width, mgint height)
     // SDL_SetWindowSize() is needed.
 
     auto flags = SDL_GetWindowFlags(window->window);
+    float density = MGP_PixelDensity(window->window);
+    width = MGP_ToPoints(width, density);
+    height = MGP_ToPoints(height, density);
 
     if ((flags & SDL_WINDOW_FULLSCREEN) != 0)
     {
@@ -1225,7 +1299,8 @@ void MGP_Mouse_SetVisible(MGP_Platform* platform, mgbyte visible)
 void MGP_Mouse_WarpPosition(MGP_Window* window, mgint x, mgint y)
 {
     assert(window != nullptr);
-    SDL_WarpMouseInWindow(window->window, x, y);
+    float density = MGP_PixelDensity(window->window);
+    SDL_WarpMouseInWindow(window->window, MGP_ToPoints(x, density), MGP_ToPoints(y, density));
 }
 
 MGP_Cursor* MGP_Cursor_Create(MGSystemCursor cursor_)

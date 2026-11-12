@@ -69,6 +69,10 @@ public sealed partial record SkillRule
     // While the status lasts the holder's thrown basic attacks fly as this effect, from the weapon to the target, instead
     // of the weapon itself.
     public string ShotEffect { get; init; } = "";
+    // CastSound, or CastEffect, waits for the release (the drawn clip's first event frame), on every pass of the clip,
+    // as the projectile does.
+    public bool CastSoundAtRelease { get; init; }
+    public bool CastEffectAtRelease { get; init; }
 }
 
 public static partial class SkillRuleCatalog
@@ -77,6 +81,8 @@ public static partial class SkillRuleCatalog
         rule.ImpactSounds.All(static sound => sound.Length > 0) && rule.RageGlow is >= 0 and <= 255 && Ranked(rule.WeaponGrowth)
         && rule.WeaponGrowth.All(static percent => percent >= 0) && rule.Afterimages is >= 0 and <= 8 && Enum.IsDefined(rule.StatusLook)
         && Enum.IsDefined(rule.ImpactSoundOrder) && rule.CastShieldGlow.Length is 0 or 3
+        && (!rule.CastSoundAtRelease || rule.CastSound.Length > 0) && (!rule.CastEffectAtRelease || rule.CastEffect.Length > 0)
+        && (rule.Charge is null || !rule.Projectile || rule.ProjectileEffect.Length == 0)
         && (rule.WeaponOrbit.Length == 0 || rule.WeaponOrbit.Length == 2 && rule.WeaponOrbit.All(static name => name.Length > 0))
         && (rule.DefenseEffect.Length == 0 && rule.HitEffect.Length == 0 && rule.ShotEffect.Length == 0 || rule.Buff is not null)
         && (rule.DefenseBroods.Length == 0 || rule.DefenseEffect.Length > 0 && rule.Buff is { StatsOnly: true }) && rule.DefenseBroods.All(Enum.IsDefined);

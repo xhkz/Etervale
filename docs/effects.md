@@ -507,16 +507,16 @@ turns with the wearer and is hidden in a village and on the dead. Costume bodies
 ### Basic shots
 
 `PlayerShots` (`GameScene.Shots.cs`): a player's swing names its target and the attack clip's first event throws the
-shot, for every drawn player. A bow's arrow (`weapons/arrow.smd`, 8 units a frame of 70 per second) and a javelin
-itself (its own model, 6 a frame, its length along the flight; the held javelin is not drawn while it flies) fly in a
-straight line from the weapon toward the target's chest (24 above its feet); within 64 units across and 80 up of the
-target they fly 7 frames more and end, as they do after 120 frames. Magicians and priestesses shoot the Imp's fire ball
-(`vfx.monster.imp.attack.hit`) with a staff; other classes strike with it. A glowing bow or javelin sheds about 3.5
-sparks a frame along its flight (`Effect/ImageData/Particle/cc.tga`, additive, half its glow colour plus 128, fading to
-half that colour and out over 0.7 s). The flying weapons and sparks go through `VfxRenderer.AddModel` and
-`AddBillboard`; `VfxContent.LoadModel` reads a model no effect definition names. A status naming a `shotEffect`
-(Frost Javelin) throws that effect from the weapon to the target instead of the javelin, which stays in the hand, and
-the shot ends in the effect's own hit.
+shot, for every drawn player, except while a skill cast runs (the clip is the cast's, [skills.md](skills.md)). A bow's
+arrow (`weapons/arrow.smd`, 8 units a frame of 70 per second) and a javelin itself (its own model, 6 a frame, its length
+along the flight; the held javelin is not drawn while it flies) fly in a straight line from the weapon toward the
+target's chest (24 above its feet); within 64 units across and 80 up of the target they fly 7 frames more and end, as
+they do after 120 frames. Magicians and priestesses shoot the Imp's fire ball (`vfx.monster.imp.attack.hit`) with a
+staff; other classes strike with it. A glowing bow or javelin sheds about 3.5 sparks a frame along its flight
+(`Effect/ImageData/Particle/cc.tga`, additive, half its glow colour plus 128, fading to half that colour and out over
+0.7 s). The flying weapons and sparks go through `VfxRenderer.AddModel` and `AddBillboard`; `VfxContent.LoadModel` reads
+a model no effect definition names. A status naming a `shotEffect` (Frost Javelin) throws that effect from the weapon to
+the target instead of the javelin, which stays in the hand, and the shot ends in the effect's own hit.
 
 ### Hit bursts and blood
 

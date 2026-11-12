@@ -93,49 +93,55 @@ public sealed class HudPainter : IDisposable
 
     public Texture2D Texture(string path) => _sprites.Get(path);
 
+    // The image's size in the original's pixels, whatever the density of the texture drawn for it.
+    public Point Size(string path) => _sprites.Size(path);
+
     // One white pixel, for fills drawn outside the painter.
     public Texture2D Pixel => _white;
 
     public void Sprite(string path, int x, int y, Color? tint = null)
     {
-        var texture = _sprites.Get(path);
+        var texture = _sprites.Get(path, out var density);
         if (texture is not null)
         {
-            _batch.Draw(texture, new Vector2(x, y), tint ?? Color.White);
+            _batch.Draw(texture, new Rectangle(x, y, texture.Width / density, texture.Height / density), tint ?? Color.White);
         }
     }
 
     public void Sprite(string path, int x, int y, Rectangle source, Color? tint = null)
     {
-        var texture = _sprites.Get(path);
+        var texture = _sprites.Get(path, out var density);
         if (texture is null)
         {
             return;
         }
 
-        source = Rectangle.Intersect(source, texture.Bounds);
+        source = Rectangle.Intersect(source, new Rectangle(0, 0, texture.Width / density, texture.Height / density));
         if (source.Width > 0 && source.Height > 0)
         {
-            _batch.Draw(texture, new Vector2(x, y), source, tint ?? Color.White);
+            _batch.Draw(texture, new Rectangle(x, y, source.Width, source.Height), Scaled(source, density), tint ?? Color.White);
         }
     }
 
     public void Stretch(string path, Rectangle destination, Rectangle? source = null, Color? tint = null)
     {
-        var texture = _sprites.Get(path);
+        var texture = _sprites.Get(path, out var density);
         if (texture is not null && destination.Width > 0 && destination.Height > 0)
         {
-            _batch.Draw(texture, destination, source, tint ?? Color.White);
+            _batch.Draw(texture, destination, source is { } from ? Scaled(from, density) : null, tint ?? Color.White);
         }
     }
 
+    private static Rectangle Scaled(Rectangle source, int density) =>
+        new(source.X * density, source.Y * density, source.Width * density, source.Height * density);
+
     public void Rotated(string path, Vector2 center, float rotation, Color? tint = null)
     {
-        var texture = _sprites.Get(path);
+        var texture = _sprites.Get(path, out var density);
         if (texture is not null)
         {
             var origin = new Vector2(texture.Width / 2f, texture.Height / 2f);
-            _batch.Draw(texture, center, null, tint ?? Color.White, rotation, origin, 0.5f, SpriteEffects.None, 0f);
+            _batch.Draw(texture, center, null, tint ?? Color.White, rotation, origin, 0.5f / density, SpriteEffects.None, 0f);
         }
     }
 
