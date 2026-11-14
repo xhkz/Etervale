@@ -208,11 +208,10 @@
  };
  
  struct MGVK_Transfer
-@@ -235,7 +288,48 @@
- 
+@@ -236,6 +289,47 @@
  
  const int MAX_TEXTURE_SLOTS = 16;
-+
+ 
 +// Etervale fork: shader storage resources (monogame/issues/005, 006). The effect compiler shifts the HLSL registers into
 +// one descriptor set per stage: b0 → binding 0, t/s → 32 + slot (textures, samplers and the read-only buffers,
 +// StructuredBuffer and ByteAddressBuffer), u → 64 + slot (RWTexture2D, RWStructuredBuffer, RWByteAddressBuffer).
@@ -227,7 +226,7 @@
 +	MGG_Texture* texture = nullptr;
 +	mgint mip = 0;
 +};
- 
++
 +// Etervale fork: asynchronous frame capture (MGG_FrameCapture_*). Each swapchain frame slot copies its presented image
 +// (downscaled by a blit) into its own host buffer inside the frame's command buffer; the copy is read when the slot's
 +// fence has already been waited for reuse, so capturing adds no synchronisation of its own.
@@ -465,11 +464,10 @@
  		return VK_FORMAT_BC3_SRGB_BLOCK;
  	case MGSurfaceFormat::Dxt1a:
  		return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
--	default:
--		assert(0);
 +	case MGSurfaceFormat::Depth32Float:
 +		return VK_FORMAT_D32_SFLOAT;
-+	default:
+ 	default:
+-		assert(0);
 +		MGVK_UNREACHABLE();
  	}
  }
@@ -529,7 +527,42 @@
  	}
  }
  
-@@ -1198,7 +1382,18 @@
+@@ -1028,9 +1212,10 @@
+ 			SDL_DisplayMode mode;
+ 			if (SDL_GetDisplayMode(displayIndex, i, &mode) == 0)
+ 			{
++				// Etervale fork (issue 021): display modes in pixels.
+ 				MGG_DisplayMode displayMode;
+-				displayMode.width = mode.w;
+-				displayMode.height = mode.h;
++				displayMode.width = (int)lroundf(mode.w * mg_display_pixel_density());
++				displayMode.height = (int)lroundf(mode.h * mg_display_pixel_density());
+ 				displayMode.format = MGSurfaceFormat::Color;
+ 
+ 				bool found = false;
+@@ -1054,8 +1239,8 @@
+ 	SDL_DisplayMode currentMode;
+ 	if (SDL_GetCurrentDisplayMode(displayIndex, &currentMode) == 0)
+ 	{
+-		info.CurrentDisplayMode.width = currentMode.w;
+-		info.CurrentDisplayMode.height = currentMode.h;
++		info.CurrentDisplayMode.width = (int)lroundf(currentMode.w * mg_display_pixel_density());
++		info.CurrentDisplayMode.height = (int)lroundf(currentMode.h * mg_display_pixel_density());
+ 		info.CurrentDisplayMode.format = MGSurfaceFormat::Color;
+ 	}
+ 	else
+@@ -1064,8 +1249,8 @@
+ 		SDL_DisplayMode desktopMode;
+ 		if (SDL_GetDesktopDisplayMode(displayIndex, &desktopMode) == 0)
+ 		{
+-			info.CurrentDisplayMode.width = desktopMode.w;
+-			info.CurrentDisplayMode.height = desktopMode.h;
++			info.CurrentDisplayMode.width = (int)lroundf(desktopMode.w * mg_display_pixel_density());
++			info.CurrentDisplayMode.height = (int)lroundf(desktopMode.h * mg_display_pixel_density());
+ 			info.CurrentDisplayMode.format = MGSurfaceFormat::Color;
+ 		}
+ 		else
+@@ -1198,7 +1383,18 @@
  	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
  	submitInfo.commandBufferCount = 1;
  	submitInfo.pCommandBuffers = &frame.commandBuffer;
@@ -548,16 +581,15 @@
  		std::lock_guard lock(device->queueMutex);
  		vkQueueSubmit(device->queue, 1, &submitInfo, renderFence);
  	}
-@@ -1220,7 +1415,22 @@
- 	VK_CHECK_RESULT(res);
+@@ -1221,6 +1417,21 @@
  	VK_SET_OBJECT_NAME(device->device, buffer->buffer, VK_OBJECT_TYPE_BUFFER, "MGG_Buffer.buffer");
  }
-+
+ 
 +// Etervale fork (issue 006): a storage buffer is read and written by shaders, holds dispatch arguments, and is filled and
 +// read back by copies.
 +static const VkBufferUsageFlags MGVK_StorageBufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
 +	VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
- 
++
 +// Etervale fork (issues 005, 006): every stage and access that can touch a storage resource (or anything a dispatch
 +// wrote) after a copy or a dispatch: the barriers around them use these as the far side, so whichever pass comes next
 +// sees the writes.
@@ -571,7 +603,7 @@
  static VkBufferUsageFlags ToUsage(MGBufferType type)
  {
  	VkBufferUsageFlags usage;
-@@ -1235,8 +1445,10 @@
+@@ -1235,8 +1446,10 @@
  	case MGBufferType::Constant:
  		return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
  		break;
@@ -583,7 +615,7 @@
  	}
  }
  
-@@ -1298,6 +1510,7 @@
+@@ -1298,6 +1511,7 @@
  	assert(adapter != nullptr);
  
  	auto device = new MGG_GraphicsDevice();
@@ -591,7 +623,7 @@
  
  	device->instance = system->instance;
  	device->physicalDevice = adapter->device;
-@@ -1352,6 +1565,7 @@
+@@ -1352,6 +1566,7 @@
  	bool scalarBlockLayoutSupported = false;
  	bool hlslFunctionalitySupported = false;
  	bool userTypeSupported = false;
@@ -599,7 +631,7 @@
  
  	for (const auto& extension : deviceExtensions)
  	{
-@@ -1365,6 +1579,8 @@
+@@ -1365,6 +1580,8 @@
  			hlslFunctionalitySupported = true;
  		if (strcmp(extension.extensionName, VK_GOOGLE_USER_TYPE_EXTENSION_NAME) == 0)
  			userTypeSupported = true;
@@ -608,7 +640,7 @@
  	}
  
  	if (!swapChainSupported)
-@@ -1403,6 +1619,11 @@
+@@ -1403,6 +1620,11 @@
  	{
  		enabledFeatures.samplerAnisotropy = VK_TRUE;
  	}
@@ -620,7 +652,7 @@
  
  	VkDeviceCreateInfo deviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
  	deviceCreateInfo.queueCreateInfoCount = 1;
-@@ -1438,6 +1659,24 @@
+@@ -1438,6 +1660,24 @@
  	if (userTypeSupported)
  		extensions.push_back(VK_GOOGLE_USER_TYPE_EXTENSION_NAME);
  
@@ -645,7 +677,7 @@
  	VkPhysicalDeviceFeatures2 deviceFeatures2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
  	if (lastFeature != nullptr)
  	{
-@@ -1456,6 +1695,17 @@
+@@ -1456,6 +1696,17 @@
  	VK_SET_OBJECT_NAME(device->device, device->device, VK_OBJECT_TYPE_DEVICE, "MGG_GraphicsDevice.device");
  	VK_SET_OBJECT_NAME(device->device, device->physicalDevice, VK_OBJECT_TYPE_PHYSICAL_DEVICE, "MGG_GraphicsDevice.physicalDevice");
  
@@ -663,7 +695,7 @@
  	VmaAllocatorCreateInfo allocatorInfo = {};
  	allocatorInfo.instance = system->instance;
  	allocatorInfo.physicalDevice = device->physicalDevice;
-@@ -1533,6 +1783,9 @@
+@@ -1533,6 +1784,9 @@
  		device->nullTexture[(int)MGTextureType::Cube] = tex;
  	}
  
@@ -673,11 +705,10 @@
  	return device;
  }
  
-@@ -1644,6 +1897,14 @@
- 	MGVK_WaitPendingTransfers(device, nullptr);
+@@ -1645,6 +1899,14 @@
  
  	MGVK_CleanupPendingTransfers(device);
-+
+ 
 +	// Etervale fork: staging buffers of in-frame uploads and the frame capture's copies.
 +	for (auto& staged : device->frameStaging)
 +		vmaDestroyBuffer(device->allocator, staged.second.buffer, staged.second.allocation);
@@ -685,10 +716,11 @@
 +	for (auto& slot : device->captureSlots)
 +		MGVK_ReleaseCaptureSlot(device, slot);
 +	device->captureSlots.clear();
- 
++
  	MGVK_CleanupSwapChain(device);
  
-@@ -1959,6 +2220,7 @@
+ 	for (auto pair : device->shader_programs)
+@@ -1959,6 +2221,7 @@
  	uint32_t swapchainCount = 0;
  	res = vkGetSwapchainImagesKHR(device->device, device->swapchain, &swapchainCount, NULL);
  	VK_CHECK_RESULT(res);
@@ -696,7 +728,7 @@
  
  	// Do we need to change the number of swapchain images?  This can happen for various reasons
  	// including display changes and refresh rates.
-@@ -2180,7 +2442,42 @@
+@@ -2180,6 +2443,41 @@
  
  	bool isSwapchainBound = device->targets.targets[0] != nullptr &&
  		device->targets.targets[0]->isSwapchain;
@@ -713,7 +745,7 @@
 +		MGVK_EndRenderPass(device, frame.commandBuffer);
 +		VkResult res = vkEndCommandBuffer(frame.commandBuffer);
 +		VK_CHECK_RESULT(res);
- 
++
 +		VkFence fence;
 +		VkFenceCreateInfo fenceInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
 +		vkCreateFence(device->device, &fenceInfo, nullptr, &fence);
@@ -735,11 +767,10 @@
 +	}
 +	device->renderTargetDirty = true;
 +	device->pipelineStateDirty = true;
-+
+ 
  	MGVK_RecreateSwapChain(device, nativeWindowHandle, width, height, vkColor, vkDepth, multiSampleCount, syncInterval);
  
- 	MGVK_PrepareFrame(device);
-@@ -2254,6 +2551,7 @@
+@@ -2254,6 +2552,7 @@
  		res = vkWaitForFences(device->device, 1, &frame.completedFence, VK_TRUE, UINT64_MAX);
  		VK_CHECK_RESULT(res);
  		frame.is_rendering = false;
@@ -747,7 +778,7 @@
  	}
  
  	// Do we need to get the next swapchain image?
-@@ -2262,6 +2560,7 @@
+@@ -2262,6 +2561,7 @@
  		res = vkAcquireNextImageKHR(device->device, device->swapchain, UINT64_MAX,
  			frame.imageAcquiredSemaphore, VK_NULL_HANDLE, &frame.image_index);
  		VK_CHECK_RESULT(res);
@@ -755,12 +786,12 @@
  	}
  
  	// This should be cleared by now.
-@@ -2279,7 +2578,22 @@
+@@ -2279,6 +2579,21 @@
  
  	// Cleanup resources from the last time this frame was rendered.
  	MGVK_ProcessDescriptorCaches(device, device->frame);
 +	MGVK_RecycleDiscardedBuffers(device);
- 
++
 +	// Etervale fork: staging buffers of in-frame texture uploads, once their frame is complete.
 +	for (size_t i = 0; i < device->frameStaging.size();)
 +	{
@@ -774,11 +805,10 @@
 +		staged = device->frameStaging.back();
 +		device->frameStaging.pop_back();
 +	}
-+
+ 
  	// MGVK_DestroyFrameResources uses currentFrame and device->freeFrames to calculate age.
  	// We should pass the device->frame rather than swapchain_image_index.
- 	// Otherwise age calculation will underflow.
-@@ -2328,7 +2642,9 @@
+@@ -2328,7 +2643,9 @@
  
  	auto targets = device->pipelineState.targets;
  
@@ -789,7 +819,7 @@
  	{
  		for (int i = 0; i < targets->set.numTargets; i++)
  		{
-@@ -2354,7 +2670,7 @@
+@@ -2354,7 +2671,7 @@
  		if (clearStencil)
  			attachment->aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
  
@@ -798,7 +828,7 @@
  		if (depthTexture) {
  			attachment->aspectMask &= DetermineAspectMask(depthTexture->info.format);
  		}
-@@ -2370,6 +2686,9 @@
+@@ -2370,6 +2687,9 @@
  		}
  	}
  
@@ -808,7 +838,7 @@
  	VkClearRect rect;
  	rect.rect.offset.x = 0;
  	rect.rect.offset.y = 0;
-@@ -2410,6 +2729,75 @@
+@@ -2410,6 +2730,75 @@
  	device->pipelineState.targets = nullptr;
  }
  
@@ -884,7 +914,7 @@
  static void MGVK_DestroyPipelines(MGG_GraphicsDevice* device, std::function<bool(const MGVK_PipelineState&)> compare)
  {
  	auto& pipelines = device->pipelines;
-@@ -2489,6 +2877,11 @@
+@@ -2489,6 +2878,11 @@
  				vkDestroyImageView(device->device, texture->target_view, nullptr);
  			if (texture->view != VK_NULL_HANDLE)
  				vkDestroyImageView(device->device, texture->view, nullptr);
@@ -896,7 +926,7 @@
  
  			if (texture->msImage != VK_NULL_HANDLE)
  			{
-@@ -2514,6 +2907,13 @@
+@@ -2514,6 +2908,13 @@
  			device->destroyBlendStates.pop();
  
  			MGVK_DestroyPipelines(device, [state](const MGVK_PipelineState& s) { return s.blendState == state; });
@@ -910,7 +940,7 @@
  			delete state;
  		}
  
-@@ -2527,6 +2927,13 @@
+@@ -2527,6 +2928,13 @@
  			device->destroyRasterizerStates.pop();
  
  			MGVK_DestroyPipelines(device, [state](const MGVK_PipelineState& s) { return s.rasterizerState == state; });
@@ -924,7 +954,7 @@
  			delete state;
  		}
  
-@@ -2540,6 +2947,13 @@
+@@ -2540,6 +2948,13 @@
  			device->destroyDepthStencilStates.pop();
  
  			MGVK_DestroyPipelines(device, [state](const MGVK_PipelineState& s) { return s.depthStencilState == state; });
@@ -938,7 +968,7 @@
  			delete state;
  		}
  
-@@ -2622,6 +3036,7 @@
+@@ -2622,6 +3037,7 @@
  	auto& swap = device->swapchains[frame.image_index];
  
  	MGVK_EndRenderPass(device, frame.commandBuffer);
@@ -946,7 +976,7 @@
  
  	VkResult res;
  
-@@ -2633,11 +3048,11 @@
+@@ -2633,11 +3049,11 @@
  		frame.is_recording = false;
  
  		VkSemaphore waits[] = { frame.imageAcquiredSemaphore };
@@ -960,7 +990,7 @@
  		submitInfo.pWaitSemaphores = waits;
  		submitInfo.pWaitDstStageMask = waitFlags;
  		submitInfo.commandBufferCount = 1;
-@@ -2686,28 +3101,18 @@
+@@ -2686,28 +3102,18 @@
  	frame.image_index = -1;
  	frame.is_rendering = true;
  
@@ -998,7 +1028,7 @@
  	{
  		std::lock_guard lock(device->queueMutex);
  
-@@ -2787,6 +3192,7 @@
+@@ -2787,6 +3193,7 @@
  	viewport.height = height;
  	viewport.minDepth = minDepth;
  	viewport.maxDepth = maxDepth;
@@ -1006,7 +1036,7 @@
  
  	auto& frame = device->frames[device->frameIndex];
  	assert(frame.is_recording);
-@@ -2804,6 +3210,7 @@
+@@ -2804,6 +3211,7 @@
  	scissor.extent.width = width;
  	scissor.extent.height = height;
  	device->scissorDirty = true;
@@ -1014,7 +1044,7 @@
  }
  
  void MGG_GraphicsDevice_SetRenderTargets(MGG_GraphicsDevice* device, MGG_Texture** targets, mgint* arraySlices, mgint count)
-@@ -2846,6 +3253,8 @@
+@@ -2846,6 +3254,8 @@
  
  	device->pipelineStateDirty = true;
  	device->renderTargetDirty = true;
@@ -1023,7 +1053,7 @@
  }
  
  void MGG_GraphicsDevice_SetConstantBuffer(MGG_GraphicsDevice* device, MGShaderStage stage, mgint slot, MGG_Buffer* buffer)
-@@ -2917,7 +3326,9 @@
+@@ -2917,7 +3327,9 @@
  	assert(shader->stage == stage);
  
  	device->shaders[(mgint)stage] = shader;
@@ -1034,7 +1064,7 @@
  }
  
  void MGG_GraphicsDevice_SetInputLayout(MGG_GraphicsDevice* device, MGG_InputLayout* layout)
-@@ -2955,10 +3366,11 @@
+@@ -2955,10 +3367,11 @@
  	}
  	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
  	{
@@ -1047,7 +1077,7 @@
  	}
  	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
  	{
-@@ -3145,20 +3557,31 @@
+@@ -3145,20 +3558,31 @@
  			continue;
  		}
  
@@ -1082,7 +1112,7 @@
  
  		auto first = cached->set.targets[0];
  		assert(first);
-@@ -3175,7 +3598,10 @@
+@@ -3175,7 +3599,10 @@
  		int num_attachments = 0;
  		int num_color_attachments = 0;
  
@@ -1094,7 +1124,7 @@
  		{
  			auto target = cached->set.targets[i];
  			auto firstUse = cached->set.firstUse[i];
-@@ -3217,11 +3643,13 @@
+@@ -3217,11 +3644,13 @@
  
              if (isMsaa)
              {
@@ -1111,7 +1141,7 @@
  				desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
              }
              else
-@@ -3249,6 +3677,26 @@
+@@ -3249,6 +3678,26 @@
  			num_color_attachments++;
  		}
  
@@ -1138,7 +1168,7 @@
  		auto depth = cached->set.targets[0]->depthTexture;
  		if (depth)
  		{
-@@ -3304,8 +3752,9 @@
+@@ -3304,8 +3753,9 @@
              if (isMsaa)
                  subpass_desc.pResolveAttachments = &resolve_attachment_ref;
  
@@ -1149,7 +1179,7 @@
  
  			// Add subpass dependencies for proper synchronization
  			VkSubpassDependency dependencies[2];
-@@ -3360,8 +3809,9 @@
+@@ -3360,8 +3810,9 @@
  
  				dependencies[1].srcSubpass = 0;
  				dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
@@ -1161,7 +1191,7 @@
  				dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
  				dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
  				dependencies[1].dependencyFlags = 0;
-@@ -3386,7 +3836,7 @@
+@@ -3386,7 +3837,7 @@
  			VK_SET_OBJECT_NAME(device->device, cached->framebuffer, VK_OBJECT_TYPE_FRAMEBUFFER, "MGVK_TargetSetCache.framebuffer (hash: %u)", hash);
  		}
  
@@ -1170,7 +1200,7 @@
  	}
  
  	// Track our layout changes.
-@@ -3402,9 +3852,19 @@
+@@ -3402,9 +3853,19 @@
  	// Set the cache for the changed pipeline state.
  	device->pipelineState.targets = cached;
  
@@ -1193,12 +1223,10 @@
  
  	// Setup the render pass and pipeline.
  	VkRect2D render_area;
-@@ -3464,18 +3924,59 @@
- 		VK_CHECK_RESULT(res);
- 		VK_SET_OBJECT_NAME(device->device, info->set, VK_OBJECT_TYPE_DESCRIPTOR_SET, "MGVK_DescriptorInfo.set (Shader id: %u, index: %d)", shader->id, i);
+@@ -3466,16 +3927,57 @@
  	}
-+}
-+
+ }
+ 
 +// Etervale fork (issues 005, 006): the view of one mip of a storage image, made the first time it is bound.
 +static VkImageView MGVK_StorageView(MGG_GraphicsDevice* device, MGG_Texture* texture, mgint mip)
 +{
@@ -1221,8 +1249,8 @@
 +	VK_CHECK_RESULT(res);
 +	VK_SET_OBJECT_NAME(device->device, view, VK_OBJECT_TYPE_IMAGE_VIEW, "MGG_Texture.storage_views[%d] (id: %llu)", mip, texture->id);
 +	return view;
- }
- 
++}
++
 +static void MGVK_BindShaderResources(MGG_GraphicsDevice* device, FrameCounter currentFrame, MGG_Shader* shader, VkDescriptorSet* current, uint32_t* dynamicOffset);
 +
  static void MGVK_UpdateDescriptors(MGG_GraphicsDevice* device, FrameCounter currentFrame, MGG_Shader* shader, VkDescriptorSet* current, uint32_t* dynamicOffset)
@@ -1256,7 +1284,7 @@
  
  	// Apply the bindings to the new descriptor set.
  	auto& frame = device->frames[device->frameIndex];
-@@ -3488,7 +3989,12 @@
+@@ -3488,7 +3990,12 @@
  
  	MGVK_DescriptorInfo* info;
  
@@ -1270,7 +1298,7 @@
  	uint32_t hash = MG_ComputeHash(shader->uniformSlots);
  	hash = MG_ComputeHash(shader->textureSlots, hash);
  	uint32_t dirty = shader->textureSlots;
-@@ -3506,16 +4012,56 @@
+@@ -3506,10 +4013,12 @@
  			tex->frame = currentFrame;
  			hash = MG_ComputeHash(tex->id, hash);
  		}
@@ -1283,10 +1311,10 @@
  
  		// Early out if there are no more used slots.
  		dirty &= ~mask;
- 		if (!dirty)
+@@ -3517,6 +4026,44 @@
  			break;
-+	}
-+
+ 	}
+ 
 +	// Etervale fork: the storage buffers and images by slot (issues 005, 006). Every resource the shader reads or writes
 +	// is stamped with this frame, so it is neither recycled nor destroyed while a frame in flight uses it.
 +	key[keyLength++] = (uint64_t)shader->bufferSlots | ((uint64_t)shader->uavSlots << 32);
@@ -1302,7 +1330,7 @@
 +		}
 +		key[keyLength++] = buffer ? buffer->id : 0;
 +		hash = MG_ComputeHash((mguint)(key[keyLength - 1] & 0xFFFFFFFF), hash);
- 	}
++	}
 +	for (int i = 0; i < MGVK_MAX_UAV_SLOTS; i++)
 +	{
 +		if ((shader->uavSlots & (1u << i)) == 0)
@@ -1324,10 +1352,11 @@
 +		hash = MG_ComputeHash((mguint)(id & 0xFFFFFFFF), hash);
 +		hash = MG_ComputeHash((mguint)(id >> 32), hash);
 +	}
- 
++
  	// We hash the frameIndex because each frame in the swap chain has its
  	// own uniforms buffer (device->frames[frameIndex].uniforms) that gets
-@@ -3527,8 +4073,18 @@
+ 	// bound to the descriptor set. If we don't, some frame will use the
+@@ -3527,8 +4074,18 @@
  	// that we don't create twice as much descriptor due to this.
  	hash = MG_ComputeHash(device->frameIndex, hash);
  
@@ -1348,7 +1377,7 @@
  	if (!info)
  	{
  		// The descriptor wasn't cached... so we need to
-@@ -3545,7 +4101,8 @@
+@@ -3545,7 +4102,8 @@
  		shader->freeSets.pop();
  
  		// Cache the new or recycled set for later use.
@@ -1358,10 +1387,11 @@
  
  		for (int i = 0; i < shader->bindings.size(); i++)
  		{
-@@ -3579,6 +4136,25 @@
+@@ -3578,7 +4136,26 @@
+ 					((VkDescriptorImageInfo*)w.pImageInfo)->imageView = tex->view;
  				else
  					((VkDescriptorImageInfo*)w.pImageInfo)->imageView = device->nullTexture[(int)shader->textureTypes[slot]]->view;
- 			}
++			}
 +			else if (w.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
 +			{
 +				// Etervale fork: a read-only buffer (t-slot) or a RW buffer (u-slot); an empty read slot reads zeros.
@@ -1373,7 +1403,7 @@
 +				((VkDescriptorBufferInfo*)w.pBufferInfo)->buffer = buffer->buffer;
 +				((VkDescriptorBufferInfo*)w.pBufferInfo)->offset = 0;
 +				((VkDescriptorBufferInfo*)w.pBufferInfo)->range = VK_WHOLE_SIZE;
-+			}
+ 			}
 +			else if (w.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
 +			{
 +				// Etervale fork: one mip of a storage image; a dispatch with an empty image slot is refused before here.
@@ -1384,7 +1414,7 @@
  			else
  			{
  				// This should never happen!
-@@ -3634,6 +4210,7 @@
+@@ -3634,6 +4211,7 @@
  		return program;
  
  	program = new MGVK_Program();
@@ -1392,7 +1422,7 @@
  	program->vertex = vertexShaderData;
  	program->pixel = pixelShaderData;
  
-@@ -3661,19 +4238,19 @@
+@@ -3661,19 +4239,19 @@
  
  static VkPipeline MGVK_CreatePipeline(MGG_GraphicsDevice* device)
  {
@@ -1419,7 +1449,7 @@
  
  	// We set the viewport and scissor dynamically.
  	static const VkDynamicState dynamicStates[] = {
-@@ -3734,7 +4311,7 @@
+@@ -3734,7 +4312,7 @@
  
  	// Setup the blend, rasterizer, and depth/stencil states.
  	VkPipelineColorBlendStateCreateInfo colorBlending = pstate.blendState->info;
@@ -1428,7 +1458,7 @@
  	pipelineInfo.pColorBlendState = &colorBlending;
  	pipelineInfo.pRasterizationState = &pstate.rasterizerState->info;
  	pipelineInfo.pDepthStencilState = &pstate.depthStencilState->info;
-@@ -3784,7 +4361,7 @@
+@@ -3784,7 +4362,7 @@
  	VK_CHECK_RESULT(res);
  	VK_SET_OBJECT_NAME(device->device, pipeline.cache, VK_OBJECT_TYPE_PIPELINE, "MGVK_PipelineCache.cache (hash: %u)", hash);
  
@@ -1437,7 +1467,7 @@
  
  	return pipeline.cache;
  }
-@@ -3793,10 +4370,15 @@
+@@ -3793,10 +4371,15 @@
  {
  	assert(device);
  
@@ -1457,7 +1487,7 @@
  
  	// Update the shader program.
  	if (device->shaderDirty)
-@@ -3824,11 +4406,14 @@
+@@ -3824,11 +4407,14 @@
  
  		auto pipeline = MGVK_CreatePipeline(device);
  		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -1472,7 +1502,7 @@
  		device->descriptorSets[0] = nullptr;
  		device->descriptorSets[1] = nullptr;
  		device->dynamicOffsets[0] = 0;
-@@ -3870,8 +4455,10 @@
+@@ -3870,8 +4456,10 @@
  		device->blendFactorDirty = false;
  	}
  
@@ -1485,7 +1515,7 @@
  	{
  		auto program = device->pipelineState.program;
  
-@@ -3906,6 +4493,8 @@
+@@ -3906,6 +4494,8 @@
  		// Clear all the dirty flags.
  		device->uniformsDirty = 0;
  		device->textureSamplerDirty = 0;
@@ -1494,7 +1524,7 @@
  	}
  
  	if (device->vertexBuffersDirty)
-@@ -3953,6 +4542,50 @@
+@@ -3953,6 +4543,50 @@
  	}
  }
  
@@ -1545,7 +1575,7 @@
  void MGG_GraphicsDevice_Draw(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType, mgint vertexStart, mgint vertexCount)
  {
  	assert(device != nullptr);
-@@ -3964,6 +4597,7 @@
+@@ -3964,6 +4598,7 @@
  	auto& frame = device->frames[device->frameIndex];
  	assert(frame.is_recording);
  
@@ -1553,7 +1583,7 @@
  	MGVK_UpdateRenderPass(device, device->frame, frame.commandBuffer);
  
  	auto topology = ToVkPrimitiveTopology(primitiveType);
-@@ -3974,6 +4608,7 @@
+@@ -3974,6 +4609,7 @@
  	}
  
  	MGVK_UpdatePipeline(device, frame.commandBuffer, device->frame);
@@ -1561,7 +1591,7 @@
  
  	vkCmdDraw(frame.commandBuffer, vertexCount, 1, vertexStart, 0);
  }
-@@ -3991,6 +4626,7 @@
+@@ -3991,6 +4627,7 @@
  	auto& frame = device->frames[device->frameIndex];
  	assert(frame.is_recording);
  
@@ -1569,7 +1599,7 @@
  	MGVK_UpdateRenderPass(device, device->frame, frame.commandBuffer);
  
  	auto topology = ToVkPrimitiveTopology(primitiveType);
-@@ -4001,6 +4637,7 @@
+@@ -4001,6 +4638,7 @@
  	}
  
  	MGVK_UpdatePipeline(device, frame.commandBuffer, device->frame);
@@ -1577,7 +1607,7 @@
  
  	auto indexBuffer = device->indexBuffer;
  	assert(indexBuffer != nullptr);
-@@ -4034,6 +4671,7 @@
+@@ -4034,6 +4672,7 @@
  	auto& frame = device->frames[device->frameIndex];
  	assert(frame.is_recording);
  
@@ -1585,7 +1615,7 @@
  	MGVK_UpdateRenderPass(device, device->frame, frame.commandBuffer);
  
  	auto topology = ToVkPrimitiveTopology(primitiveType);
-@@ -4044,6 +4682,7 @@
+@@ -4044,6 +4683,7 @@
  	}
  
  	MGVK_UpdatePipeline(device, frame.commandBuffer, device->frame);
@@ -1593,7 +1623,7 @@
  
  	auto indexBuffer = device->indexBuffer;
  	assert(indexBuffer != nullptr);
-@@ -4419,7 +5058,7 @@
+@@ -4419,7 +5059,7 @@
  	case MGBlend::SourceAlphaSaturation:
  		return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
  	default:
@@ -1602,7 +1632,7 @@
  	}
  }
  
-@@ -4438,7 +5077,7 @@
+@@ -4438,7 +5078,7 @@
  	case MGBlendFunction::Max:
  		return VK_BLEND_OP_MAX;
  	default:
@@ -1611,7 +1641,7 @@
  	}
  }
  
-@@ -4473,7 +5112,7 @@
+@@ -4473,7 +5113,7 @@
  
  	// First check the cache.
  	uint32_t hash = MG_ComputeHash((mgbyte*)infos, sizeof(MGG_BlendState_Info) * 4);
@@ -1620,7 +1650,7 @@
  	if (cached)
  	{
  		cached->refs++;
-@@ -4499,8 +5138,10 @@
+@@ -4499,8 +5139,10 @@
  
  	state->refs = 1;
  	state->hash = hash;
@@ -1632,7 +1662,7 @@
  
  	return state;
  
-@@ -4521,7 +5162,7 @@
+@@ -4521,7 +5163,7 @@
  
  	// Queue the state for later destruction.
  	device->destroyBlendStates.push(state);
@@ -1641,7 +1671,7 @@
  }
  
  static VkCompareOp ToVkCompareOp(MGCompareFunction func)
-@@ -4545,7 +5186,7 @@
+@@ -4545,7 +5187,7 @@
  	case MGCompareFunction::NotEqual:
  		return VK_COMPARE_OP_NOT_EQUAL;
  	default:
@@ -1650,7 +1680,7 @@
  	}
  }
  
-@@ -4570,7 +5211,7 @@
+@@ -4570,7 +5212,7 @@
  	case MGStencilOperation::Invert:
  		return VK_STENCIL_OP_INVERT;
  	default:
@@ -1659,7 +1689,7 @@
  	}
  }
  
-@@ -4581,7 +5222,7 @@
+@@ -4581,7 +5223,7 @@
  
  	// First check the cache.
  	uint32_t hash = MG_ComputeHash((mgbyte*)info, sizeof(MGG_DepthStencilState_Info));
@@ -1668,7 +1698,7 @@
  	if (cached)
  	{
  		cached->refs++;
-@@ -4626,7 +5267,9 @@
+@@ -4626,7 +5268,9 @@
  
  	state->refs = 1;
  	state->hash = hash;
@@ -1679,7 +1709,7 @@
  
  	return state;
  }
-@@ -4646,7 +5289,7 @@
+@@ -4646,7 +5290,7 @@
  
  	// Queue the state for later destruction.
  	device->destroyDepthStencilStates.push(state);
@@ -1688,7 +1718,7 @@
  }
  
  static VkPolygonMode ToVkPolygonMode(MGFillMode mode)
-@@ -4658,7 +5301,7 @@
+@@ -4658,7 +5302,7 @@
  	case MGFillMode::WireFrame:
  		return VK_POLYGON_MODE_LINE;
  	default:
@@ -1697,7 +1727,7 @@
  	}
  }
  
-@@ -4673,7 +5316,7 @@
+@@ -4673,7 +5317,7 @@
  	case MGCullMode::CullCounterClockwiseFace:
  		return VK_CULL_MODE_BACK_BIT;
  	default:
@@ -1706,7 +1736,7 @@
  	}
  }
  
-@@ -4685,7 +5328,7 @@
+@@ -4685,7 +5329,7 @@
  
  	// First check the cache.
  	uint32_t hash = MG_ComputeHash((mgbyte*)info, sizeof(MGG_RasterizerState_Info));
@@ -1715,7 +1745,7 @@
  	if (cached)
  	{
  		cached->refs++;
-@@ -4716,7 +5359,9 @@
+@@ -4716,7 +5360,9 @@
  
  	state->refs = 1;
  	state->hash = hash;
@@ -1726,7 +1756,7 @@
  
  	return state;
  }
-@@ -4736,7 +5381,7 @@
+@@ -4736,7 +5382,7 @@
  
  	// Queue the state for later destruction.
  	device->destroyRasterizerStates.push(state);
@@ -1735,7 +1765,7 @@
  }
  
  static VkSamplerAddressMode ToVkSamplerAddressMode(MGTextureAddressMode mode)
-@@ -4752,7 +5397,7 @@
+@@ -4752,7 +5398,7 @@
  	case MGTextureAddressMode::Border:
  		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
  	default:
@@ -1744,7 +1774,7 @@
  	}
  }
  
-@@ -4878,6 +5523,26 @@
+@@ -4878,6 +5524,26 @@
  		return;
  
  	device->destroySamplers.push(state);
@@ -1771,7 +1801,7 @@
  }
  
  static MGG_Buffer* MGVK_BufferDiscard(MGG_GraphicsDevice* device, MGG_Buffer* buffer)
-@@ -4922,6 +5587,7 @@
+@@ -4922,6 +5588,7 @@
  		*best = buffer->next;
  		buffer->next = nullptr;
  		buffer->dataSize = dataSize;
@@ -1779,10 +1809,11 @@
  		//buffer->dirtyMin = 0;
  		//buffer->dirtyMax = 0;
  		return buffer;
-@@ -4944,6 +5610,30 @@
+@@ -4943,6 +5610,30 @@
+ 
  	buffer->actualSize = buffer->dataSize = sizeInBytes;
  	buffer->type = type;
- 
++
 +	if (type == MGBufferType::Storage)
 +	{
 +		// Etervale fork (issue 006): device-local, never mapped; filled through staging copies
@@ -1806,11 +1837,10 @@
 +		device->all_buffers.push_back(buffer);
 +		return buffer;
 +	}
-+
+ 
  	if (type == MGBufferType::Constant && !no_push)
  	{
- 		// Uniform buffers never use real buffers.  We just
-@@ -5091,14 +5781,25 @@
+@@ -5091,14 +5782,25 @@
  		return;
  	}
  
@@ -1838,10 +1868,13 @@
  
  		// Fix any active mapping of the buffer that
  		// was just discarded for another.
-@@ -5138,6 +5839,32 @@
- 	MGVK_BufferCopyAndFlush(device, buffer, offset, data, elementCount, elementSizeInBytes, vertexStride);
- }
+@@ -5135,6 +5837,32 @@
+ 	}
  
+ 	// Do the copy and flush.
++	MGVK_BufferCopyAndFlush(device, buffer, offset, data, elementCount, elementSizeInBytes, vertexStride);
++}
++
 +// Etervale fork (issue 013): SetDataOptions.NoOverwrite. The caller promises the range it writes is not read by any
 +// recorded or in-flight draw (the framework's ring of user vertices and indices for DrawUser*Primitives appends this
 +// way), so the data goes into the buffer in place: no rename, no copy of the old content. MGG_Buffer_SetData without
@@ -1865,13 +1898,10 @@
 +		return;
 +	}
 +
-+	MGVK_BufferCopyAndFlush(device, buffer, offset, data, elementCount, elementSizeInBytes, vertexStride);
-+}
-+
- void MGG_Buffer_GetData(MGG_GraphicsDevice* device, MGG_Buffer* buffer, mgint offset, mgbyte* data, mgint dataCount, mgint dataBytes, mgint dataStride)
- {
-     assert(device != nullptr);
-@@ -5170,6 +5897,17 @@
+ 	MGVK_BufferCopyAndFlush(device, buffer, offset, data, elementCount, elementSizeInBytes, vertexStride);
+ }
+ 
+@@ -5170,7 +5898,33 @@
      }
  }
  
@@ -1887,18 +1917,6 @@
 +	bool storage);
 +
  MGG_Texture* MGG_Texture_Create(
- 	MGG_GraphicsDevice* device,
- 	MGTextureType type,
-@@ -5180,8 +5918,42 @@
- 	mgint mipmaps,
- 	mgint slices)
- {
-+	return MGVK_Texture_Create(device, type, format, width, height, depth, mipmaps, slices, false);
-+}
-+
-+// Etervale fork (issue 005): a texture shaders can also write (RWTexture2D): the image gets the storage usage. Null when
-+// the device cannot use the format as a storage image (vkGetPhysicalDeviceFormatProperties).
-+MG_EXPORT MGG_Texture* MGG_Texture_CreateStorage(
 +	MGG_GraphicsDevice* device,
 +	MGTextureType type,
 +	MGSurfaceFormat format,
@@ -1908,6 +1926,18 @@
 +	mgint mipmaps,
 +	mgint slices)
 +{
++	return MGVK_Texture_Create(device, type, format, width, height, depth, mipmaps, slices, false);
++}
++
++// Etervale fork (issue 005): a texture shaders can also write (RWTexture2D): the image gets the storage usage. Null when
++// the device cannot use the format as a storage image (vkGetPhysicalDeviceFormatProperties).
++MG_EXPORT MGG_Texture* MGG_Texture_CreateStorage(
+ 	MGG_GraphicsDevice* device,
+ 	MGTextureType type,
+ 	MGSurfaceFormat format,
+@@ -5181,7 +5935,26 @@
+ 	mgint slices)
+ {
  	assert(device != nullptr);
 +	VkFormatProperties props = {};
 +	vkGetPhysicalDeviceFormatProperties(device->physicalDevice, ToVkFormat(format), &props);
@@ -1932,7 +1962,7 @@
  	assert(width > 0);
  	assert(height > 0);
  	assert(depth > 0);
-@@ -5193,6 +5965,7 @@
+@@ -5193,6 +5966,7 @@
  	texture->type = type;
  	texture->format = format;
  	texture->id = ++device->currentTextureId;
@@ -1940,7 +1970,7 @@
  
  	VkImageCreateInfo& create_info = texture->info;
  	create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-@@ -5208,6 +5981,8 @@
+@@ -5208,6 +5982,8 @@
  	create_info.samples = VK_SAMPLE_COUNT_1_BIT;
  	create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
  	create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -1949,7 +1979,7 @@
  	create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
  	create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
  
-@@ -5288,10 +6063,20 @@
+@@ -5288,10 +6064,20 @@
                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                          VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -1971,7 +2001,7 @@
  		mggCreateImage(device, &create_info, texture);
  		VK_SET_OBJECT_NAME(device->device, texture->image, VK_OBJECT_TYPE_IMAGE, "MGG_Texture.image (RenderTarget id: %llu)", texture->id);
  
-@@ -5495,6 +6280,27 @@
+@@ -5495,6 +6281,27 @@
  	vmaMapMemory(device->allocator, buffer.allocation, &dest);
  	memcpy(dest, data, dataBytes);
  	vmaUnmapMemory(device->allocator, buffer.allocation);
@@ -1999,7 +2029,7 @@
  
  	// Get a command buffer and fill it... only one thread at a time
  	// can do this.  Eventually we could have multiple transfer pools.
-@@ -5556,12 +6362,22 @@
+@@ -5556,12 +6363,22 @@
  
  	if (texture->isTarget)
  	{
@@ -2023,7 +2053,7 @@
  
  	MGG_Buffer buffer;
  	MGVK_BufferCreate(device, dataBytes, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_ONLY, &buffer);
-@@ -5587,6 +6403,127 @@
+@@ -5587,6 +6404,127 @@
  		MGVK_BeginCommandBuffer(frame.commandBuffer);
  }
  
@@ -2151,7 +2181,7 @@
  MGG_InputLayout* MGG_InputLayout_Create(
  	MGG_GraphicsDevice* device,
  	MGG_Shader* vertexShader,
-@@ -5603,6 +6540,7 @@
+@@ -5603,6 +6541,7 @@
  	assert(elementCount >= 0);
  
  	auto layout = new MGG_InputLayout();
@@ -2159,7 +2189,7 @@
  
  	layout->bindings.resize(streamCount);
  	for (int i = 0; i < streamCount; i++)
-@@ -5619,7 +6557,11 @@
+@@ -5619,7 +6558,11 @@
  		const auto element = elements[i];
  		auto& attrib = layout->attributes[i];
  
@@ -2172,7 +2202,7 @@
  		attrib.binding = element.VertexBufferSlot;
  		attrib.format = ToVkFormat(element.Format);
  		attrib.offset = element.AlignedByteOffset;
-@@ -5642,9 +6584,42 @@
+@@ -5642,9 +6585,42 @@
  	if (layout == nullptr)
  		return;
  
@@ -2215,7 +2245,7 @@
  MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, mgbyte* bytecode, mgint sizeInBytes)
  {
  	assert(device != nullptr);
-@@ -5676,6 +6651,22 @@
+@@ -5676,6 +6652,22 @@
  		sizeInBytes -= sizeof(VkDescriptorSetLayoutBinding) * count;
  	}
  
@@ -2238,14 +2268,14 @@
  	VkShaderModuleCreateInfo create_info = { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
  	create_info.codeSize = sizeInBytes;
  	create_info.pCode = (uint32_t*)bytecode;
-@@ -5703,9 +6694,18 @@
+@@ -5703,8 +6695,17 @@
  		shader->poolInfo = nullptr;
  		shader->pool = nullptr;
  		shader->writes = nullptr;
 +		MGVK_CreateComputePipeline(device, shader);
  		return shader;
  	}
- 
++
 +	// Etervale fork: two resources of one shader on the same register give a layout with a duplicated binding
 +	// (VUID-VkDescriptorSetLayoutCreateInfo-binding-00279): only one of them is bound. Said once per shader.
 +	for (size_t a = 0; a < layoutBindings.size(); a++)
@@ -2253,11 +2283,10 @@
 +			if (layoutBindings[a].binding == layoutBindings[b].binding)
 +				printf("Shader %u (stage %d): two resources share binding %u; give them separate registers\n",
 +					shader->id, (int)stage, layoutBindings[a].binding);
-+
+ 
  	VkDescriptorSetLayoutCreateInfo layoutInfo;
  	memset(&layoutInfo, 0, sizeof(layoutInfo));
- 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-@@ -5743,16 +6743,62 @@
+@@ -5743,16 +6744,62 @@
  	// Pre-fill the free descriptor sets now.
  	MGVK_FillDescriptorSetCache(device, shader);
  
@@ -2324,7 +2353,7 @@
  			bufferInfo->buffer = NULL;
  			bufferInfo->offset = 0;
  			bufferInfo->range = VK_WHOLE_SIZE;
-@@ -5814,6 +6860,7 @@
+@@ -5814,6 +6861,7 @@
  		}
  	}
  
@@ -2332,11 +2361,10 @@
  	return shader;
  }
  
-@@ -5824,6 +6871,17 @@
- 
+@@ -5825,6 +6873,17 @@
  	if (!shader)
  		return;
-+
+ 
 +	// Etervale fork: a compute shader's pipeline may still run in a frame in flight; effects are disposed rarely, so the
 +	// device is waited once rather than the pipeline queued for later destruction.
 +	if (shader->computePipeline != VK_NULL_HANDLE)
@@ -2347,10 +2375,11 @@
 +		if (device->shaders[(mgint)MGShaderStage::Compute] == shader)
 +			device->shaders[(mgint)MGShaderStage::Compute] = nullptr;
 +	}
- 
++
  	delete [] shader->bufferInfo;
  	delete [] shader->imageInfo;
-@@ -6106,4 +7164,745 @@
+ 	delete [] shader->writes;
+@@ -6106,4 +7165,745 @@
  	handles->Queue            = static_cast<void*>(device->queue);
  	handles->QueueFamilyIndex = static_cast<mgint>(device->graphicsQueueFamily);
  	handles->QueueIndex       = 0;
@@ -2361,7 +2390,7 @@
 +// MGG.EnsureRuntimeVersion) checks before anything else: a library built from other sources (the official package, or
 +// a stale build of the fork) would fail later at the first missing export, or worse, call an export whose arguments
 +// changed. Bumped with every change of an exported function (monogame/issues/002-runtime-version.md).
-+#define MGVK_ETERVALE_RUNTIME_VERSION 7
++#define MGVK_ETERVALE_RUNTIME_VERSION 8
 +
 +MG_EXPORT mgint MGG_Etervale_RuntimeVersion()
 +{
@@ -2471,7 +2500,7 @@
 +		return false;
 +	vkCmdResetQueryPool(frame.commandBuffer, (VkQueryPool)pool, first, count);
 +	return true;
-+}
+ }
 +
 +MG_EXPORT void MGG_TimestampPool_Write(MGG_GraphicsDevice* device, void* pool, mguint index)
 +{
@@ -2480,7 +2509,7 @@
 +	if (!frame.is_recording)
 +		return;
 +	vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, (VkQueryPool)pool, index);
- }
++}
 +
 +MG_EXPORT mgbool MGG_TimestampPool_Read(MGG_GraphicsDevice* device, void* pool, mguint first, mguint count, mgulong* ticks)
 +{
@@ -3098,7 +3127,7 @@
 +}
 --- a/native/monogame/sdl/MGP_sdl.cpp
 +++ b/native/monogame/sdl/MGP_sdl.cpp
-@@ -7,6 +7,7 @@
+@@ -7,12 +7,67 @@
  #include "mg_common.h"
  
  #include <SDL.h>
@@ -3106,7 +3135,141 @@
  
  #if _WIN32
  #include <combaseapi.h>
-@@ -1064,8 +1065,23 @@
+ #endif
+ 
++#if defined(__APPLE__)
++#include <CoreGraphics/CoreGraphics.h>
++#endif
+ 
++// Etervale fork (monogame/issues/021-retina-pixels.md): on macOS the window asks for the display's full (Retina)
++// resolution, and every size, position and mouse coordinate the runtime exchanges is in pixels. SDL works in points
++// there, so the runtime converts at its edge: a window's sizes and mouse by that window's density (pixels per point),
++// window positions and display modes by the main display's. Elsewhere SDL's units are already pixels (density 1).
++float mg_display_pixel_density()
++{
++#if defined(__APPLE__)
++    CGDisplayModeRef mode = CGDisplayCopyDisplayMode(CGMainDisplayID());
++    if (mode != nullptr)
++    {
++        size_t points = CGDisplayModeGetWidth(mode);
++        size_t pixels = CGDisplayModeGetPixelWidth(mode);
++        CGDisplayModeRelease(mode);
++        if (points > 0 && pixels > 0)
++            return (float)pixels / (float)points;
++    }
++#endif
++    return 1.0f;
++}
++
++static float MGP_PixelDensity(SDL_Window* window)
++{
++#if defined(__APPLE__)
++    int points = 0;
++    int pixels = 0;
++    int height = 0;
++    if (window != nullptr)
++    {
++        SDL_GetWindowSize(window, &points, &height);
++        SDL_GetWindowSizeInPixels(window, &pixels, &height);
++    }
++    if (points > 0 && pixels > 0)
++        return (float)pixels / (float)points;
++    return mg_display_pixel_density();
++#else
++    (void)window;
++    return 1.0f;
++#endif
++}
++
++static int MGP_ToPixels(int points, float density)
++{
++    return (int)lroundf((float)points * density);
++}
++
++static int MGP_ToPoints(int pixels, float density)
++{
++    return (int)lroundf((float)pixels / density);
++}
++
++
+ struct MGP_Platform
+ {
+     std::vector<MGP_Window*> windows;
+@@ -514,8 +569,11 @@
+         case SDL_EventType::SDL_MOUSEMOTION:
+             event_.Type = MGEventType::MouseMove;
+             event_.MouseMove.Window = MGP_WindowFromId(platform, ev.motion.windowID);
+-            event_.MouseMove.X = ev.motion.x;
+-            event_.MouseMove.Y = ev.motion.y;
++            {
++                float density = MGP_PixelDensity(SDL_GetWindowFromID(ev.motion.windowID));
++                event_.MouseMove.X = MGP_ToPixels(ev.motion.x, density);
++                event_.MouseMove.Y = MGP_ToPixels(ev.motion.y, density);
++            }
+             return true;
+ 
+         case SDL_EventType::SDL_MOUSEWHEEL:
+@@ -529,8 +587,11 @@
+         case SDL_EventType::SDL_MOUSEBUTTONDOWN:
+             event_.Type = ev.type == SDL_EventType::SDL_MOUSEBUTTONDOWN ? MGEventType::MouseButtonDown : MGEventType::MouseButtonUp;
+             event_.MouseButton.Window = MGP_WindowFromId(platform, ev.button.windowID);
+-            event_.MouseButton.X = ev.button.x;
+-            event_.MouseButton.Y = ev.button.y;
++            {
++                float density = MGP_PixelDensity(SDL_GetWindowFromID(ev.button.windowID));
++                event_.MouseButton.X = MGP_ToPixels(ev.button.x, density);
++                event_.MouseButton.Y = MGP_ToPixels(ev.button.y, density);
++            }
+             switch (ev.button.button)
+             {
+                 default:
+@@ -648,8 +709,11 @@
+             case SDL_WINDOWEVENT_RESIZED:
+             case SDL_WINDOWEVENT_SIZE_CHANGED:
+                 event_.Type = MGEventType::WindowResized;
+-                event_.Window.Data1 = ev.window.data1;
+-                event_.Window.Data2 = ev.window.data2;
++                {
++                    float density = MGP_PixelDensity(SDL_GetWindowFromID(ev.window.windowID));
++                    event_.Window.Data1 = MGP_ToPixels(ev.window.data1, density);
++                    event_.Window.Data2 = MGP_ToPixels(ev.window.data2, density);
++                }
+                 return true;
+                 break;
+             case SDL_WINDOWEVENT_FOCUS_GAINED:
+@@ -660,8 +724,8 @@
+                 return true;
+             case SDL_WINDOWEVENT_MOVED:
+                 event_.Type = MGEventType::WindowMoved;
+-                event_.Window.Data1 = ev.window.data1;
+-                event_.Window.Data2 = ev.window.data2;
++                event_.Window.Data1 = MGP_ToPixels(ev.window.data1, mg_display_pixel_density());
++                event_.Window.Data2 = MGP_ToPixels(ev.window.data2, mg_display_pixel_density());
+                 return true;
+             case SDL_WINDOWEVENT_CLOSE:
+                 event_.Type = MGEventType::WindowClose;
+@@ -795,6 +859,9 @@
+ 
+ #if defined(MG_VULKAN) || defined(MG_DIRECTX12)
+ 	flags |= SDL_WINDOW_VULKAN;
++#if defined(__APPLE__)
++	flags |= SDL_WINDOW_ALLOW_HIGHDPI;
++#endif
+ #elif defined(MG_OPENGL)
+ 
+     if (!MGP_Window_DetectOpenGLVersion(window->contextMajorVersion, window->contextMinorVersion))
+@@ -830,7 +897,9 @@
+ 
+     title = title ? title : "";
+ 
+-	window->window = SDL_CreateWindow((const char*)title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags);
++	float density = mg_display_pixel_density();
++	window->window = SDL_CreateWindow((const char*)title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
++		MGP_ToPoints(width, density), MGP_ToPoints(height, density), flags);
+ 
+ 	if (window->window == nullptr)
+ 	{
+@@ -1064,8 +1133,23 @@
  	assert(window != nullptr);
  
  	SDL_SetWindowBordered(window->window, borderless ? SDL_FALSE : SDL_TRUE);
@@ -3130,11 +3293,10 @@
  void MGP_Window_SetTitle(MGP_Window* window, const char* title)
  {
      assert(window != nullptr);
-@@ -1077,6 +1093,15 @@
- void MGP_Window_Show(MGP_Window* window, mgbyte show)
+@@ -1078,6 +1162,15 @@
  {
  	assert(window != nullptr);
-+
+ 
 +	// Etervale fork: automation runs (captures, checks, benchmarks) keep their window hidden with MG_HIDDEN_WINDOW=1, so
 +	// they never open over the user's desktop; they render to off-screen targets and present to the hidden window.
 +	const char* hidden = getenv("MG_HIDDEN_WINDOW");
@@ -3143,9 +3305,47 @@
 +		printf("Window kept hidden (MG_HIDDEN_WINDOW=1)\n");
 +		return;
 +	}
- 
++
  	if (show)
  		SDL_ShowWindow(window->window);
+ 	else
+@@ -1088,12 +1181,15 @@
+ {
+ 	assert(window != nullptr);
+ 	SDL_GetWindowPosition(window->window, &x, &y);
++	x = MGP_ToPixels(x, mg_display_pixel_density());
++	y = MGP_ToPixels(y, mg_display_pixel_density());
+ }
+ 
+ void MGP_Window_SetPosition(MGP_Window* window, mgint x, mgint y)
+ {
+ 	assert(window != nullptr);
+-	SDL_SetWindowPosition(window->window, x, y);
++	float density = mg_display_pixel_density();
++	SDL_SetWindowPosition(window->window, MGP_ToPoints(x, density), MGP_ToPoints(y, density));
+ }
+ 
+ void MGP_Window_SetClientSize(MGP_Window* window, mgint width, mgint height)
+@@ -1107,6 +1203,9 @@
+     // SDL_SetWindowSize() is needed.
+ 
+     auto flags = SDL_GetWindowFlags(window->window);
++    float density = MGP_PixelDensity(window->window);
++    width = MGP_ToPoints(width, density);
++    height = MGP_ToPoints(height, density);
+ 
+     if ((flags & SDL_WINDOW_FULLSCREEN) != 0)
+     {
+@@ -1200,7 +1299,8 @@
+ void MGP_Mouse_WarpPosition(MGP_Window* window, mgint x, mgint y)
+ {
+     assert(window != nullptr);
+-    SDL_WarpMouseInWindow(window->window, x, y);
++    float density = MGP_PixelDensity(window->window);
++    SDL_WarpMouseInWindow(window->window, MGP_ToPoints(x, density), MGP_ToPoints(y, density));
+ }
+ 
+ MGP_Cursor* MGP_Cursor_Create(MGSystemCursor cursor_)
 --- a/native/monogame/include/api_enums.h
 +++ b/native/monogame/include/api_enums.h
 @@ -73,6 +73,9 @@
@@ -3195,6 +3395,18 @@
  };
  
  enum class MGTextureType : mgint
+--- a/native/monogame/include/mg_common.h
++++ b/native/monogame/include/mg_common.h
+@@ -22,6 +22,9 @@
+ #include <optional> 
+ 
+ 
++// Etervale fork (monogame/issues/021-retina-pixels.md): pixels per point of the main display (1 outside macOS).
++float mg_display_pixel_density();
++
+ #if defined(_WIN32)
+ #define MG_GENERATE_TRAP() __debugbreak()
+ #else
 --- a/native/monogame/faudio/MGA_faudio.cpp
 +++ b/native/monogame/faudio/MGA_faudio.cpp
 @@ -613,6 +613,7 @@

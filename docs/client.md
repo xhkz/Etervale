@@ -17,7 +17,7 @@ rendering internals, skill presentation and VFX data have their own documents (s
 
 | Path | Responsibility |
 |---|---|
-| [`Client/PristonTale/Program.cs`](../Client/PristonTale/Program.cs) | Entry: no arguments, `--settings PATH`, or `--validate-display REPORT.json` (runs `DisplayValidationProbe`) |
+| [`Client/PristonTale/Program.cs`](../Client/PristonTale/Program.cs) | Entry: `--settings PATH` and `--resolution WIDTHxHEIGHT` in any order (`ClientLaunchOptions`), or `--validate-display REPORT.json` (runs `DisplayValidationProbe`) |
 | [`Client/PristonTale/Game1.cs`](../Client/PristonTale/Game1.cs) | MonoGame `Game`: device setup, variable timestep, asset root discovery, server address, Escape/exit, window-title stats, shutdown gating |
 | `Client/PristonTale/Display/` | `PresentationController` (settings at the frame boundary, display confirmation, pacing, save), `DisplayController` (window mode, size, VSync; primary monitor only), `DisplayValidationProbe` |
 | `Client/PristonTale/Content/Content.mgcb` | Content build: the shader library (see [shaders.md](shaders.md)) and `Fonts/UI.spritefont` |
@@ -94,8 +94,8 @@ OpeningScreen --login ok--> CharacterSelectScreen --enter world ok--> GameplaySc
 - `GameScreen` lifecycle: `Enter` (after the previous screen is disposed), `Update`, `Draw`, `HandleEscape`, `Dispose`.
 - A screen requests a transition with `Context.RequestScreen(next)`. `GameClient` stores it as pending and swaps after
   the current `Update` returns: `Dispose` old, then `Enter` new. Never swap from `Draw`.
-- `OpeningScreen`: cinematic (`StartImage/Opening/Map/stage.smd` and its camera path); any key or the end of the
-  cinematic reveals the login form. `OpeningLoginController` starts `IGameBackend.LoginAsync` and polls the task each
+- `OpeningScreen`: cinematic (`StartImage/Opening/Map/stage.smd` and its camera path); any key, a mouse click or the
+  end of the cinematic reveals the login form (the revealing click's held button is no click on the form). `OpeningLoginController` starts `IGameBackend.LoginAsync` and polls the task each
   frame. The server accepts one login per connection, so when `IGameBackend.RequiresNewConnection` is set (a login
   succeeded or the connection closed) the controller first calls `ScreenContext.RenewBackend`: `GameClient` installs a
   new `GameServerConnection` and disposes the old one off the game thread.
@@ -107,7 +107,10 @@ OpeningScreen --login ok--> CharacterSelectScreen --enter world ok--> GameplaySc
   `Busy` operation (roster load, roster/job actor preparation, enter, delete, create) runs, input is ignored and
   `PollBusy` checks the task. A successful `EnterWorldAsync` builds an `EnteredCharacter` (class, name, level, face,
   field code, spawn x/z, tier, hair) and requests `GameplayScreen`. The Exit button returns to `OpeningScreen`; the next
-  login opens a new connection.
+  login opens a new connection. The frame, title, boxes, buttons and face picker are laid out in the HUD's design units
+  (`CharSelectLayout.Ui`: the window divided by `HudLayout`'s integer scale) and drawn at that scale, images with point
+  sampling and text filtered; clicks on them go through `HudLayout.ToLogical`, while the roster and job picks stay in
+  window pixels.
 - `GameplayScreen` has no transition out; leaving it means quitting.
 - Escape: `Game1` calls `GameClient.HandleEscape` -> `GameScreen.HandleEscape`. `GameplayScreen` closes the open HUD
   panels (`GameplayHud.ClosePanel`) and returns true if anything was open; every other case exits the game. While a
@@ -152,7 +155,7 @@ the back buffer), clear, `GameScene.Draw` (renderer, effects, `ComposeScene`), g
 | Field streaming | `FieldResourceStreamer.Request`: stage and model parse, collision build, `PrepareStageTexturesAsync` on `Task.Run` | `Update` publishes through `AddStageIncrementally`: up to 32 steps and a 2 ms soft budget per frame |
 | Remote actors | Composer `PrepareAsync` (`PristonActorLoader.Load` + `PrepareActorResourcesAsync`); a player's look prepares each part (body, head, weapon, shield) once for every look that wears it (`PlayerActorComposer`) | `RemoteEntityManager.Update` publishes one completed preparation per frame |
 | Ground loot models | `GroundLootPresentation` preparation tasks | `GroundLootPresentation.Update` |
-| HUD images and item icons | `HudSprites`/`HudIconCache` decode on the thread pool | Upload within a byte budget per `Update` (`HudSprites`: 512 KiB). The icon cache keeps only the last requested set (at most 512), so `GameplayHud.RequestIcons` always names the pack, the open shop and the open warehouse together |
+| HUD images and item icons | `HudSprites`/`HudIconCache` decode on the thread pool | Upload within a byte budget per `Update` (`HudSprites`: 512 KiB). At HUD scale 2 to 4 `HudSprites` reads an image's copy of that density when there is one (`HudHiResArt`, made by `pthud`, [tools.md](tools.md)) and reads every image again when the scale changes; `HudPainter` and Bellatra's show keep sizes and source rectangles in the original's pixels (`HudPainter.Size`), so one texture pixel lands on one screen pixel. The icon cache keeps only the last requested set (at most 512), so `GameplayHud.RequestIcons` always names the pack, the open shop and the open warehouse together |
 | UI bitmap transparency | `PristonImageDecoder.Decode(..., bmpCoverage: true)`, `PristonUiPixels.Prepare` | A 32-bit BMP whose fourth byte varies (not all 0, not all 255) carries its coverage, which replaces the black key (such as item `DA304`, drawn over a near-black background); other BMPs take exact black as transparent; world textures stay opaque |
 | Skill sounds | `SkillSoundBank` reads and decodes on a worker | Creates `SoundEffect`s in `Update`; a sound not ready is skipped |
 | Display settings file | `ClientSettingsStore` writer task | `QueueSave` only |
@@ -393,7 +396,9 @@ destination. Renderer side of stage publication: [rendering.md](rendering.md).
 | Shift + click on a monster | same | Automatic attack (keeps attacking after release); a ground click, a cast, a loot pick or a warp leaves it and tells the server to stop chasing (`AttackInputController.Stop`: an attack on no one as the next gesture) |
 | Right click | same | Attack if the right socket holds the basic attack, otherwise cast the right socket skill |
 | Hold `A` | `GameScene.CollectGroundLabels`, `TryPickLoot` | Show and pick every ground item label |
-| Middle drag, cursor at screen edge, wheel, Left/Right, Up/Down | `PristonCamera.UpdateOrbit` (Engine3D) | Orbit (drag, edge, Left/Right at the edge orbit's speed), zoom (wheel; Up/Down at 300 units a second); the mouse is ignored while the HUD captures the pointer, the arrows while a text input has the keyboard |
+| Middle drag, cursor at screen edge, wheel, Left/Right, Up/Down | `PristonCamera.UpdateOrbit` (Engine3D) | Orbit (drag, edge, Left/Right at the edge orbit's speed), zoom (wheel; Up/Down at 300 units a second); the mouse is ignored while the HUD captures the pointer, the arrows while a text input has the keyboard. A turn pauses the auto camera; the locked camera keeps only the drag's and the arrows' turn ([camera modes](#camera-modes)) |
+| `B` held + status arrow click | `GameplayHud.ClickPanels` -> `HudStatusPanel.AllocateAmount` | Spends ten attribute points at once while ten are left |
+| `Z`, or the bar's camera button | `GameplayHud.CycleCameraMode` -> `ClientSettings.CameraMode` | Cycles Manual, Auto and Lock ([camera modes](#camera-modes)) |
 | `I` or `V`, `C`, `S`, `X`, `Q`, `D` | `GameplayHud.UpdateKeys` | Inventory, status, skills, system menu, quest window, party window (ignored with Ctrl held) |
 | `F1`-`F8` | `HudSkillBindings` | Select a skill shortcut; while pressing a skill in the tree, bind it ([skills.md](skills.md)) |
 | `Enter`, `Page Up`/`Page Down`, `Up`/`Down` | `HudChat.Update` | Open the chat input or send its line, scroll the chat, recall commands; while typing, HUD, binding, debug and motion keys and the `A` labels are suppressed |
@@ -404,6 +409,24 @@ destination. Renderer side of stage publication: [rendering.md](rendering.md).
 | Arrow keys (action field) | `GameScene.UpdateActionKeys` | Walk along x (left, right) and z (up, down), diagonals included; left or right pressed again within 500 ms of letting it go dashes (runs) until released or turned; letting go stops the walk and the attack; walking into another player (within 16 of the next step and of its height, nearer there than before; `RemoteEntityManager.FindPlayerBumped`) stops there and makes it the target, its trade, party and friend buttons shown once a bump; walking away always goes |
 | `Space` (action field) | same | Attack the nearest monster ahead (within the attack range along x on the side faced, 32 units of the player's line; `RemoteEntityManager.FindAhead`), else pick up the nearest drop within 32 along x and 16 of the line (`GroundLootPresentation.FindNear`), else swing at nothing (`SwingRequest`); it does not cheer there |
 | `Ctrl` (action field) | same | The right socket skill: at once when it takes no target, else on the nearest monster ahead, or for a skill on allies the nearest player or summon ahead (the caster when none); the basic attack in the socket attacks as `Space` does |
+
+### Camera modes
+
+`ClientSettings.CameraMode` (saved in `client-settings.json`) is the original's camera mode; `GameScene.UpdateCamera`
+hands it to `PristonCamera.Mode` each frame, with whether the player moved since the last frame.
+
+- Manual: the camera moves only by the orbit and zoom input above.
+- Auto (the default): while the player moves and the camera follows (`PristonCamera.AutoFollow`), it turns toward the
+  player's facing on the original's 70 Hz tick (`TurnBehind`, `FollowTurn`): a gap under a quarter turn plus 180 angle
+  units closes by a 64th of itself each tick, at least 4 units, and the turn stops within 256 units of the facing, so a
+  player walking back toward the camera does not spin it round. Turning the camera by hand, picking ground loot or a
+  target (monster, NPC, player) pauses the following; a walk click resumes it. Zooming does not pause it.
+- Lock: on entering it the camera turns to the heading of 45 degrees; it then stays 440 units away (600 in a window
+  wider than 4:3) at a pitch of 45 degrees less 128 units (`HoldLock`), and the wheel, the zoom keys, the tilt and the
+  screen edge do nothing. The middle drag and the arrows still turn it.
+
+The bar draws `AutoCameraImage.bmp` or `PixCameraImage.bmp` over the camera button in Auto or Lock (none in Manual), and
+pointing at the button shows the mode's tooltip (`Camera_Hand`, `Camera_Auto`, `Camera_Fix`).
 
 An action field (`FieldState.Action`, [world.md](world.md#fields)) is seen side-on (`GameScene.UpdateCamera`): the
 camera stands at the field's `ActionCamera` height and depth, follows the player along x within its bounds and looks
@@ -562,6 +585,11 @@ come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `Scr
   (`Aging/Bar.bmp`) filling toward the goal while it matures (with the live count from `AgingProgress` for worn
   copies), else the small plate (`Aging/Aging.bmp`), with `+level` in black; the stats its aging raises are light blue
   (119, 200, 254). A mixed copy's name is cyan (150, 255, 255) and the stats its mix raised are blue (110, 165, 250).
+  A weapon, body armour, robe or orb has an 18x16 icon after its name (`HudItemDetailTooltip.NameMark`,
+  `Items/Weapon_*.bmp`): one or two hands for a weapon (`ItemEquipmentMetadata.IsTwoHanded`), the knight for a body
+  armour and the wizard for a robe or an orb (`ItemClassRestrictions.IsArmor`, `IsRobe`, `IsOrb`). The name is centred
+  with two spaces after it, the icon follows them centred on the name's capitals, and the box widens to hold it. The
+  inventory, trade, personal shop and workbench boxes show it.
 - Premium timers (`HudPremiumTimers`) form the column at x 8 under the running-effects bar; usable items have their
   own tooltips (`HudUsableTooltip`). Details: [special-items.md](special-items.md).
 - Bless Castle (`GameplayHud.Castle`, `HudSiegeBoard`): the server's `CastleState` is kept; while a siege runs and the
@@ -604,8 +632,10 @@ come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `Scr
   seal's emblem and name over an earlier seal's, with the pickup sound, the room's seals shaking the camera (50, every 4
   frames) with the Diastrophism skill's impact sound, taken from its rule. The sounds are `wav/Sod` (`EventCue`,
   `EventSounds`), the castle's siege end sharing the stage's fanfare.
-- Status window: attribute buttons send `ProgressionCommand` with `ProgressionRevision`; the organic, poison, fire,
-  lightning and ice resistance boxes show the owner's resistances; the Clan box shows the owner's clan mark and name.
+- Status window: attribute buttons send `ProgressionCommand` with `ProgressionRevision`, one point a click, or ten with
+  B held while ten are left (`HudStatusPanel.AllocateAmount`; not while the chat line has the keyboard); the organic,
+  poison, fire, lightning and ice resistance boxes show the owner's resistances; the Clan box shows the owner's clan
+  mark and name.
 - Block feedback (`HudStringEffect`): when the player blocks a blow, the original `block.tga` word shows at (354, 488)
   of the 800x600 frame, opaque for 26 interface frames at 70 per second, then fades by 10 alpha per frame while it
   grows 3 pixels and drifts up-left.
@@ -755,8 +785,9 @@ come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `Scr
 - Helper pet (`UI/HelpPet/`, `GameplayHud.HelpPet.cs`; the scene's `SelfHelperPet` gives the pet beside the player
   and the screen point over it): the texts are the client's `image/Sinimage/PetData/PetMessage.txt` (code page 949,
   `*Topic` sections closed by `end`). Below level 10, while the pet is shown, it speaks over itself in a chat bubble
-  ("Name : message", 4 s) of the bar's buttons, toggles, skill sockets, gauges, day clock, minimap and chat window
-  when they are pointed at, clicked or right clicked (each topic's message 0, 1 or 2), and of the C, I/V, S, X, Q, D, R
+  ("Name : message", 4 s) of the bar's buttons, toggles (the camera button's topic by the camera mode), skill sockets,
+  gauges, day clock, minimap and chat window when they are pointed at, clicked or right clicked (each topic's message
+  0, 1 or 2), and of the C, I/V, S, X, Q, D, R
   and potion keys (message 3, the potions 3 to 5); it speaks when the pointer comes onto a part and keeps that part's
   line up while the pointer stays. In town it says an idle line every 30 s, and while fighting below level 8 one battle
   line each time the level's experience passes one or more of 5, 10, 20, 30, 35, 40, 50, 60, 70, 80 and 90%; neither
@@ -846,10 +877,14 @@ come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `Scr
 - `MonsterSoundCues` follows each monster's animation like `MonsterPresentation`: the attack or skill sound on the
   clip's first two event frames, the damage, death or vanishing sound when the monster enters that motion, and the idle
   sound one time in four when it stops.
-- Players: a server `Hit` or `Miss` of a player's swing plays the weapon sound of the attacker's weapon (`CombatSounds.
-  WeaponCode`: axes, swords with the first three as small blades, spears, claws, bows, staves cast by magicians and
-  priestesses and struck by others, hammers, throwing weapons, punches without a weapon; one- or two-handed by
-  `ItemEquipmentMetadata.IsTwoHanded`; a miss plays the hand's miss sound, a critical adds the critical sound). Damage
+- Players: a basic swing plays the weapon sound of the attacker's weapon once, when its drawn attack clip passes its
+  first event frame, with the swing's server `Hit` or `Miss` (`SwingSounds`: the swing and outcome of another player
+  wait its playback delay; an outcome after the release plays at once, one whose release is not seen within 500 ms
+  plays then, further targets of the swing are silent). Each pass of a weapon-clip skill plays the hit sound at its
+  release; skill hits play none. The sound is `CombatSounds.WeaponCode`: axes, swords with the first three as small
+  blades, spears, claws, bows, staves cast by magicians and priestesses and struck by others, hammers, throwing
+  weapons, punches without a weapon; one- or two-handed by `ItemEquipmentMetadata.IsTwoHanded`; a miss plays the
+  hand's miss sound, a critical adds the critical sound. Damage
   and death play the class's sound, a `Revive` the restart chime. The local player's walk and run clips play the floor's
   footsteps (stone in towns and ruins, dungeon stone, soft ground in forests and deserts) on their first two event
   frames. Everything comes from the presence stream, so every client near the action plays it.

@@ -10,10 +10,12 @@ using Microsoft.Xna.Framework.Input;
 using PristonTale.Engine3D.Formats;
 using PristonTale.Engine3D.Rendering;
 using PristonTale.Gameplay.UI;
+using PristonTale.Gameplay.Screens.Opening;
 using PristonTale.Gameplay.World;
 using PristonTale.Gameplay.World.Remote;
 using PristonTale.Gameplay.UI.Widgets;
 using PristonTale.Gameplay.UI.Rendering;
+using PristonTale.Gameplay.Localization;
 using PristonTale.Contracts.Characters;
 using PristonTale.Contracts.World;
 using PristonTale.Contracts.Texts;
@@ -54,6 +56,10 @@ internal static class HudInteractionTests
         yield return ("original gauges crop bitmaps from the top and follow the source formulas", GaugeAsync);
         yield return ("atlas gauge separation preserves the frame and masks every rectangular corner", AtlasGaugeAsync);
         yield return ("HUD overlays tolerate uninitialized and tiny resized viewports", OverlayAsync);
+        yield return ("an item box marks a weapon's hands and whom an armour, robe or orb is for", NameMarkAsync);
+        yield return ("the status window spends ten points with the quick key held, while ten are left", QuickAllocateAsync);
+        yield return ("the status window's title follows the character's tier", StatusTitleAsync);
+        yield return ("a click or a key skips the opening to the login form, and the revealing click is no click on the form", OpeningRevealAsync);
         yield return ("bottom windows slide with the original 70 Hz steps", SlideAsync);
         yield return ("minimap crops the field map around the player like the original", MinimapAsync);
     }
@@ -737,6 +743,58 @@ internal static class HudInteractionTests
         return Task.CompletedTask;
     }
 
+    private static Task NameMarkAsync()
+    {
+        Assert.True(HudItemDetailTooltip.NameMark("WA105") == ItemNameMark.TwoHanded && HudItemDetailTooltip.NameMark("wa101") == ItemNameMark.OneHanded,
+            "an axe's hands are not marked from the two-handed list");
+        Assert.True(HudItemDetailTooltip.NameMark("WD101") == ItemNameMark.OneHanded && HudItemDetailTooltip.NameMark("WS101") == ItemNameMark.TwoHanded,
+            "a dagger or a bow is not marked as a weapon");
+        Assert.True(HudItemDetailTooltip.NameMark("DA101") == ItemNameMark.Fighter && HudItemDetailTooltip.NameMark("DA201") == ItemNameMark.Caster
+            && HudItemDetailTooltip.NameMark("OM101") == ItemNameMark.Caster, "an armour, robe or orb is not marked for its wearers");
+        Assert.True(HudItemDetailTooltip.NameMark("DS101") == ItemNameMark.None && HudItemDetailTooltip.NameMark("PL101") == ItemNameMark.None
+            && HudItemDetailTooltip.NameMark("") == ItemNameMark.None && HudItemDetailTooltip.NameMark(null) == ItemNameMark.None, "an unmarked item has a mark");
+        Assert.True(HudArt.NameMarks.Length == (int)ItemNameMark.Caster, "a mark has no icon");
+        return Task.CompletedTask;
+    }
+
+    private static Task QuickAllocateAsync()
+    {
+        Assert.True(HudStatusPanel.AllocateAmount(25, quick: false) == 1, "a plain click spends more than one point");
+        Assert.True(HudStatusPanel.AllocateAmount(25, quick: true) == HudStatusPanel.QuickPoints && HudStatusPanel.AllocateAmount(10, quick: true) == 10,
+            "the quick key does not spend ten points");
+        Assert.True(HudStatusPanel.AllocateAmount(9, quick: true) == 1, "the quick key spends ten points with fewer than ten left");
+        return Task.CompletedTask;
+    }
+
+    private static Task OpeningRevealAsync()
+    {
+        var released = new MouseState(400, 300, 0, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released,
+            ButtonState.Released);
+        var left = new MouseState(400, 300, 0, ButtonState.Pressed, ButtonState.Released, ButtonState.Released, ButtonState.Released,
+            ButtonState.Released);
+        var right = new MouseState(400, 300, 0, ButtonState.Released, ButtonState.Released, ButtonState.Pressed, ButtonState.Released,
+            ButtonState.Released);
+        Assert.True(OpeningScreen.RevealRequested(default, default, left, released), "a left click did not reveal the login form");
+        Assert.True(OpeningScreen.RevealRequested(default, default, right, released), "a right click did not reveal the login form");
+        Assert.True(OpeningScreen.RevealRequested(new KeyboardState(Keys.Space), default, released, released), "a key did not reveal the login form");
+        Assert.True(!OpeningScreen.RevealRequested(default, default, left, left), "a held button revealed the login form");
+        Assert.True(!OpeningScreen.RevealRequested(new KeyboardState(Keys.Space), new KeyboardState(Keys.Space), released, released),
+            "a held key revealed the login form");
+        Assert.True(!LoginPanel.Clicked(left, LoginPanel.HeldMouse), "the button held from the revealing click counted as a click on the form");
+        Assert.True(LoginPanel.Clicked(left, released), "a new click on the form did not count");
+        return Task.CompletedTask;
+    }
+
+    private static Task StatusTitleAsync()
+    {
+        var state = OwnerState.Capture(new CharacterClassRegistry().CreatePlayer(PlayerClass.Knight, "Rank"));
+        Assert.True(HudStatusPanel.Title(PlayerClass.Knight, state) == DataText.ClassTitle(PlayerClass.Knight, 0), "a new character's title is not the first tier's");
+        var ranked = state with { Tier = 2 };
+        Assert.True(HudStatusPanel.Title(PlayerClass.Knight, ranked) == DataText.ClassTitle(PlayerClass.Knight, 2)
+            && HudStatusPanel.Title(PlayerClass.Knight, ranked) != HudStatusPanel.Title(PlayerClass.Knight, state), "a rank-up keeps the first tier's title");
+        return Task.CompletedTask;
+    }
+
     private static Task SlideAsync()
     {
         var slide = new HudSlide { Open = true };
@@ -859,14 +917,14 @@ internal static class HudInteractionTests
         Assert.True(colors[2] == new Color(240, 20, 25) && colors[3] == new Color(180, 175, 170), "crimson or silver changed");
         Assert.True(colors[4].R <= colors[4].A && colors[4].B <= colors[4].A, "edge pixels are not premultiplied");
 
-        Assert.True(HudSprites.ColorKeyFor(".BMP") == PristonUiColorKey.Black && HudSprites.ColorKeyFor(".tga") == PristonUiColorKey.None,
+        Assert.True(PristonUiPixels.InterfaceKeyFor(".BMP") == PristonUiColorKey.Black && PristonUiPixels.InterfaceKeyFor(".tga") == PristonUiColorKey.None,
             "Sinimage bitmaps are not black keyed or TGA files lost their alpha");
         var bitmap = new DecodedPristonImage(3, 1, [Color.Black, new Color(1, 0, 0), Color.White], false);
-        PristonUiPixels.Prepare(bitmap, HudSprites.ColorKeyFor(".bmp"));
+        PristonUiPixels.Prepare(bitmap, PristonUiPixels.InterfaceKeyFor(".bmp"));
         Assert.True(bitmap.Pixels[0] == Color.Transparent && bitmap.Pixels[1] == new Color(1, 0, 0) && bitmap.Pixels[2] == Color.White,
             "black key is not exact RGB 0,0,0");
         var targa = new DecodedPristonImage(2, 1, [new Color(200, 100, 50, 128), new Color(0, 0, 0, 255)], true);
-        PristonUiPixels.Prepare(targa, HudSprites.ColorKeyFor(".tga"));
+        PristonUiPixels.Prepare(targa, PristonUiPixels.InterfaceKeyFor(".tga"));
         Assert.True(targa.Pixels[0] == new Color(100, 50, 25, 128) && targa.Pixels[1] == Color.Black, "TGA alpha is not premultiplied or black was keyed");
         return Task.CompletedTask;
     }

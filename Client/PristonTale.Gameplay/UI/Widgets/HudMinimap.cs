@@ -219,14 +219,13 @@ public sealed class HudMinimap
 
     private void DrawMap(HudPainter painter, Rectangle box, string path, PristonIntRectangle rectangle, Vector3 player)
     {
-        var map = painter.Texture(path);
-        if (map is null || !MapRegion(rectangle, player, _viewSize, out var source, out var destination))
+        var map = painter.Size(path);
+        if (map.X == 0 || !MapRegion(rectangle, player, _viewSize, out var source, out var destination))
         {
             return;
         }
 
-        var from = new Rectangle((int)(source.X * map.Width), (int)(source.Y * map.Height),
-            Math.Max(1, (int)(source.Z * map.Width)), Math.Max(1, (int)(source.W * map.Height)));
+        var from = new Rectangle((int)(source.X * map.X), (int)(source.Y * map.Y), Math.Max(1, (int)(source.Z * map.X)), Math.Max(1, (int)(source.W * map.Y)));
         var to = new Rectangle(box.X + 1 + (int)destination.X, box.Y + 1 + (int)destination.Y, (int)destination.Z, (int)destination.W);
         painter.Stretch(path, to, from);
     }

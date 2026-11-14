@@ -13,9 +13,10 @@ namespace PristonTale.Gameplay.UI;
 // window when pointed at or clicked, and the gauges and the day clock when clicked. The keys speak in GameplayHud.Input.
 public sealed partial class GameplayHud
 {
-    // By HudMenuButton and HudToggle.
+    // By HudMenuButton; the camera toggle's by its current PristonCameraMode.
     private static readonly string[] MenuTopics = ["CarStatus", "InvenTory", "Skill", "Party", "Quest", "System"];
-    private static readonly string[] ToggleTopics = ["RunAndWalk", "Camera_Hand", "Mini_Map"];
+    private static readonly string[] CameraTopics = ["Camera_Hand", "Camera_Auto", "Camera_Fix"];
+    private const string MapTopic = "Mini_Map";
     private const int KeyIndex = 3;
     private readonly HudHelpPet _helpPet;
 
@@ -57,7 +58,12 @@ public sealed partial class GameplayHud
         if (_hoveredToggle is { } toggle)
         {
             var speaks = action == 0 ? toggle != HudToggle.Map : action == 1 && toggle != HudToggle.Walk;
-            return speaks ? ToggleTopics[(int)toggle] : null;
+            return !speaks ? null : toggle switch
+            {
+                HudToggle.Walk => "RunAndWalk",
+                HudToggle.Camera => CameraTopics[(int)CameraMode],
+                _ => MapTopic
+            };
         }
 
         if (HudBar.Socket(false).Contains(design))
@@ -72,7 +78,7 @@ public sealed partial class GameplayHud
 
         if (MinimapShown && HudMinimap.Box(layout).Contains(pointer))
         {
-            return "Mini_Map";
+            return MapTopic;
         }
 
         if (action == 2)

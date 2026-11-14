@@ -27,7 +27,7 @@ change. A library from elsewhere fails late and obscurely:
   the framework was forked (changes 1–19). Version 2: compute and storage resources (issues 005, 006). Version 3:
   pipeline statistics (issue 012). Version 4: NoOverwrite uploads in place (issue 013). Version 5: the 32-bit float
   depth format (issue 014). Version 6: depth surfaces (issue 016). Version 7: the maximized state of a window (issue
-  017).
+  017). Version 8: sizes, positions, display modes and the mouse in pixels on macOS (issue 021).
 
 ## Test
 

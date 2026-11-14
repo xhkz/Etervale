@@ -16,6 +16,7 @@ internal static class ClientSettingsTests
         yield return ("settings write failures are observable without faulting gameplay", WriteFailureAsync);
         yield return ("frame pacing has no catch-up bursts and separates foreground limits", PacingAsync);
         yield return ("a texture named with another extension is found in the subfolder its name points to", TextureExtensionAsync);
+        yield return ("--resolution sets the window size for one start, with --settings in any order, and refuses sizes the settings refuse", LaunchOptionsAsync);
     }
 
     private static Task ValidationAsync()
@@ -33,7 +34,8 @@ internal static class ClientSettingsTests
             LampShadowTileSize = 0,
             ShadowUpdateRate = 75,
             RefreshRate = -9,
-            Monitor = -2
+            Monitor = -2,
+            CameraMode = (PristonCameraMode)9
         };
         Assert.True(settings.Validate(NullClientLog.Instance) == new ClientSettings(), "invalid settings did not restore safe defaults");
         Assert.True(new ClientSettings { ServerAddress = " " }.Validate(NullClientLog.Instance).ServerAddress == new ClientSettings().ServerAddress,
@@ -118,6 +120,9 @@ internal static class ClientSettingsTests
 
         var serialized = System.Text.Json.JsonSerializer.Serialize(new ClientSettings { DistanceFog = DistanceFogMode.Classic });
         Assert.True(serialized.Contains("\"DistanceFog\":\"Classic\"", StringComparison.Ordinal), "fog mode is not written by name");
+        serialized = System.Text.Json.JsonSerializer.Serialize(new ClientSettings { CameraMode = PristonCameraMode.Lock });
+        Assert.True(serialized.Contains("\"CameraMode\":\"Lock\"", StringComparison.Ordinal), "camera mode is not written by name");
+        Assert.True(new ClientSettings().CameraMode == PristonCameraMode.Auto, "the camera does not start in the original's auto mode");
     }
 
     private static async Task PersistenceAsync()
@@ -206,6 +211,28 @@ internal static class ClientSettingsTests
         Assert.True(settings.FrameLimit(false) == 60 && settings.FrameLimit(true) == 60, "background increased the foreground ceiling");
         settings = settings with { MaxFps = 0, BackgroundMaxFps = 30 };
         Assert.True(settings.FrameLimit(false) == 30 && settings.FrameLimit(true) == 0, "focus did not select the configured limit");
+        return Task.CompletedTask;
+    }
+
+    private static Task LaunchOptionsAsync()
+    {
+        Assert.True(ClientLaunchOptions.TryParse(["--resolution", "2560x1440", "--settings", "a.json"], out var options, out _)
+            && options is { SettingsPath: "a.json", WindowWidth: 2560, WindowHeight: 1440 }, "the resolution and settings path were not both read");
+        var applied = options.Apply(new ClientSettings { WindowWidth = 1280, WindowHeight = 720, WindowMode = WindowMode.Borderless });
+        Assert.True(applied is { WindowWidth: 2560, WindowHeight: 1440, WindowMode: WindowMode.Borderless }, "the resolution was not applied, or changed the mode");
+        Assert.True(ClientLaunchOptions.TryParse([], out options, out _) && options.Apply(new ClientSettings()).WindowWidth == new ClientSettings().WindowWidth,
+            "no arguments changed the settings");
+        string[][] refused =
+        [
+            ["--resolution", "799x600"], ["--resolution", "1920x599"], ["--resolution", "16385x1080"], ["--resolution", "1920"], ["--resolution", "-1920x1080"],
+            ["--resolution"], ["--resolution", "1920x1080", "--resolution", "800x600"], ["--fullscreen", "yes"]
+        ];
+        foreach (var args in refused)
+        {
+            Assert.True(!ClientLaunchOptions.TryParse(args, out _, out var error) && error is { Length: > 0 }, $"'{string.Join(' ', args)}' was accepted");
+        }
+
+        Assert.True(ClientLaunchOptions.TryParse(["--resolution", "800X600"], out options, out _) && options.WindowHeight == 600, "the smallest size was refused");
         return Task.CompletedTask;
     }
 }

@@ -11,15 +11,17 @@ using PristonTale.Gameplay.Effects;
 
 namespace PristonTale.Gameplay.World;
 
-// Character, weapon and footstep sounds: monsters on their animation's cues, players' swings from the server's combat
-// events (the hit, critical or miss of the attacker's weapon), players' damage and death by class, and the local
-// player's steps on the floor of its field.
+// Character, weapon and footstep sounds: monsters on their animation's cues, players' basic swings at their drawn attack
+// clip's release with the hit, critical or miss the server reported (SwingSounds) and each pass of a weapon-clip skill
+// as a hit, players' damage and death by class, and the local player's steps on the floor of its field. Skill hits play
+// no weapon sound.
 public sealed partial class GameScene
 {
     private CombatSounds _combatSounds;
     private MonsterSoundCues _monsterSounds;
     private int _footsteps;
     private ClipEventCursor _stepClip;
+    private readonly SwingSounds _swingSounds = new();
 
     private void CreateCombatSounds()
     {
@@ -48,6 +50,31 @@ public sealed partial class GameScene
         }
 
         StepFootsteps();
+        while (_swingSounds.Next(_skillClockMs, out var attacker, out var outcome))
+        {
+            PlaySwing(attacker, outcome);
+        }
+    }
+
+    // A player's attack clip passed its release frame this frame.
+    private void ObserveSwingRelease(ulong attackerId, SwingRelease release)
+    {
+        if (release == SwingRelease.SkillPass)
+        {
+            PlaySwing(attackerId, WeaponSoundOutcome.Hit);
+        }
+        else if (release == SwingRelease.Basic && _swingSounds.Release(attackerId) is { } outcome)
+        {
+            PlaySwing(attackerId, outcome);
+        }
+    }
+
+    private void PlaySwing(ulong attackerId, WeaponSoundOutcome outcome)
+    {
+        if (_combatSounds is not null && _playerBody is not null && _remote is not null && SwingOf(attackerId) is { } swing)
+        {
+            _combatSounds.PlayWeapon(swing.WeaponKey, swing.Class, outcome, swing.Position, _playerBody.Position);
+        }
     }
 
     // The local player's walk and run clips step on their first two event frames.
@@ -83,18 +110,22 @@ public sealed partial class GameScene
         }
 
         var listener = _playerBody.Position;
+        foreach (var removed in update.Removed)
+        {
+            _swingSounds.Forget(removed);
+        }
+
         foreach (var combatEvent in update.Events)
         {
             switch (combatEvent.Kind)
             {
-                case CombatEventKind.Hit or CombatEventKind.Miss:
-                    if (SwingOf(combatEvent.AttackerId) is { } swing)
-                    {
-                        var outcome = combatEvent.Kind == CombatEventKind.Miss ? WeaponSoundOutcome.Miss
-                            : combatEvent.Critical ? WeaponSoundOutcome.Critical : WeaponSoundOutcome.Hit;
-                        _combatSounds.PlayWeapon(swing.WeaponKey, swing.Class, outcome, swing.Position, listener);
-                    }
-
+                case CombatEventKind.SwingBegin when SwingOf(combatEvent.AttackerId) is not null:
+                    _swingSounds.Begin(combatEvent.AttackerId, SwingSoundAtMs(combatEvent.AttackerId));
+                    break;
+                case CombatEventKind.Hit or CombatEventKind.Miss when !combatEvent.Skill && SwingOf(combatEvent.AttackerId) is not null:
+                    var outcome = combatEvent.Kind == CombatEventKind.Miss ? WeaponSoundOutcome.Miss
+                        : combatEvent.Critical ? WeaponSoundOutcome.Critical : WeaponSoundOutcome.Hit;
+                    _swingSounds.Outcome(combatEvent.AttackerId, outcome, SwingSoundAtMs(combatEvent.AttackerId));
                     break;
                 case CombatEventKind.Revive:
                     var risen = combatEvent.TargetId == _remote.SelfEntityId ? listener
@@ -108,6 +139,9 @@ public sealed partial class GameScene
             }
         }
     }
+
+    // Another player's swing reaches its drawn motion one playback delay later; the local player's at once.
+    private double SwingSoundAtMs(ulong attackerId) => _skillClockMs + (attackerId == _remote.SelfEntityId ? 0d : _remote.PlaybackDelayMsOf(attackerId));
 
     // The weapon, class and position of a player that swung: the local player from its own equipment, others from their
     // appearance; null for monsters.

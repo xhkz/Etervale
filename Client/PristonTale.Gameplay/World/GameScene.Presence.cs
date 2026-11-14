@@ -197,6 +197,7 @@ public sealed partial class GameScene
         _attackInput.Cancel();
         _targetSelection.Clear();
         _monsterFx?.Clear();
+        _swingSounds.Clear();
         _renderer?.TransientLights.Clear();
         while (_presenceQueue.Reader.TryRead(out _))
         {

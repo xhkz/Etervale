@@ -3,7 +3,8 @@
 #   make server   build the server, the world importer and the account tool
 #   make client   build the client and the effect importer
 #   make run-server   start the server in Docker (docker-compose.yml), importing the world data first when data/ has none
-#   make run-client   build and start the client, which connects to localhost
+#   make run-client   build and start the client, which connects to localhost; RESOLUTION=2560x1440 sets the window
+#                     size for that start
 
 DOTNET_BUILD = dotnet build -c Release -m:1 -warnaserror
 VULKAN_SDK_URL = https://sdk.lunarg.com/sdk/download/latest/mac/vulkan_sdk.zip
@@ -20,7 +21,7 @@ help:
 	@echo "make server   build the server, the world importer and the account tool"
 	@echo "make client   build the client and the effect importer (needs make setup first)"
 	@echo "make run-server   start the server in Docker, importing the world data first when data/ has none"
-	@echo "make run-client   build and start the client, which connects to localhost"
+	@echo "make run-client   build and start the client, which connects to localhost (RESOLUTION=WIDTHxHEIGHT for the window size)"
 
 setup: deps vulkan-sdk runtime restore
 
@@ -100,4 +101,4 @@ run-server: $(DATABASE)
 	HOST_UID=$$(id -u) HOST_GID=$$(id -g) docker compose --profile server up --build server
 
 run-client: client
-	dotnet run --project Client/PristonTale -c Release --no-build
+	dotnet run --project Client/PristonTale -c Release --no-build $(if $(RESOLUTION),-- --resolution $(RESOLUTION))

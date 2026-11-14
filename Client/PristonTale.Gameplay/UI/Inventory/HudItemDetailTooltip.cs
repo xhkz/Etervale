@@ -13,9 +13,20 @@ namespace PristonTale.Gameplay.UI.Inventory;
 
 public readonly record struct AgingGauge(int Level, int Count, int Goal);
 
+// The icon after an item's name: a weapon's hands, or whom a body armour (the fighters) or a robe or orb (the casters) is for.
+public enum ItemNameMark
+{
+    None,
+    OneHanded,
+    TwoHanded,
+    Fighter,
+    Caster
+}
+
 // The original item box: the name, every stat the copy carries with the original labels, the requirements (red when the
 // owner does not meet them), then the class specialization. Each line is label and value as one centred string, one
-// text line apart. An aged copy shows its aging gauge under the name and the stats its aging raises in light blue.
+// text line apart. An aged copy shows its aging gauge under the name and the stats its aging raises in light blue. A
+// weapon, body armour, robe or orb has its ItemNameMark icon after its name, which is centred with two spaces after it.
 public static class HudItemDetailTooltip
 {
     public const int LineHeight = HudPainter.LineHeight;
@@ -35,6 +46,10 @@ public static class HudItemDetailTooltip
     public static readonly Color HuntColor = new(125, 180, 175);
     private const int GaugeWidth = 130;
     private const int GaugeFill = 125;
+    private const string MarkPadding = "  ";
+    private const int MarkWidth = 18;
+    // The 16-pixel icon centred on the name's capitals, which stand about 9 pixels tall from TooltipNameY.
+    private const int MarkY = HudPainter.TooltipNameY - 4;
 
     private static readonly string[] ResistanceLabels =
         ["Item.ResistOrganic", "Item.ResistNature", "Item.ResistFlame", "Item.ResistFrost", "Item.ResistLightning", "Item.ResistPoison", "Item.ResistWater",
@@ -127,6 +142,23 @@ public static class HudItemDetailTooltip
         return lines;
     }
 
+    public static ItemNameMark NameMark(string catalogKey)
+    {
+        if (string.IsNullOrEmpty(catalogKey))
+        {
+            return ItemNameMark.None;
+        }
+
+        if (ItemEquipmentMetadata.TryGet(catalogKey, out _, out var slot) && slot == EquipmentSlot.Weapon)
+        {
+            return ItemEquipmentMetadata.IsTwoHanded(catalogKey) ? ItemNameMark.TwoHanded : ItemNameMark.OneHanded;
+        }
+
+        return ItemClassRestrictions.IsArmor(catalogKey) ? ItemNameMark.Fighter
+            : ItemClassRestrictions.IsRobe(catalogKey) || ItemClassRestrictions.IsOrb(catalogKey) ? ItemNameMark.Caster
+            : ItemNameMark.None;
+    }
+
     public static AgingGauge? Gauge(OwnedItemView item, OwnerState owner)
     {
         if (item?.Details is not { } details || !Aged(details))
@@ -148,26 +180,49 @@ public static class HudItemDetailTooltip
     }
 
     public static void Draw(HudPainter painter, HudLayout layout, Point pointer, IReadOnlyList<(string Text, Color Color)> lines,
-        AgingGauge? gauge = null)
+        AgingGauge? gauge = null, string catalogKey = null)
     {
+        var mark = NameMark(catalogKey);
+        var markRoom = mark == ItemNameMark.None ? 0 : painter.Measure(MarkPadding) + MarkWidth;
         var textWidth = gauge is null ? 0 : GaugeWidth;
-        foreach (var line in lines)
+        for (var index = 0; index < lines.Count; index++)
         {
-            textWidth = Math.Max(textWidth, painter.Measure(line.Text));
+            textWidth = Math.Max(textWidth, painter.Measure(lines[index].Text) + (index == 0 ? markRoom : 0));
         }
 
         var width = Math.Min(layout.Width - 8, textWidth + 28);
         var bounds = painter.TooltipBox(layout, pointer, width, HudPainter.TooltipLinesY + (lines.Count - 1) * LineHeight + 8);
-        for (var index = 0; index < lines.Count; index++)
+        for (var index = 1; index < lines.Count; index++)
         {
-            var y = index == 0 ? bounds.Y + HudPainter.TooltipNameY : bounds.Y + HudPainter.TooltipLinesY + (index - 1) * LineHeight;
+            var y = bounds.Y + HudPainter.TooltipLinesY + (index - 1) * LineHeight;
             painter.TextCentered(painter.Fit(lines[index].Text, bounds.Width - 16), bounds.Left, bounds.Right, y, lines[index].Color);
+        }
+
+        if (lines.Count > 0)
+        {
+            DrawName(painter, bounds, lines[0], mark, markRoom);
         }
 
         if (gauge is { } aging)
         {
             DrawGauge(painter, bounds, aging);
         }
+    }
+
+    private static void DrawName(HudPainter painter, Rectangle bounds, (string Text, Color Color) line, ItemNameMark mark, int markRoom)
+    {
+        var y = bounds.Y + HudPainter.TooltipNameY;
+        var name = painter.Fit(line.Text, bounds.Width - 16 - markRoom);
+        if (mark == ItemNameMark.None)
+        {
+            painter.TextCentered(name, bounds.Left, bounds.Right, y, line.Color);
+            return;
+        }
+
+        var nameWidth = painter.Measure(name);
+        var left = bounds.Left + (bounds.Width - nameWidth - painter.Measure(MarkPadding)) / 2;
+        painter.Text(name, left, y, line.Color);
+        painter.Sprite(HudArt.NameMarks[(int)mark - 1], left + nameWidth + painter.Measure(MarkPadding), bounds.Y + MarkY);
     }
 
     private static void DrawGauge(HudPainter painter, Rectangle bounds, AgingGauge gauge)

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Makes the HUD's higher-resolution art (HudHiResArt) with an external Real-ESRGAN build. It never creates a
+       GraphicsDevice. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>PristonTale.HudUpscale</RootNamespace>
+    <AssemblyName>pthud</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Client\PristonTale.Engine3D\PristonTale.Engine3D.csproj" />
+    <Compile Include="../PristonTale.GltfExport/PngWriter.cs" Link="PngWriter.cs" />
+  </ItemGroup>
+</Project>

@@ -168,6 +168,10 @@ Since the C# half was forked too (`../issues/001-framework-from-source.md`), eac
 31. **macOS build** (`../issues/020-macos-build.md`): FAudio's macOS link uses `-no_fixup_chains` instead of
     `-ld_classic`, which current Xcode ignores, so the unaligned pointers of its packed curves link; `build.sh` builds
     SDL2 and FAudio for arm64 and x86_64 like the runtime.
+32. **Retina resolution in pixels** (`sdl/MGP_sdl.cpp`, `../issues/021-retina-pixels.md`, `upstream/21-retina-pixels.md`;
+    interface version 8): on macOS the window asks for its full resolution (`SDL_WINDOW_ALLOW_HIGHDPI`), and every
+    size, position, display mode and mouse coordinate the runtime exchanges is in pixels (`mg_display_pixel_density`
+    and each window's density); elsewhere the density is 1.
 
 The runtime also prints the swapchain image count and present mode, an early submission when the uniform buffer is
 full, and a warning when two resources of one shader share a binding.

@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PristonTale.Contracts.Units;
+using PristonTale.Gameplay.UI.Rendering;
 
 namespace PristonTale.Gameplay.UI.Bellatra;
 
@@ -170,7 +171,7 @@ public sealed class BellatraEffects
         return (scale, new Vector2((viewport.Width - DesignWidth * scale) / 2f, (viewport.Height - DesignHeight * scale) / 2f));
     }
 
-    public void Draw(SpriteBatch batch, Func<string, Texture2D> texture, Texture2D pixel, SpriteFont font, float textScale)
+    public void Draw(SpriteBatch batch, HudSprites art, Texture2D pixel, SpriteFont font, float textScale)
     {
         if (_running.Count == 0)
         {
@@ -194,25 +195,26 @@ public sealed class BellatraEffects
             {
                 if (running.Layer.Layer == layer)
                 {
-                    DrawTrack(batch, running, texture, font, textScale, scale, offset);
+                    DrawTrack(batch, running, art, font, textScale, scale, offset);
                 }
             }
         }
     }
 
-    private void DrawTrack(SpriteBatch batch, Playing running, Func<string, Texture2D> texture, SpriteFont font, float textScale, float scale, Vector2 offset)
+    private void DrawTrack(SpriteBatch batch, Playing running, HudSprites art, SpriteFont font, float textScale, float scale, Vector2 offset)
     {
         var image = running.Track.Keys[running.Key].Image;
         var at = offset + (new Vector2(running.Layer.Origin.X, running.Layer.Origin.Y) + new Vector2(MathF.Truncate(running.Offset.X), MathF.Truncate(running.Offset.Y))) * scale;
         switch (running.Track.Kind)
         {
-            case BellatraImageKind.Screen when image >= 0 && image < ScreenImages.Length && ScreenImages[image] is { } path && texture(path) is { } screen:
+            case BellatraImageKind.Screen when image >= 0 && image < ScreenImages.Length && ScreenImages[image] is { } path && art.Get(path, out var density) is { } screen:
             {
-                var source = new Rectangle(0, 0, Math.Min(running.Layer.Size.X, screen.Width), Math.Min(running.Layer.Size.Y, screen.Height));
-                batch.Draw(screen, at, source, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                // The layer's size is in the original image's pixels; a higher-resolution copy has density times as many.
+                var source = new Rectangle(0, 0, Math.Min(running.Layer.Size.X * density, screen.Width), Math.Min(running.Layer.Size.Y * density, screen.Height));
+                batch.Draw(screen, at, source, Color.White, 0f, Vector2.Zero, scale / density, SpriteEffects.None, 0f);
                 break;
             }
-            case BellatraImageKind.Texture when image >= 0 && image < Textures.Length && texture(Textures[image]) is { } art:
+            case BellatraImageKind.Texture when image >= 0 && image < Textures.Length && art.Get(Textures[image]) is { } texture:
             {
                 var half = new Vector2(running.Layer.Size.X, running.Layer.Size.Y) + running.Growth;
                 if (half.X <= 0 || half.Y <= 0)
@@ -221,8 +223,8 @@ public sealed class BellatraEffects
                 }
 
                 var alpha = Math.Clamp(running.Alpha / 255f, 0f, 1f);
-                batch.Draw(art, at, null, Color.White * alpha, MathHelper.ToRadians(running.Angle), new Vector2(art.Width / 2f, art.Height / 2f),
-                    new Vector2(2f * half.X / art.Width, 2f * half.Y / art.Height) * scale, SpriteEffects.None, 0f);
+                batch.Draw(texture, at, null, Color.White * alpha, MathHelper.ToRadians(running.Angle), new Vector2(texture.Width / 2f, texture.Height / 2f),
+                    new Vector2(2f * half.X / texture.Width, 2f * half.Y / texture.Height) * scale, SpriteEffects.None, 0f);
                 break;
             }
         }

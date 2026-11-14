@@ -18,7 +18,8 @@ namespace PristonTale.Gameplay.Effects;
 // instead of the javelin, which stays in the hand. An arrow or javelin flies from the weapon toward its target's chest (24 above its feet) in a
 // straight line; once within 64 units across and 80 up of the target it flies 7 frames more and ends, as it does after
 // 120 frames. A glowing bow or javelin sheds sparks of its glow colour (half of it plus 128,
-// Effect/ImageData/Particle/cc.tga) along its flight, which fade over 0.7 s.
+// Effect/ImageData/Particle/cc.tga) along its flight, which fade over 0.7 s. While a skill cast runs the clip is the
+// cast's (SkillPresentation.ObserveClip) and throws no basic shot.
 public sealed class PlayerShots
 {
     public const string ArrowModel = "weapons/arrow.smd";
@@ -61,16 +62,34 @@ public sealed class PlayerShots
         return false;
     }
 
-    // One player this frame: its body clip, its weapon (catalog key, world matrix, glow); a shot is thrown when the
-    // attack clip passes its first event.
-    public void Hold(SkillPresentation skills, ulong attackerId, PristonMotionInfo motion, float ticks, string weaponKey, Matrix weaponWorld,
+    // One player this frame: its body clip, its weapon (catalog key, world matrix, glow). The clip goes to the player's
+    // running cast first; without one, the attack clip passing its first event is a basic swing's release and throws
+    // the shot. Returns which release, if any, this frame saw.
+    public SwingRelease Hold(SkillPresentation skills, ulong attackerId, PristonMotionInfo motion, float ticks, string weaponKey, Matrix weaponWorld,
         in HeldItemGlow glow, Vector3 attackerPosition, bool staffCaster, Func<ulong, Vector3?> targetOf)
     {
         _seen.Add(attackerId);
         ref var clip = ref CollectionsMarshal.GetValueRefOrAddDefault(_clips, attackerId, out _);
-        clip.Advance(motion, ticks);
-        if (motion.State != (uint)MotionCode.Attack || weaponKey.Length < 3 || !clip.Passed(0) || !_targets.TryGetValue(attackerId, out var targetId)
-            || targetOf(targetId) is not { } target)
+        var restarted = clip.Advance(motion, ticks);
+        var cast = skills?.ObserveClip(attackerId, clip, restarted) ?? CastClip.None;
+        if (cast != CastClip.None)
+        {
+            return cast == CastClip.WeaponPass ? SwingRelease.SkillPass : SwingRelease.None;
+        }
+
+        if (motion.State != (uint)MotionCode.Attack || !clip.Passed(0))
+        {
+            return SwingRelease.None;
+        }
+
+        Throw(skills, attackerId, weaponKey, weaponWorld, glow, attackerPosition, staffCaster, targetOf);
+        return SwingRelease.Basic;
+    }
+
+    private void Throw(SkillPresentation skills, ulong attackerId, string weaponKey, Matrix weaponWorld, in HeldItemGlow glow, Vector3 attackerPosition,
+        bool staffCaster, Func<ulong, Vector3?> targetOf)
+    {
+        if (weaponKey.Length < 3 || !_targets.TryGetValue(attackerId, out var targetId) || targetOf(targetId) is not { } target)
         {
             return;
         }
@@ -264,4 +283,12 @@ public sealed class PlayerShots
     }
 
     private readonly record struct Spark(Vector3 Position, Vector3 Color, float Age);
+}
+
+// What a player's attack clip released this frame: a basic swing, or one pass of a weapon-clip skill.
+public enum SwingRelease : byte
+{
+    None,
+    Basic,
+    SkillPass
 }

@@ -22,7 +22,8 @@ public sealed class LoginPanel
     }
 
     private readonly HudCanvas _canvas;
-    private MouseState _previousMouse;
+    // Starts held: the button of the click that revealed the panel is not a click on it until released.
+    private MouseState _previousMouse = HeldMouse;
     private FocusTarget _focus;
 
     public LoginPanel(SpriteBatch batch, SpriteFont font, HudAtlas atlas)
@@ -35,6 +36,9 @@ public sealed class LoginPanel
 
         _canvas = new HudCanvas(batch, font, atlas);
     }
+
+    internal static readonly MouseState HeldMouse = new(0, 0, 0, ButtonState.Pressed, ButtonState.Released, ButtonState.Released, ButtonState.Released,
+        ButtonState.Released);
 
     public TextInputField Account { get; } = new() { MaxLength = 20, Focused = true };
     public TextInputField Password { get; } = new() { MaxLength = 20, Masked = true };
@@ -55,7 +59,7 @@ public sealed class LoginPanel
         {
             var layout = LoginLayout.Create(viewport.Width, viewport.Height);
             var cursor = layout.Pointer(mouse.Position);
-            var clicked = mouse.LeftButton == ButtonState.Pressed && _previousMouse.LeftButton == ButtonState.Released;
+            var clicked = Clicked(mouse, _previousMouse);
             if (Pressed(keyboard, previousKeyboard, Keys.Tab))
             {
                 var direction = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift) ? -1 : 1;
@@ -91,6 +95,9 @@ public sealed class LoginPanel
         _previousMouse = mouse;
         return intent;
     }
+
+    internal static bool Clicked(in MouseState mouse, in MouseState previous) =>
+        mouse.LeftButton == ButtonState.Pressed && previous.LeftButton == ButtonState.Released;
 
     private void SetFocus(FocusTarget focus)
     {

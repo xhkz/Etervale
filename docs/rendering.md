@@ -42,7 +42,7 @@ sources are in [shaders.md](shaders.md); option fields in [client-settings.md](c
 | `Rendering/PristonTextureLoader.cs`, `PristonImageDecoder.cs`, `PristonMipChain.cs` | Texture decode off-thread, mip chain with alpha-coverage preservation, GPU upload. |
 | `Rendering/RenderBatch.cs`, `RenderStageHandle.cs`, `RenderQueueBuilder.cs`, `PristonRenderQueue.cs`, `BatchUploader.cs`, `PristonGpuMesh*.cs` | Batches, per-stage residency, culling and sorting, dynamic-buffer uploads. |
 | `Rendering/PristonModelAnimator.cs`, `AnimatedModelRuntime.cs`, `PristonSkinPalette.cs`, `PristonModelNormals.cs`, `PristonMotionSelection.cs`, `CrowdAnimationLod.cs` | Keyframe evaluation, animated scenery, bone palettes (current and previous pose), rebuilt normals, motion clip choice, the crowd level of detail of actor poses. |
-| `Rendering/PristonCamera*.cs` | Orbit camera, collision, field-of-view limits. |
+| `Rendering/PristonCamera*.cs` | Orbit camera and its modes (`PristonCameraMode`), collision, field-of-view limits. |
 | `Rendering/PristonDayNightCycle.cs`, `DayNightSettings.cs` | Time of day, sun/moon direction and illuminance, sky colour, lamp factor, night hue. |
 | `Rendering/Lighting/` | Photometry and exposure, stage baked light and floor light field, shadow cascades, lamp shadows, light culling, transient lights, environment lighting, volumetric light, calibration spheres. |
 | `Rendering/Post/` | Post chain (`PristonPostProcessor`), auto exposure, bloom, colour grade, display transform CPU reference, GTAO/contact shadows, SSR, TAA, SMAA (`Smaa/` tables and credits), full-screen triangle. |

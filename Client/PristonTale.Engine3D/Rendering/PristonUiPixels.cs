@@ -11,6 +11,10 @@ public enum PristonUiColorKey
 
 public static class PristonUiPixels
 {
+    // The original renderer enables an exact black color key for every authored UI bitmap; TGA files carry alpha.
+    public static PristonUiColorKey InterfaceKeyFor(string extension) =>
+        extension.Equals(".bmp", StringComparison.OrdinalIgnoreCase) ? PristonUiColorKey.Black : PristonUiColorKey.None;
+
     public static void Prepare(DecodedPristonImage image, PristonUiColorKey key)
     {
         // Authored coverage owns the silhouette, opaque black details included.

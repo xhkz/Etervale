@@ -21,7 +21,7 @@
       "spiritMinDivisor": 8, "spiritMaxDivisor": 6, "noCritical": true, "bonusBroods": ["Undead"], "bonusPercent": 100 },
     "motionIndex": 63, "motionFrames": 45, "motionEvents": [22], "motionSpeed": 100, "projectile": true,
     "castEffect": "vfx.priestess.castcircle", "projectileEffect": "vfx.priestess.holybolt.projectile", "impactEffect": "vfx.priestess.holybolt.impact",
-    "castSound": "wav/Effects/Skill/Morion/Casting_P.wav", "impactSound": "wav/Effects/Skill/Morion/HolyBolt 1.wav"
+    "castSound": "wav/Effects/Skill/Morion/Casting_P.wav", "castSoundAtRelease": true, "impactSound": "wav/Effects/Skill/Morion/HolyBolt 1.wav"
   },
   {
     "code": "0x07010003", "forceOrbPercent": 50, "name": "Multi Spark", "tier": "Job1", "category": "MultiHit", "icon": "MP14 M_Spark",
@@ -100,7 +100,7 @@
       "spiritMinDivisor": 6, "spiritMaxDivisor": 3, "noCritical": true },
     "motionIndex": 69, "motionFrames": 60, "motionEvents": [29, 44], "motionSpeed": 90, "projectile": true,
     "castEffect": "vfx.priestess.castcircle", "projectileEffect": "vfx.priestess.vigorball.projectile", "impactEffect": "vfx.priestess.vigorball.impact",
-    "castSound": "wav/Effects/Skill/Morion/Casting_P.wav",
+    "castSound": "wav/Effects/Skill/Morion/Casting_P.wav", "castSoundAtRelease": true,
       "impactSoundOrder": "Random", "impactSounds": ["wav/Effects/Skill/Morion/VigorBall 1.wav", "wav/Effects/Skill/Morion/VigorBall 2.wav"] },
   {
     "code": "0x07040002", "name": "Resurrection", "tier": "Job3", "category": "Heal", "icon": "MP43 Resurrection",

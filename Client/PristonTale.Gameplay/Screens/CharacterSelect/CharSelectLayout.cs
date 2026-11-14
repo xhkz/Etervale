@@ -18,6 +18,14 @@ internal static class CharSelectLayout
         Delete
     }
 
+    // The screen's 2D parts are laid out in the HUD's design units, the window divided by HudLayout's integer scale, and
+    // drawn at that scale; the 3D picks (roster, job lineup) stay in window pixels.
+    public static Viewport Ui(Viewport window)
+    {
+        var layout = HudLayout.Of(window);
+        return new Viewport(0, 0, layout.Width, layout.Height);
+    }
+
     public static int ButtonRowY(Viewport vp) => vp.Height - 40;
     public static int TwoButtonPrimaryX(Viewport vp) => vp.Width / 2 - 120;
     public static int TwoButtonQuitX(Viewport vp) => vp.Width / 2 - 120 + 110;

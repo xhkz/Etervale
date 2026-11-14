@@ -10,7 +10,8 @@ internal static class PlayerShotTests
 {
     public static IEnumerable<(string, Func<Task>)> Cases()
     {
-        yield return ("a bow shoots at the attack clip's first event, flies to its target and ends 7 frames after reaching it", ArrowAsync);
+        yield return ("a bow shoots at the attack clip's first event, releasing the swing, flies to its target and ends 7 frames after reaching it",
+            ArrowAsync);
         yield return ("a glowing bow sheds sparks, a javelin hides in the hand while it flies, a staff strikes for a fighter", WeaponsAsync);
     }
 
@@ -25,10 +26,10 @@ internal static class PlayerShotTests
         shots.ObserveSwing(1, 2);
         shots.Hold(null, 1, Attack, 1600f, "WS101", hand, HeldItemGlow.None, Vector3.Zero, false, Target);
         Assert.True(shots.Flying == 0, "the arrow left before the attack's event");
-        shots.Hold(null, 1, Attack, 1600f + 900f, "WS101", hand, HeldItemGlow.None, Vector3.Zero, false, Target);
-        Assert.True(shots.Flying == 1, "the arrow did not leave at the attack's event");
-        shots.Hold(null, 1, Attack, 1600f + 1000f, "WS101", hand, HeldItemGlow.None, Vector3.Zero, false, Target);
-        Assert.True(shots.Flying == 1, "the same event threw twice");
+        var released = shots.Hold(null, 1, Attack, 1600f + 900f, "WS101", hand, HeldItemGlow.None, Vector3.Zero, false, Target);
+        Assert.True(shots.Flying == 1 && released == SwingRelease.Basic, "the arrow did not leave at the attack's event, or the swing was not released");
+        released = shots.Hold(null, 1, Attack, 1600f + 1000f, "WS101", hand, HeldItemGlow.None, Vector3.Zero, false, Target);
+        Assert.True(shots.Flying == 1 && released == SwingRelease.None, "the same event threw or released twice");
 
         // 200 units at 8 a frame reach the target in about 18 frames; 7 more end the shot.
         for (var frame = 0; frame < 20; frame++)

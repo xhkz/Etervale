@@ -331,7 +331,7 @@ public sealed class HudInventoryPanel
             return;
         }
 
-        HudItemDetailTooltip.Draw(painter, layout, pointer, _detailTip, _gaugeTip);
+        HudItemDetailTooltip.Draw(painter, layout, pointer, _detailTip, _gaugeTip, item.CatalogKey);
     }
 
     // Whether the bag items lay out a finished puzzle board.

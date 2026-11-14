@@ -21,7 +21,6 @@ public sealed partial class GameplayHud
     private readonly HudBellatraWindow _bellatraWindow = new();
     private readonly HudBellatraResult _bellatraResult = new();
     private HudBellatraShow _bellatraShow;
-    private Func<string, Texture2D> _bellatraArt;
     private bool _bellatraArtAsked;
 
     // Plays Bellatra's sounds and music and shakes the camera; set by the screen.
@@ -112,7 +111,6 @@ public sealed partial class GameplayHud
     // and the windows still work.
     private void SetUpBellatraShow()
     {
-        _bellatraArt = _sprites.Get;
         try
         {
             var table = BellatraEffectTable.Read(AssetFiles.ReadAllBytes(AssetFiles.Combine(_context.AssetRoot, BellatraEffectTable.Path)));
@@ -133,7 +131,7 @@ public sealed partial class GameplayHud
 
         var batch = _context.SpriteBatch;
         batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.None, RasterizerState.CullNone);
-        show.Draw(batch, _bellatraArt, _painter.Pixel, _context.Font, HudPainter.TextScale);
+        show.Draw(batch, _sprites, _painter.Pixel, _context.Font, HudPainter.TextScale);
         batch.End();
     }
 

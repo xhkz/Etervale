@@ -10,7 +10,7 @@ namespace PristonTale.Application.GameMasters;
 // Commands that make items, gold and experience, and the overrides for the items they make.
 internal static class GmItemCommands
 {
-    public const int MaxGold = 1_000_000;
+    public const int MaxGold = 1_000_000_000;
 
     public static Task Specialization(GmCommandContext context)
     {
@@ -218,7 +218,7 @@ internal static class GmItemCommands
         }
     }
 
-    // Drops 1 to 1,000,000 gold at the game master.
+    // Drops 1 to MaxGold gold at the game master.
     public static async Task Gold(GmCommandContext context)
     {
         var word = context.Word();

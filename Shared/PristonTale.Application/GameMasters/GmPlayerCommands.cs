@@ -1,11 +1,25 @@
 using PristonTale.Application.Chat;
+using PristonTale.Simulation.Characters;
 using static PristonTale.Application.GameMasters.GmInformationCommands;
 
 namespace PristonTale.Application.GameMasters;
 
-// Commands on players: disconnecting, killing, finding, moving and hiding them, and lending a level.
+// Commands on players: disconnecting, killing, finding, moving and hiding them, lending a level, and the game master's
+// own attributes.
 internal static class GmPlayerCommands
 {
+    public const int GodAttribute = 500000;
+
+    // Sets the game master's five attributes to GodAttribute.
+    public static async Task God(GmCommandContext context)
+    {
+        var attributes = new CharacterAttributes(GodAttribute, GodAttribute, GodAttribute, GodAttribute, GodAttribute);
+        if (await context.Commands.World.SetAttributesAsync(context.Issuer.EntityId, attributes))
+        {
+            context.Reply(Format("> Every attribute is {0}", GodAttribute));
+        }
+    }
+
     public static Task Kick(GmCommandContext context)
     {
         var target = Target(context);

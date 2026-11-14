@@ -49,7 +49,7 @@
       "spiritMinDivisor": 6, "spiritMaxDivisor": 4, "areaPercent": 70, "mainPercent": 100, "element": "Fire", "noCritical": true, "spellPower": true },
     "motionIndex": 67, "motionFrames": 50, "motionEvents": [29], "motionSpeed": 100, "projectile": true,
     "castEffect": "vfx.magician.castcircle", "projectileEffect": "vfx.magician.fireball.shot", "impactEffect": "vfx.magician.fireball.hit",
-    "castSound": "wav/Effects/Skill/Morion/Casting_M.wav", "impactSound": "wav/Effects/monster/Figon/impact 1.wav"
+    "castSound": "wav/Effects/Skill/Morion/Casting_M.wav", "castSoundAtRelease": true, "impactSound": "wav/Effects/monster/Figon/impact 1.wav"
   },
   {
     "code": "0x08020001", "name": "Mental Mastery", "tier": "Job2", "category": "Passive", "icon": "MM20 M_Mastery",
@@ -109,7 +109,7 @@
       "absorb": { "percent": [10, 13, 16, 19, 21, 24, 26, 28, 29, 30], "resource": "Mana" } },
     "motionIndex": 69, "motionFrames": 50, "motionEvents": [36], "motionSpeed": 80,
     "castEffect": "vfx.magician.energyshield.cast", "buffEffect": "vfx.magician.energyshield.aura", "defenseEffect": "vfx.magician.energyshield.absorb",
-    "castSound": "wav/Effects/Skill/Morion/Casting_M.wav", "keepIcon": "Mg3_E_SHIELD"
+    "castSound": "wav/Effects/Skill/Morion/Casting_M.wav", "castSoundAtRelease": true, "keepIcon": "Mg3_E_SHIELD"
   },
   {
     "code": "0x08040002", "name": "Diastrophism", "tier": "Job3", "category": "AreaAttack", "icon": "MM43 Diastrophism",
@@ -120,7 +120,7 @@
     "damage": { "min": [20, 27, 34, 41, 48, 55, 62, 69, 76, 83], "max": [56, 64, 72, 80, 88, 96, 104, 112, 120, 128], "levelDivisor": 2,
       "spiritMinDivisor": 6, "spiritMaxDivisor": 3, "noCritical": true, "spellPower": true },
     "motionIndex": 73, "motionFrames": 86, "motionEvents": [61], "endHit": true, "motionSpeed": 120,
-    "castEffect": "vfx.magician.castcircle", "impactEffect": "vfx.magician.diastrophism.quake", "castSound": "wav/Effects/Skill/Morion/Casting_M.wav",
+    "castEffect": "vfx.magician.castcircle", "impactEffect": "vfx.magician.diastrophism.quake", "castSound": "wav/Effects/Skill/Morion/Casting_M.wav", "castSoundAtRelease": true,
       "impactEffects": ["vfx.magician.diastrophism.quake", "-"], "impactSounds": ["wav/Effects/Skill/Morion/Diastrophism 2.wav", "-"] },
   {
     "code": "0x08040003", "name": "Spirit Elemental", "tier": "Job3", "category": "Buff", "icon": "MM46 S_Elemental",
@@ -134,7 +134,7 @@
     "exclusive": ["0x08040003"], "replaces": ["0x08100004"],
     "motionIndex": 69, "motionFrames": 50, "motionEvents": [36], "motionSpeed": 80,
     "castEffect": "vfx.magician.spiritelemental.cast", "buffEffect": "vfx.magician.spiritelemental.aura",
-    "castSound": "wav/Effects/Skill/Morion/Casting_M.wav", "keepIcon": "Mg3_S_ELEMENTAL"
+    "castSound": "wav/Effects/Skill/Morion/Casting_M.wav", "castSoundAtRelease": true, "keepIcon": "Mg3_S_ELEMENTAL"
   },
   {
     "code": "0x08040004", "forceOrbs": "None", "name": "Dancing Sword", "tier": "Job3", "category": "Buff", "icon": "MM50 D_Sword",

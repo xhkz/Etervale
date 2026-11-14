@@ -106,6 +106,7 @@ assets_n/
 3d/
 *.7z
 3d_glb/
+local/
 
 # MonoGame fork (monogame/): the native runtime build fetches SDL2/FAudio and writes premake files,
 # objects and the build tree; the source (src/) is committed, the built libraries (bin/) never are.

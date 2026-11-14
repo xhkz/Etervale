@@ -20,7 +20,7 @@
     "kind": "WeaponAttack", "target": "Enemy", "masteryBase": 82, "masteryPerRank": 2,
     "attackRating": [30, 40, 50, 60, 70, 80, 90, 100, 110, 120], "attackRatingPlusLevel": true, "damage": {},
     "motion": "Attack", "loops": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "attackSpeedSteps": [1, 1, 1, 1, 2, 2, 2, 2, 2, 2], "projectile": true,
-    "projectileEffect": "vfx.atalanta.farina.shot", "impactEffect": "vfx.atalanta.farina.hit", "castSound": "wav/Effects/Skill/Morion/Farina 1.wav"
+    "projectileEffect": "vfx.atalanta.farina.shot", "impactEffect": "vfx.atalanta.farina.hit", "castSound": "wav/Effects/Skill/Morion/Farina 1.wav", "castSoundAtRelease": true
   },
   {
     "code": "0x06010003", "name": "Throwing Mastery", "tier": "Job1", "category": "Passive", "icon": "MA14 T_Mastery",
@@ -61,7 +61,7 @@
     "damage": { "percent": [10, 22, 34, 46, 58, 70, 82, 94, 106, 118], "bonusBroods": ["Demon"], "bonusPercent": 30 },
     "motion": "Attack", "loops": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "projectile": true,
     "projectileEffect": "vfx.atalanta.twist.shot", "impactEffect": "vfx.atalanta.twist.hit",
-    "castSound": "wav/Effects/Skill/Morion/TwistJavelin.wav"
+    "castSound": "wav/Effects/Skill/Morion/TwistJavelin.wav", "castSoundAtRelease": true
   },
   {
     "code": "0x06020003", "forceOrbs": "Weapon", "name": "Soul Sucker", "tier": "Job2", "category": "AreaAttack", "icon": "MA26 S_Sucker",
@@ -84,7 +84,7 @@
       "flatElement": "Fire", "bonusBroods": ["Mutant"], "bonusPercent": 50 },
     "motion": "Attack", "loops": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "projectile": true,
     "projectileEffect": "vfx.atalanta.firejavelin.shot", "impactEffect": "vfx.atalanta.firejavelin.hit",
-    "castSound": "wav/Effects/Skill/Morion/FireJavelin 1.wav"
+    "castSound": "wav/Effects/Skill/Morion/FireJavelin 1.wav", "castSoundAtRelease": true
   },
   {
     "code": "0x06040001", "name": "Split Javelin", "tier": "Job3", "category": "MultiHit", "icon": "MA40 Split_Javelin",

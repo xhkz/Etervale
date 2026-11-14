@@ -15,7 +15,7 @@ public static class GameMasterLevel
     // The server's view of a character's gold.
     public const int Operator = 3;
 
-    // Item creation and gifts, premium resets, monster absorption, experience and gold.
+    // Item creation and gifts, premium resets, monster absorption, experience, gold and attributes.
     public const int Administrator = 4;
 
     public const int Highest = Administrator;
