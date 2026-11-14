@@ -89,6 +89,9 @@ public sealed record ClientSettings
     // The physical sky (sun, moon, stars, volumetric clouds) instead of the original's painted domes, and its clouds.
     public bool RealisticSky { get; init; } = true;
     public CloudQuality CloudQuality { get; init; } = CloudQuality.Medium;
+    // World textures from their 2x copies (HiResArt.World) where the game data has them; read when a scene's renderer
+    // is created, so a change shows from the next field loaded.
+    public bool HiResWorldTextures { get; init; }
     // Atmospheric fades distant geometry toward the captured sky up to a capped opacity; Classic is still accepted but
     // is drawn as Atmospheric; Off disables it.
     public DistanceFogMode DistanceFog { get; init; } = DistanceFogMode.Atmospheric;

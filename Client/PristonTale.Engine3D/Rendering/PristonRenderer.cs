@@ -167,7 +167,10 @@ public sealed partial class PristonRenderer : IDisposable
         _log = log ?? ConsoleClientLog.Instance;
         _presentation = presentation;
         _stateCache = new PristonRenderStateCache(graphicsDevice);
-        _textureLoader = new PristonTextureLoader(graphicsDevice, _log);
+        _textureLoader = new PristonTextureLoader(graphicsDevice, _log)
+        {
+            HiResRoot = presentation is { Requested.HiResWorldTextures: true, AssetRoot.Length: > 0 } ? presentation.AssetRoot : string.Empty
+        };
         _textureLoader.Initialize();
         _shaders = new PristonShaderLibrary(content, _log, _textureLoader.White);
         _sceneTargets = new PristonSceneTargets(graphicsDevice, content, _log);

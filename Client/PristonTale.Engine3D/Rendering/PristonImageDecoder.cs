@@ -12,7 +12,7 @@ public sealed record DecodedPristonImage(int Width, int Height, Color[] Pixels, 
 
 public static class PristonImageDecoder
 {
-    private const long MaximumPixels = 64_000_000;
+    public const long MaximumPixels = 64_000_000;
 
     // UI bitmaps pass bmpCoverage: the fourth byte of a 32-bit BMP is then its coverage, unless every byte is 0 (reserved
     // data) or 255. World BMPs stay opaque.

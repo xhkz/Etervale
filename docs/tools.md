@@ -26,7 +26,7 @@ JSON, UI font) and the Blender helper scripts in `3d_glb/blender/`. None of them
 | `tools/PristonTale.WorldJson/` | `ptworldjson`: dumps `WorldCatalog` fields, gates and warps to `world.json` |
 | `tools/PristonTale.VfxImport/` | `ptvfx`: converts the original effect scripts and installs the authored effect definitions into `<assetRoot>/Effect/Vfx` |
 | `tools/PristonTale.DataImport/` | `ptdata`: copies folders of another client's game data into `assets/`, unmasking XOR-masked files and refusing what the game cannot read |
-| `tools/PristonTale.HudUpscale/` | `pthud`: makes the HUD's 2x, 3x and 4x copies of the interface images with an external Real-ESRGAN build |
+| `tools/PristonTale.HudUpscale/` | `pthud`: makes the HUD's 2x, 3x and 4x copies of the interface images and the 2x copies of the field textures with an external Real-ESRGAN build |
 | `tools/ui/build_font.py` | Builds the UI font subset and its MonoGame `.spritefont` description |
 | `3d_glb/blender/` | Blender scripts for viewing exported GLBs (`frame_map.py`, `play_animation.py`) |
 
@@ -322,29 +322,37 @@ dotnet run --project tools/PristonTale.DataImport -c Release --no-build -- copy 
 
 ## HudUpscale (`pthud`)
 
-Makes the higher-resolution copies of the interface images that the HUD draws at scales 2 to 4 (`HudHiResArt`):
-`assets/Hud/HiRes/<density>x/<asset path>.png`, straight alpha, for densities 2, 3 and 4. `assets/` is not in Git, so
-the copies reach other machines only with the game data. Without a copy the HUD draws the original.
+Makes the higher-resolution copies of original images (`HiResArt`), in two sets: `hud`, the interface images the HUD
+draws at scales 2 to 4 (`HiResArt.Hud`, densities 2, 3 and 4), and `world`, the field textures the scene loads with
+`hiResWorldTextures` ([client-settings.md](client-settings.md)) (`HiResArt.World`, density 2). Copies are
+`assets/<set>/HiRes/<density>x/<asset path>.png` (`Hud` or `World`), straight alpha. `assets/` is not in Git, so the
+copies reach other machines only with the game data. Without a copy the game uses the original.
 
 ```bash
-dotnet run --project tools/PristonTale.HudUpscale -c Release --no-build -- upscale assets <work> <realesrgan-ncnn-vulkan> [--model <name>] [folder ...]
-dotnet run --project tools/PristonTale.HudUpscale -c Release --no-build -- prepare assets <work> [folder ...]
+dotnet run --project tools/PristonTale.HudUpscale -c Release --no-build -- upscale assets <work> <realesrgan-ncnn-vulkan> [--set hud|world] [--model <name>] [folder ...]
+dotnet run --project tools/PristonTale.HudUpscale -c Release --no-build -- prepare assets <work> [--set hud|world] [folder ...]
 dotnet run --project tools/PristonTale.HudUpscale -c Release --no-build -- run <realesrgan-ncnn-vulkan> <work> [--model <name>]
-dotnet run --project tools/PristonTale.HudUpscale -c Release --no-build -- collect assets <work>
+dotnet run --project tools/PristonTale.HudUpscale -c Release --no-build -- collect assets <work> [--set hud|world]
 ```
 
 - The upscaler is `realesrgan-ncnn-vulkan` of Real-ESRGAN's release v0.2.5.0 (`realesrgan-ncnn-vulkan-20220424-<os>.zip`
   for macOS, Linux and Windows, with its `models` folder beside it); the model defaults to `realesrgan-x4plus`. It is
   not part of the repository.
-- `upscale` runs the three steps. `prepare` decodes every `.bmp`, `.tga`, `.png` and `.jpg` under the folders (default
-  `image`, without `image/Sinimage/Items`, whose icons the icon cache draws) as the HUD does (colour key, coverage),
-  fills transparent pixels with their covered neighbours' colour, and writes each as an opaque PNG numbered in
-  `<work>/in`, with `<work>/manifest.tsv` naming its asset path. Unreadable files are reported and skipped.
-- `run` upscales `<work>/in` 4x into `<work>/out`. `collect` puts each original's coverage, scaled bilinearly, back on
-  its result, writes the 4x copy and the 3x and 2x copies (area-averaged, weighted by coverage), and exits 1 when a
-  result is missing or the wrong size.
+- `--set` defaults to `hud`; `prepare` and `collect` of one work folder take the same set. Folders replace the set's
+  own: `image` without `image/Sinimage/Items` (whose icons the icon cache draws) for `hud`, `Field` for `world`.
+- `upscale` runs the three steps. `prepare` decodes every `.bmp`, `.tga`, `.png` and `.jpg` under the folders as the
+  game does (`hud`: colour key and coverage; `world`: as the scene samples it), fills transparent pixels with their
+  covered neighbours' colour, and writes each as an opaque PNG numbered in `<work>/in`, with `<work>/manifest.tsv`
+  naming its asset path. Unreadable files are reported and skipped, and so is an original whose 4x result would pass
+  the image decoder's 64-megapixel limit (the 2048 x 2048 floors and maps under `Field`). A `world` texture repeats across its faces, so it
+  is written with 16 pixels of its opposite edges around it, and the upscaler sees no edge where the texture tiles.
+- `run` upscales `<work>/in` 4x into `<work>/out`. `collect` takes the margin off again, puts each original's coverage,
+  scaled bilinearly, back on its result, writes the set's copies (the 4x result, or area-averaged and weighted by
+  coverage for a smaller density), and exits 1 when a result is missing or the wrong size.
+- The client gives a world copy the original's coverage itself, so a texture whose opacity comes from a separate map
+  keeps the map's edges; the opacity maps under `Field` are upscaled too, and nothing reads their copies.
 - An upscaler can invent detail, small text in particular; look at the copies before keeping them. Delete
-  `assets/Hud/HiRes` (or one copy) to go back to the originals.
+  `assets/Hud/HiRes` or `assets/World/HiRes` (or one copy) to go back to the originals.
 
 ## UI font (`tools/ui/build_font.py`)
 

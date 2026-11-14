@@ -9,7 +9,7 @@ namespace PristonTale.Gameplay.UI.Rendering;
 
 // Original interface images by asset-relative path. Files are read and decoded on the thread pool;
 // Update uploads finished images on the game thread within a fixed byte budget. At a HUD scale above 1 an image is read
-// from its higher-resolution copy when there is one (HudHiResArt); its density says how many texture pixels stand for one
+// from its higher-resolution copy when there is one (HiResArt); its density says how many texture pixels stand for one
 // pixel of the original, and sizes and source rectangles stay in the original's pixels (Size, HudPainter).
 public sealed class HudSprites : IDisposable
 {
@@ -77,7 +77,7 @@ public sealed class HudSprites : IDisposable
     // until their replacements are uploaded.
     public void SetScale(int hudScale)
     {
-        var density = HudHiResArt.DensityFor(hudScale);
+        var density = HiResArt.HudDensityFor(hudScale);
         if (density == _density || _disposed)
         {
             return;
@@ -238,7 +238,7 @@ public sealed class HudSprites : IDisposable
         for (var index = 0; index < paths.Length; index++)
         {
             var path = paths[index];
-            if (density > 1 && Read(AssetFiles.Combine(assetRoot, HudHiResArt.PathOf(path, density)), density) is { } copy)
+            if (density > 1 && Read(AssetFiles.Combine(assetRoot, HiResArt.PathOf(HiResArt.Hud, path, density)), density) is { } copy)
             {
                 result[index] = new Prepared(path, copy, density, false);
                 continue;

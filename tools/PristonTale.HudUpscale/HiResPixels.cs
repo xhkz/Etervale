@@ -1,3 +1,5 @@
+using PristonTale.Engine3D.Rendering;
+
 namespace PristonTale.HudUpscale;
 
 // Pixel work around the upscaler, on straight-alpha RGBA bytes (4 per pixel, row-major). The upscaler sees colour only:
@@ -83,30 +85,53 @@ public static class HiResPixels
     // The original's coverage, scaled by factor with bilinear filtering (pixel centres aligned), on the upscaled colour.
     public static byte[] WithCoverage(byte[] upscaled, byte[] original, int width, int height, int factor)
     {
-        var outWidth = width * factor;
-        var outHeight = height * factor;
-        if (upscaled.Length != outWidth * outHeight * 4)
+        if (upscaled.Length != width * factor * height * factor * 4)
         {
-            throw new ArgumentException($"the upscaled image is not {outWidth}x{outHeight}");
+            throw new ArgumentException($"the upscaled image is not {width * factor}x{height * factor}");
         }
 
+        var coverage = new byte[width * height];
+        for (var index = 0; index < coverage.Length; index++)
+        {
+            coverage[index] = original[index * 4 + 3];
+        }
+
+        var scaled = HiResArt.UpsampleCoverage(coverage, width, height, factor);
         var result = (byte[])upscaled.Clone();
+        for (var index = 0; index < scaled.Length; index++)
+        {
+            result[index * 4 + 3] = scaled[index];
+        }
+
+        return result;
+    }
+
+    // A tiling texture with margin pixels of its opposite edges around it, so the upscaler sees its neighbours across
+    // every edge and the result tiles without a seam once Crop takes the margin off again.
+    public static byte[] WrapPad(byte[] rgba, int width, int height, int margin)
+    {
+        var outWidth = width + margin * 2;
+        var outHeight = height + margin * 2;
+        var result = new byte[outWidth * outHeight * 4];
         for (var y = 0; y < outHeight; y++)
         {
-            var sy = Math.Clamp((y + 0.5f) / factor - 0.5f, 0f, height - 1);
-            var y0 = (int)sy;
-            var y1 = Math.Min(y0 + 1, height - 1);
-            var fy = sy - y0;
+            var sy = ((y - margin) % height + height) % height;
             for (var x = 0; x < outWidth; x++)
             {
-                var sx = Math.Clamp((x + 0.5f) / factor - 0.5f, 0f, width - 1);
-                var x0 = (int)sx;
-                var x1 = Math.Min(x0 + 1, width - 1);
-                var fx = sx - x0;
-                var top = Alpha(original, width, x0, y0) * (1 - fx) + Alpha(original, width, x1, y0) * fx;
-                var bottom = Alpha(original, width, x0, y1) * (1 - fx) + Alpha(original, width, x1, y1) * fx;
-                result[(y * outWidth + x) * 4 + 3] = (byte)MathF.Round(top * (1 - fy) + bottom * fy);
+                var sx = ((x - margin) % width + width) % width;
+                Array.Copy(rgba, (sy * width + sx) * 4, result, (y * outWidth + x) * 4, 4);
             }
+        }
+
+        return result;
+    }
+
+    public static byte[] Crop(byte[] rgba, int width, int left, int top, int cropWidth, int cropHeight)
+    {
+        var result = new byte[cropWidth * cropHeight * 4];
+        for (var y = 0; y < cropHeight; y++)
+        {
+            Array.Copy(rgba, ((top + y) * width + left) * 4, result, y * cropWidth * 4, cropWidth * 4);
         }
 
         return result;
@@ -157,7 +182,4 @@ public static class HiResPixels
         }
 
         return result;
-    }
-
-    private static float Alpha(byte[] rgba, int width, int x, int y) => rgba[(y * width + x) * 4 + 3];
-}
+    }}

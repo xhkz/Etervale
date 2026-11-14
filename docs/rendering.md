@@ -39,7 +39,7 @@ sources are in [shaders.md](shaders.md); option fields in [client-settings.md](c
 | `Rendering/PristonSceneTargets.cs` | HDR scene, motion, pre-pass targets; sky composition; caller target capture and restore. |
 | `Rendering/PristonShaderLibrary.cs` | Surface effects, frame constants, technique selection. |
 | `Rendering/PristonMaterial*.cs`, `PristonMaterialAdapter.cs` | Original material to runtime material: queue classification, textures and layers, roughness/reflectance/shading model. |
-| `Rendering/PristonTextureLoader.cs`, `PristonImageDecoder.cs`, `PristonMipChain.cs` | Texture decode off-thread, mip chain with alpha-coverage preservation, GPU upload. |
+| `Rendering/PristonTextureLoader.cs`, `PristonImageDecoder.cs`, `PristonMipChain.cs` | Texture decode off-thread, mip chain with alpha-coverage preservation, GPU upload; with `hiResWorldTextures` a texture's 2x copy (`HiResArt.World`) in its place. |
 | `Rendering/RenderBatch.cs`, `RenderStageHandle.cs`, `RenderQueueBuilder.cs`, `PristonRenderQueue.cs`, `BatchUploader.cs`, `PristonGpuMesh*.cs` | Batches, per-stage residency, culling and sorting, dynamic-buffer uploads. |
 | `Rendering/PristonModelAnimator.cs`, `AnimatedModelRuntime.cs`, `PristonSkinPalette.cs`, `PristonModelNormals.cs`, `PristonMotionSelection.cs`, `CrowdAnimationLod.cs` | Keyframe evaluation, animated scenery, bone palettes (current and previous pose), rebuilt normals, motion clip choice, the crowd level of detail of actor poses. |
 | `Rendering/PristonCamera*.cs` | Orbit camera and its modes (`PristonCameraMode`), collision, field-of-view limits. |
@@ -506,6 +506,11 @@ they took the domes.
 - Light selection is relative to the camera focus (`camera.Target`), not the camera position.
 - Transient lights fill the first local-light slots; with `localLightLimit` 8 a fight can leave no stage lamps.
 - Texture cache keys include the full directory: the same file name in two directories is two textures.
+- A world texture's 2x copy (`PristonTextureLoader.HiResRoot`, set from `hiResWorldTextures` and the asset root) takes
+  only its colour from the copy: the coverage is the original's own alpha or opacity map, scaled bilinearly
+  (`HiResArt.UpsampleCoverage`), so cut-out edges and the alpha test stay where the original puts them; the cut-out
+  rule and the mip chain still follow the original's file name. A copy that is not exactly twice the original's size
+  is reported and the original is used.
 - A tool that renders every frame into a new 1920x1080 render target (created and disposed each frame) loses the
   Vulkan device after a few hundred frames; keep one target and reuse it, as `WeatherCaptureProbe` does.
 

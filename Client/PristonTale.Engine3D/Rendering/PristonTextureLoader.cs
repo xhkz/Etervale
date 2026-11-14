@@ -32,6 +32,8 @@ public sealed class PristonTextureLoader : IDisposable
 
     public Texture2D White => _white;
     public bool RequirePreparedTextures { get; set; }
+    // The asset root under which a texture's 2x copy (HiResArt.World) replaces it; empty: originals only.
+    public string HiResRoot { get; init; } = string.Empty;
 
     public void Initialize()
     {
@@ -294,6 +296,7 @@ public sealed class PristonTextureLoader : IDisposable
             return new PreparedTexture(0, 0, []);
         }
 
+        var masked = false;
         if (!image.HasSourceAlpha && !string.IsNullOrWhiteSpace(opacity))
         {
             var alphaPath = ResolvePath(directory, opacity);
@@ -306,6 +309,20 @@ public sealed class PristonTextureLoader : IDisposable
                     var alpha = mask.Pixels[index];
                     image.Pixels[index] = new Color(color.R, color.G, color.B, PristonOpacityMask.Alpha(alpha.R, alpha.G, alpha.B));
                 }
+
+                masked = true;
+            }
+        }
+
+        if (ReadCopy(path) is { } copy)
+        {
+            if (copy.Width == image.Width * HiResArt.WorldDensity && copy.Height == image.Height * HiResArt.WorldDensity)
+            {
+                image = WithCoverageOf(copy, image, image.HasSourceAlpha || masked);
+            }
+            else
+            {
+                _log.Warn($"Texture copy of '{path}' is {copy.Width}x{copy.Height}, not {HiResArt.WorldDensity}x the original; using the original.");
             }
         }
 
@@ -317,6 +334,59 @@ public sealed class PristonTextureLoader : IDisposable
     private static DecodedPristonImage ReadImage(string path)
     {
         return PristonImageDecoder.Decode(AssetFiles.ReadAllBytes(path), Path.GetExtension(path));
+    }
+
+    private DecodedPristonImage ReadCopy(string path)
+    {
+        if (HiResRoot.Length == 0)
+        {
+            return null;
+        }
+
+        var relative = Path.GetRelativePath(HiResRoot, path);
+        if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative))
+        {
+            return null;
+        }
+
+        var copy = AssetFiles.Resolve(AssetFiles.Combine(HiResRoot, HiResArt.PathOf(HiResArt.World, relative, HiResArt.WorldDensity)));
+        if (!File.Exists(copy))
+        {
+            return null;
+        }
+
+        var image = ReadImage(copy);
+        return image.IsValid ? image : null;
+    }
+
+    // The copy's colour with the original's final coverage (its own alpha or its opacity map's), scaled bilinearly, so
+    // a cut-out edge falls where the original's does; an opaque original keeps the copy opaque.
+    internal static DecodedPristonImage WithCoverageOf(DecodedPristonImage copy, DecodedPristonImage original, bool covered)
+    {
+        var pixels = copy.Pixels;
+        if (covered)
+        {
+            var coverage = new byte[original.Pixels.Length];
+            for (var index = 0; index < coverage.Length; index++)
+            {
+                coverage[index] = original.Pixels[index].A;
+            }
+
+            var scaled = HiResArt.UpsampleCoverage(coverage, original.Width, original.Height, copy.Width / original.Width);
+            for (var index = 0; index < pixels.Length; index++)
+            {
+                pixels[index].A = scaled[index];
+            }
+        }
+        else
+        {
+            for (var index = 0; index < pixels.Length; index++)
+            {
+                pixels[index].A = byte.MaxValue;
+            }
+        }
+
+        return copy with { HasSourceAlpha = original.HasSourceAlpha };
     }
 
     private static string CacheKey(string directory, string name, string opacity)

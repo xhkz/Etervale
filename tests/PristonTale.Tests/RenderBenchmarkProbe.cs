@@ -169,7 +169,7 @@ internal sealed class RenderBenchmarkProbe : Game
         {
             throw new InvalidDataException("Render benchmark requires an uncapped window on the current desktop; use --validate-display for display modes and caps.");
         }
-        _settings = new PresentationSettings { Requested = settings };
+        _settings = new PresentationSettings { Requested = settings, AssetRoot = root };
         _settings.ApplyRendering(settings);
         var graphics = new GraphicsDeviceManager(this)
         {

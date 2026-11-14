@@ -56,7 +56,8 @@ public class Game1 : Game
     protected override void LoadContent()
     {
         _presentationController = new PresentationController(_presentation, _settingsStore, _graphics, Window);
-        _client = new GameClient(GraphicsDevice, Content, ResolveAssetRoot(), ResolveServerAddress(_presentation.Requested.ServerAddress), _presentation);
+        _presentation.AssetRoot = ResolveAssetRoot();
+        _client = new GameClient(GraphicsDevice, Content, _presentation.AssetRoot, ResolveServerAddress(_presentation.Requested.ServerAddress), _presentation);
         _client.LoadContent();
         Window.TextInput += (_, args) => _client.TypeCharacter(args.Character);
         ConsoleClientLog.Instance.Info($"[Presentation] GPU={GraphicsDevice.Adapter.DeviceName}; variable timestep; VSync={_presentation.VerticalSync}; maxFps={_presentation.Requested.MaxFps} (0=unlimited).");

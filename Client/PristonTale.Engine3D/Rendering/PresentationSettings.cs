@@ -5,6 +5,8 @@ public readonly record struct DisplayModeOption(int Monitor, int Width, int Heig
 public sealed class PresentationSettings
 {
     public ClientSettings Requested { get; set; } = new();
+    // The game data's root, where the renderers look for higher-resolution copies of world textures.
+    public string AssetRoot { get; set; } = string.Empty;
     public string EffectiveDisplay { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public bool AwaitingConfirmation { get; set; }
