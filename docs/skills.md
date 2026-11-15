@@ -495,7 +495,9 @@ Presentation (`SkillPresentation`):
 - Combat events add floating damage, heal and evade text and the revive effect (`ReviveEffect`).
 - VFX: every `<assetRoot>/Effect/Vfx/**/*.vfx.json`, read off the game thread in ordinal path order (docs/effects.md).
   Sounds are asset paths loaded by `SkillSoundBank`.
-- HUD: `HudSkillHud` draws the socket icons with the cooldown sweep from `SkillCooldownBook` and, from (10, 10), the
+- HUD: `HudSkillHud` draws the socket icons with the cooldown sweep from `SkillCooldownBook` (the top of the disc inscribed
+  in the 40 px round button, `HudPainter.DiscTop`, darkened as much as remains and edged by a gold chord, under the
+  seconds left) and, from (10, 10), the
   continuous-skill bar: one 32 px icon per status that has a `keepIcon` (or a skill button), longest running first,
   ten to a row in up to two rows (ten crystal pets leave room for the other effects),
   each the `keep/GA_.tga` ring, a 72-step fan filling clockwise as the time runs out (cyan, red for harmful) and the

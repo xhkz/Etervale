@@ -100,5 +100,5 @@ run-server: $(DATABASE)
 	@docker info > /dev/null 2>&1 || { echo "Docker is not running: start Docker Desktop (or the Docker daemon) first." >&2; exit 1; }
 	HOST_UID=$$(id -u) HOST_GID=$$(id -g) docker compose --profile server up --build server
 
-run-client: client
+run-client:
 	dotnet run --project Client/PristonTale -c Release --no-build $(if $(RESOLUTION),-- --resolution $(RESOLUTION))

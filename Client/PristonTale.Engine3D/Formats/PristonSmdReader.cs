@@ -53,6 +53,37 @@ public sealed class PristonSmdReader
         return ParseStage(path);
     }
 
+    // A stage's water is often two materials of one texture: the open surface carries the water flag and the strip along
+    // the shore, drawn the same, does not. A visible, translucent surface nothing collides with that shares a water
+    // surface's texture is that strip, so it gets the flag and moves and shades with the water it continues.
+    internal static IReadOnlyList<PristonMaterial> WithShoreWater(IReadOnlyList<PristonMaterial> materials)
+    {
+        HashSet<string> waterTextures = null;
+        foreach (var material in materials)
+        {
+            if (material.IsWater && !string.IsNullOrWhiteSpace(material.TextureName))
+            {
+                (waterTextures ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase)).Add(material.TextureName);
+            }
+        }
+
+        if (waterTextures is null)
+        {
+            return materials;
+        }
+
+        var result = new PristonMaterial[materials.Count];
+        for (var index = 0; index < materials.Count; index++)
+        {
+            var material = materials[index];
+            var shore = !material.IsWater && !material.IsInvisible && material.Transparency > 0f
+                && (material.MeshState & StageCollisionReader.CheckFace) == 0 && waterTextures.Contains(material.TextureName);
+            result[index] = shore ? material with { SurfaceFlags = material.SurfaceFlags | PristonMaterialSurfaceFlags.Water } : material;
+        }
+
+        return result;
+    }
+
     public PristonModel ReadModel(string path)
     {
         if (_cache != null)
@@ -113,7 +144,7 @@ public sealed class PristonSmdReader
         var areaPayload = ReadStageAreaIndex(data, cursor.Position, stage.OccupiedAreaCells, stage.FaceCount, path);
         return new PristonStage(
             path,
-            materialGroup.Materials,
+            WithShoreWater(materialGroup.Materials),
             vertices,
             faces,
             textureLinks,

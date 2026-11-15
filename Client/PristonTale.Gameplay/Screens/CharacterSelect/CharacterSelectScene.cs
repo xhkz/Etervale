@@ -26,12 +26,12 @@ internal sealed class CharacterSelectScene
 
     private static readonly (float X, float Z)[] SixUserCharacterPositions =
     [
-        (-18f, -110f),
-        (18f, -110f),
-        (-53f, -85f),
-        (53f, -85f),
-        (-88f, -55f),
-        (88f, -55f),
+        (-16f, -115f),
+        (16f, -115f),
+        (-46f, -98f),
+        (46f, -98f),
+        (-74f, -78f),
+        (74f, -78f),
     ];
 
     // The job lineup stands from -90 to 90: five classes 45 apart, six 36 apart; the two at the ends stand 10 nearer.

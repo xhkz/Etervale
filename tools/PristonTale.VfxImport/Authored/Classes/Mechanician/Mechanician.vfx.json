@@ -1709,6 +1709,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.lightning",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -1993,6 +2002,15 @@
         ],
         "turn": true,
         "stopWithParent": false
+      },
+      {
+        "effect": "vfx.common.summon",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },

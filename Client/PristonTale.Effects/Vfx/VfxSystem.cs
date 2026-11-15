@@ -442,7 +442,9 @@ public sealed class VfxInstance
         {
             var state = ComponentStates[index];
             var source = state.Component.Source;
-            if (source.Follow || !state.Anchored)
+            // A component at the effect's own point sits on the group's parent, as in the original effect groups: it
+            // moves with a followed or travelling effect (an aura's model on its holder).
+            if (source.Follow || source.Anchor == VfxAnchor.Point || !state.Anchored)
             {
                 state.Anchor = AnchorPosition(source.Anchor, source.Bone, Vector3.Zero, anchors);
                 state.Anchored = true;

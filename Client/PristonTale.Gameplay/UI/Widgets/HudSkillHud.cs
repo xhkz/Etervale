@@ -445,12 +445,22 @@ public sealed class HudSkillHud : IDisposable
             return;
         }
 
-        // The sweep drains from the top as the gauge refills, like the original's mastery gauge.
+        // The sweep drains from the top of the round button as the gauge refills, like the original's mastery gauge; its
+        // edge is the circle's chord at the shade's last row.
         var shade = (int)MathF.Ceiling(bounds.Height * fraction);
-        painter.ColorBox(new Rectangle(bounds.X, bounds.Y, bounds.Width, shade), 0, 0, 0, 160);
-        painter.ColorBox(new Rectangle(bounds.X, bounds.Y + shade - 1, bounds.Width, 1), 255, 220, 120, 200);
+        painter.DiscTop(bounds, shade, Color.FromNonPremultiplied(0, 0, 0, 160));
+        var chord = ChordWidth(bounds.Width, shade - 0.5f);
+        painter.ColorBox(new Rectangle(bounds.Center.X - chord / 2, bounds.Y + shade - 1, chord, 1), 255, 220, 120, 200);
         var seconds = (int)Math.Ceiling(cooldowns.RemainingMs(skillCode, nowMs) / 1000d);
         painter.TextCentered(_seconds[Math.Clamp(seconds, 0, _seconds.Length - 1)], bounds.X, bounds.Right, bounds.Y + 13, new Color(255, 240, 200));
+    }
+
+    // The width of a circle of this diameter at this depth from its top, in whole pixels.
+    internal static int ChordWidth(int diameter, float depth)
+    {
+        var radius = diameter / 2f;
+        var offset = Math.Clamp(depth, 0f, diameter) - radius;
+        return (int)MathF.Round(2f * MathF.Sqrt(MathF.Max(0f, radius * radius - offset * offset)));
     }
 
     private string Icon(uint code)

@@ -880,5 +880,3015 @@
         ]
       }
     ]
+  },
+  {
+    "name": "vfx.common.strike.blood",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              14
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              46
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.65,
+              0.625,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.15,
+              0.125,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.45,
+          0.45
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.65,
+              0.625,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.15,
+              0.125,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 28,
+        "maxParticles": 28,
+        "lifetime": [
+          0.3,
+          0.6
+        ],
+        "speed": [
+          180,
+          340
+        ],
+        "spread": 180,
+        "drag": 2.2,
+        "gravity": [
+          0,
+          -160,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.035,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.65,
+              0.625,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.15,
+              0.125,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          1.0,
+          0.3,
+          0.25
+        ],
+        "power": 200,
+        "decay": 6
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.strike.fire",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              14
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              46
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.775,
+              0.59,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.275,
+              0.09,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.45,
+          0.45
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.775,
+              0.59,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.275,
+              0.09,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 28,
+        "maxParticles": 28,
+        "lifetime": [
+          0.3,
+          0.6
+        ],
+        "speed": [
+          180,
+          340
+        ],
+        "spread": 180,
+        "drag": 2.2,
+        "gravity": [
+          0,
+          -160,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.035,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.775,
+              0.59,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.275,
+              0.09,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          1.0,
+          0.55,
+          0.18
+        ],
+        "power": 200,
+        "decay": 6
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.strike.holy",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              14
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              46
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.94,
+              0.775,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.44,
+              0.275,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.45,
+          0.45
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.94,
+              0.775,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.44,
+              0.275,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 28,
+        "maxParticles": 28,
+        "lifetime": [
+          0.3,
+          0.6
+        ],
+        "speed": [
+          180,
+          340
+        ],
+        "spread": 180,
+        "drag": 2.2,
+        "gravity": [
+          0,
+          -160,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.035,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.94,
+              0.775,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.44,
+              0.275,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          1.0,
+          0.88,
+          0.55
+        ],
+        "power": 200,
+        "decay": 6
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.strike.lightning",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              14
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              46
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.775,
+              0.875,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.275,
+              0.375,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.45,
+          0.45
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.775,
+              0.875,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.275,
+              0.375,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 28,
+        "maxParticles": 28,
+        "lifetime": [
+          0.3,
+          0.6
+        ],
+        "speed": [
+          180,
+          340
+        ],
+        "spread": 180,
+        "drag": 2.2,
+        "gravity": [
+          0,
+          -160,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.035,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.775,
+              0.875,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.275,
+              0.375,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.55,
+          0.75,
+          1.0
+        ],
+        "power": 200,
+        "decay": 6
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.strike.poison",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              14
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              46
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.75,
+              1.0,
+              0.675,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.25,
+              0.5,
+              0.175,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.45,
+          0.45
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.75,
+              1.0,
+              0.675,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.25,
+              0.5,
+              0.175,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 28,
+        "maxParticles": 28,
+        "lifetime": [
+          0.3,
+          0.6
+        ],
+        "speed": [
+          180,
+          340
+        ],
+        "spread": 180,
+        "drag": 2.2,
+        "gravity": [
+          0,
+          -160,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.035,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.75,
+              1.0,
+              0.675,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.25,
+              0.5,
+              0.175,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.5,
+          1.0,
+          0.35
+        ],
+        "power": 200,
+        "decay": 6
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.strike.shadow",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              14
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              46
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.86,
+              0.71,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.36,
+              0.21,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.45,
+          0.45
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.86,
+              0.71,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.36,
+              0.21,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 28,
+        "maxParticles": 28,
+        "lifetime": [
+          0.3,
+          0.6
+        ],
+        "speed": [
+          180,
+          340
+        ],
+        "spread": 180,
+        "drag": 2.2,
+        "gravity": [
+          0,
+          -160,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.035,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.86,
+              0.71,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.36,
+              0.21,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.72,
+          0.42,
+          1.0
+        ],
+        "power": 200,
+        "decay": 6
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.strike.steel",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              14
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              46
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.925,
+              0.96,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.425,
+              0.46,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.45,
+          0.45
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.925,
+              0.96,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.425,
+              0.46,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 28,
+        "maxParticles": 28,
+        "lifetime": [
+          0.3,
+          0.6
+        ],
+        "speed": [
+          180,
+          340
+        ],
+        "spread": 180,
+        "drag": 2.2,
+        "gravity": [
+          0,
+          -160,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.035,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.925,
+              0.96,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.425,
+              0.46,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.85,
+          0.92,
+          1.0
+        ],
+        "power": 200,
+        "decay": 6
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.strike.wind",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              14
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              46
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.8,
+              1.0,
+              0.925,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.5,
+              0.425,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.45,
+          0.45
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.8,
+              1.0,
+              0.925,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.5,
+              0.425,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "burst": 28,
+        "maxParticles": 28,
+        "lifetime": [
+          0.3,
+          0.6
+        ],
+        "speed": [
+          180,
+          340
+        ],
+        "spread": 180,
+        "drag": 2.2,
+        "gravity": [
+          0,
+          -160,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.035,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.8,
+              1.0,
+              0.925,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.5,
+              0.425,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.6,
+          1.0,
+          0.85
+        ],
+        "power": 200,
+        "decay": 6
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.surge.wind",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.55,
+          0.55
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              70
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.8,
+              1.0,
+              0.925,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.5,
+              0.425,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.5,
+          0.5
+        ],
+        "intensity": 1.6,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              16
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              38
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              44
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.3,
+              0.5,
+              0.425,
+              1.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              0.8,
+              1.0,
+              0.925,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.5,
+              0.425,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:soft",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          4,
+          0
+        ],
+        "burst": 24,
+        "maxParticles": 24,
+        "lifetime": [
+          0.6,
+          1.0
+        ],
+        "shape": "Ring",
+        "radius": [
+          18,
+          30
+        ],
+        "speed": [
+          40,
+          90
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 10,
+        "drag": 0.5,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              1.5
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.8,
+              1.0,
+              0.925,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.5,
+              0.425,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.6,
+          1.0,
+          0.85
+        ],
+        "power": 170,
+        "decay": 5
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.surge.holy",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.55,
+          0.55
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              70
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.94,
+              0.775,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.44,
+              0.275,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.5,
+          0.5
+        ],
+        "intensity": 1.6,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              16
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              38
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              44
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.5,
+              0.44,
+              0.275,
+              1.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              1.0,
+              0.94,
+              0.775,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.44,
+              0.275,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:soft",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          4,
+          0
+        ],
+        "burst": 24,
+        "maxParticles": 24,
+        "lifetime": [
+          0.6,
+          1.0
+        ],
+        "shape": "Ring",
+        "radius": [
+          18,
+          30
+        ],
+        "speed": [
+          40,
+          90
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 10,
+        "drag": 0.5,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              1.5
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.94,
+              0.775,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.44,
+              0.275,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          1.0,
+          0.88,
+          0.55
+        ],
+        "power": 170,
+        "decay": 5
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.surge.ice",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.55,
+          0.55
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              70
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.8,
+              0.95,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.45,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.5,
+          0.5
+        ],
+        "intensity": 1.6,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              16
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              38
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              44
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.3,
+              0.45,
+              0.5,
+              1.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              0.8,
+              0.95,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.45,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:soft",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          4,
+          0
+        ],
+        "burst": 24,
+        "maxParticles": 24,
+        "lifetime": [
+          0.6,
+          1.0
+        ],
+        "shape": "Ring",
+        "radius": [
+          18,
+          30
+        ],
+        "speed": [
+          40,
+          90
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 10,
+        "drag": 0.5,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              1.5
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.8,
+              0.95,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.3,
+              0.45,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.6,
+          0.9,
+          1.0
+        ],
+        "power": 170,
+        "decay": 5
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.surge.steel",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.55,
+          0.55
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              70
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.925,
+              0.96,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.425,
+              0.46,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.5,
+          0.5
+        ],
+        "intensity": 1.6,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              16
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              38
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              44
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.425,
+              0.46,
+              0.5,
+              1.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              0.925,
+              0.96,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.425,
+              0.46,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:soft",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          4,
+          0
+        ],
+        "burst": 24,
+        "maxParticles": 24,
+        "lifetime": [
+          0.6,
+          1.0
+        ],
+        "shape": "Ring",
+        "radius": [
+          18,
+          30
+        ],
+        "speed": [
+          40,
+          90
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 10,
+        "drag": 0.5,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              1.5
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.925,
+              0.96,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.425,
+              0.46,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.85,
+          0.92,
+          1.0
+        ],
+        "power": 170,
+        "decay": 5
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.surge.earth",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.55,
+          0.55
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              70
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.875,
+              0.69,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.375,
+              0.19,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.5,
+          0.5
+        ],
+        "intensity": 1.6,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              16
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              38
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              44
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.5,
+              0.375,
+              0.19,
+              1.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              1.0,
+              0.875,
+              0.69,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.375,
+              0.19,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:soft",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          4,
+          0
+        ],
+        "burst": 24,
+        "maxParticles": 24,
+        "lifetime": [
+          0.6,
+          1.0
+        ],
+        "shape": "Ring",
+        "radius": [
+          18,
+          30
+        ],
+        "speed": [
+          40,
+          90
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 10,
+        "drag": 0.5,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              1.5
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.875,
+              0.69,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.375,
+              0.19,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          1.0,
+          0.75,
+          0.38
+        ],
+        "power": 170,
+        "decay": 5
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.summon",
+    "duration": 2.0,
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.8,
+          0.8
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              90
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              20
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.9,
+              0.65,
+              0.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              1.0,
+              0.95,
+              0.8,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6,
+              0.45,
+              0.2,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          40,
+          0
+        ],
+        "delay": 0.5,
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.5,
+          0.5
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              20
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              60
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              70
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.95,
+              0.8,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6,
+              0.45,
+              0.2,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:soft",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          4,
+          0
+        ],
+        "burst": 40,
+        "maxParticles": 40,
+        "lifetime": [
+          0.7,
+          1.2
+        ],
+        "shape": "Ring",
+        "radius": [
+          30,
+          60
+        ],
+        "speed": [
+          60,
+          140
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 8,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              4.5
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              1.5
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              1.0,
+              0.95,
+              0.8,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6,
+              0.45,
+              0.2,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Caster",
+        "offset": [
+          0,
+          40,
+          0
+        ],
+        "color": [
+          1.0,
+          0.9,
+          0.65
+        ],
+        "power": 220,
+        "decay": 4,
+        "delay": 0.5
+      }
+    ]
+  },
+  {
+    "name": "vfx.common.surge.shadow",
+    "duration": 1.5,
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.55,
+          0.55
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.5,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              10
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              70
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.86,
+              0.71,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.36,
+              0.21,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.5,
+          0.5
+        ],
+        "intensity": 1.6,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              16
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              38
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              44
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.36,
+              0.21,
+              0.5,
+              1.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              0.86,
+              0.71,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.36,
+              0.21,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:soft",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          4,
+          0
+        ],
+        "burst": 24,
+        "maxParticles": 24,
+        "lifetime": [
+          0.6,
+          1.0
+        ],
+        "shape": "Ring",
+        "radius": [
+          18,
+          30
+        ],
+        "speed": [
+          40,
+          90
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 10,
+        "drag": 0.5,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              4
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              1.5
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.86,
+              0.71,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.36,
+              0.21,
+              0.5,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Caster",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.72,
+          0.42,
+          1.0
+        ],
+        "power": 170,
+        "decay": 5
+      }
+    ]
   }
 ]

@@ -31,6 +31,8 @@ public sealed class HudPainter : IDisposable
     private readonly float _capCropping;
     private (float Capitals, float Descent)? _letterHeights;
     private Matrix _transform = Matrix.Identity;
+    private int _scale = 1;
+    private Texture2D _disc;
     private bool _active;
 
     public HudPainter(SpriteBatch batch, SpriteFont font, HudSprites sprites)
@@ -50,7 +52,8 @@ public sealed class HudPainter : IDisposable
     public void Begin(HudLayout layout)
     {
         _text.Clear();
-        _transform = Matrix.CreateScale(Math.Max(1, layout.Scale));
+        _scale = Math.Max(1, layout.Scale);
+        _transform = Matrix.CreateScale(_scale);
         BeginSprites();
     }
 
@@ -185,6 +188,26 @@ public sealed class HudPainter : IDisposable
         {
             _batch.Draw(_white, bounds, premultiplied);
         }
+    }
+
+    // The top rows of the disc inscribed in a square (a round socket's cooldown shade). The disc is built at the square's
+    // drawn size, as the HUD samples by point, and kept until that size changes.
+    public void DiscTop(Rectangle square, int height, Color premultiplied)
+    {
+        height = Math.Min(height, square.Height);
+        if (square.Width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        var size = square.Width * _scale;
+        if (_disc is null || _disc.Width != size)
+        {
+            _disc?.Dispose();
+            _disc = DiscTexture(_batch.GraphicsDevice, size);
+        }
+
+        _batch.Draw(_disc, new Rectangle(square.X, square.Y, square.Width, height), new Rectangle(0, 0, size, height * _scale), premultiplied);
     }
 
     // Original colour box fills are straight RGBA.
@@ -489,6 +512,26 @@ public sealed class HudPainter : IDisposable
         return texture;
     }
 
+    private static Texture2D DiscTexture(GraphicsDevice device, int size)
+    {
+        var pixels = new Color[size * size];
+        var radius = size / 2f;
+        for (var y = 0; y < size; y++)
+        {
+            for (var x = 0; x < size; x++)
+            {
+                var dx = x + 0.5f - radius;
+                var dy = y + 0.5f - radius;
+                var coverage = Math.Clamp(radius - MathF.Sqrt(dx * dx + dy * dy) + 0.5f, 0f, 1f);
+                pixels[y * size + x] = Color.White * coverage;
+            }
+        }
+
+        var texture = new Texture2D(device, size, size, false, SurfaceFormat.Color);
+        texture.SetData(pixels);
+        return texture;
+    }
+
     private void BeginSprites()
     {
         _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None,
@@ -502,5 +545,6 @@ public sealed class HudPainter : IDisposable
         _nameBox.Dispose();
         _nameBoxHighlighted.Dispose();
         _clanMark.Dispose();
+        _disc?.Dispose();
     }
 }

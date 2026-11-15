@@ -17,9 +17,27 @@ internal static class GroundTraversalTests
     {
         yield return ("ground traversal rejects overhead roofs and stays below stacked floors", OverheadAsync);
         yield return ("ground traversal climbs connected ramps and blocks unsupported steps", ContinuityAsync);
+        yield return ("ground traversal stops at a low wall too high to step onto, not under a roof or on a step", LowWallAsync);
         yield return ("collision DDA ray and segment queries do not allocate per call", CollisionQueriesDoNotAllocateAsync);
         yield return ("player visual position restores the original two-unit floor offset", PlayerVisualPositionAsync);
         yield return ("a player above its floor falls eight units a frame and lands with the original motions", FallAsync);
+    }
+
+    private static Task LowWallAsync()
+    {
+        // The floor runs on under a wall whose top is above the step but below the wall probe.
+        GroundFloorQuery Wall(float top) => (Vector3 position, float reference, out float height) =>
+        {
+            var onWall = position.X is >= 20f and <= 30f && top <= reference + GroundTraversal.StepUp;
+            height = onWall ? top : 0f;
+            return true;
+        };
+
+        Assert.True(!GroundTraversal.TryFollow(Vector3.Zero, new Vector2(60f, 0f), Wall(20f), out var stopped), "walked through a 20-unit wall");
+        Assert.True(stopped.X < 20f && stopped.Y == 0f, $"stopped at {stopped}, inside the wall");
+        Assert.True(GroundTraversal.TryFollow(Vector3.Zero, new Vector2(60f, 0f), Wall(8f), out var stepped) && stepped.X == 60f, "an 8-unit step blocked");
+        Assert.True(GroundTraversal.TryFollow(Vector3.Zero, new Vector2(60f, 0f), Wall(40f), out var under) && under.Y == 0f, "a roof 40 up blocked");
+        return Task.CompletedTask;
     }
 
     private static Task FallAsync()

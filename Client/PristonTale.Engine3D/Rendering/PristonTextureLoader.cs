@@ -397,7 +397,36 @@ public sealed class PristonTextureLoader : IDisposable
     // A texture a model names with another extension than the one shipped is looked for under these, in its own folder.
     private static readonly string[] TextureExtensions = [".bmp", ".tga", ".jpg", ".jpeg"];
 
+    // Folders whose models name textures the shipped data keeps only in another folder: the opening's stage is built from
+    // Ricarten's pieces, the Stygian Lord's effect model wears the monster's skin. Asset-root relative, '/'-separated.
+    private static readonly (string Folder, string Source)[] BorrowedTextureFolders =
+    [
+        ("StartImage/Opening/Map", "Field/Ricarten"),
+        ("Effect/ObjAnimationData/Stygianlord", "char/monster/Monstygianlord")
+    ];
+
+    // The texture in the model's folder, else in the folder its textures are borrowed from; empty when neither has it.
     internal static string ResolvePath(string directory, string name)
+    {
+        var found = ResolveIn(directory, name);
+        if (found.Length > 0)
+        {
+            return found;
+        }
+
+        var folder = directory.Replace('\\', '/').TrimEnd('/');
+        foreach (var borrowed in BorrowedTextureFolders)
+        {
+            if (folder.EndsWith("/" + borrowed.Folder, StringComparison.OrdinalIgnoreCase))
+            {
+                return ResolveIn(AssetFiles.Combine(folder[..^borrowed.Folder.Length], borrowed.Source), name);
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static string ResolveIn(string directory, string name)
     {
         var named = AssetFiles.Combine(directory, name);
         var resolved = AssetFiles.Resolve(named);

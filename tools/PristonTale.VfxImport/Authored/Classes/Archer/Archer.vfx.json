@@ -272,6 +272,17 @@
         "decay": 1,
         "delay": 0.1429
       }
+    ],
+    "children": [
+      {
+        "effect": "vfx.common.surge.steel",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
     ]
   },
   {
@@ -425,6 +436,17 @@
         ],
         "endEffect": "vfx.archer.rage.hit"
       }
+    ],
+    "children": [
+      {
+        "effect": "vfx.common.strike.fire",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
     ]
   },
   {
@@ -531,6 +553,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.fire",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -627,6 +658,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.lightning",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -733,6 +773,17 @@
         "power": 100,
         "decay": 1,
         "delay": 0.1429
+      }
+    ],
+    "children": [
+      {
+        "effect": "vfx.common.surge.holy",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -1020,6 +1071,15 @@
         "turn": true,
         "delay": 0.5,
         "stopWithParent": false
+      },
+      {
+        "effect": "vfx.common.strike.wind",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -1056,6 +1116,17 @@
           0.2714
         ],
         "sized": true
+      }
+    ],
+    "children": [
+      {
+        "effect": "vfx.common.summon",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -1273,6 +1344,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.steel",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -1532,6 +1612,15 @@
         ],
         "turn": true,
         "stopWithParent": false
+      },
+      {
+        "effect": "vfx.common.strike.lightning",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   }

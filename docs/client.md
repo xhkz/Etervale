@@ -102,7 +102,8 @@ OpeningScreen --login ok--> CharacterSelectScreen --enter world ok--> GameplaySc
   (a login succeeded or the connection closed) the controller first calls `ScreenContext.RenewBackend`: `GameClient`
   installs a new `GameServerConnection` and disposes the old one off the game thread.
 - `CharacterSelectScreen`: sub-states `CharacterSelect`, `RaceSelect`, `JobSelect`, `FaceSelect`, `Name`. The roster
-  shows each character in its armour, empty-handed; the hovered one's box lists name, level, tribe and class, with its
+  shows each character in its armour, empty-handed, in the original's five places or, with six, in a V that keeps the
+  ends in front of the statues flanking the stage; the hovered one's box lists name, level, tribe and class, with its
   clan on a line above them for a character in one (the list's `ClanName`). `CharacterSelectCamera` dollies along the original's rail (300 to
   720 units per sub-state) with its vertical angle of pi / 4.4, whatever the settings' field of view; the stage is lit by
   an even ambient only, without lamps (`ConfigureLighting`). While a
@@ -318,6 +319,9 @@ The client owns its own locomotion; the server validates and corrects.
 - Click-to-move: `UpdatePlayerInput` advances `DestinationMovement` at `Locomotion` walk/run speed derived from the
   server-reported move speed (local derived stats until the first self state), slides against field collision
   (`MoveWithCollision`) and entity neighbours (`ResolveEntityCollision`) and follows the floor (`GroundTraversal`).
+  The floor is followed in 4-unit samples: a sample stops the body where the floor rises more than `StepUp` (10), or
+  where a floor tops out between `StepUp` and the wall probe's height (`FieldTerrain.BodyProbeHeight`, 30) above the
+  feet: a low wall the probe passes over, whose floor beneath would otherwise carry the body through it.
   Target reachability is checked with `GroundTraversal.CanReachSurface`.
 - Reports: `UpdateMovementReport` sends `MovementReport` (position in PT-global, facing, moving, running, action target,
   field code) every 200 ms while moving, every 1000 ms idle, and at once when motion, run mode, target or field

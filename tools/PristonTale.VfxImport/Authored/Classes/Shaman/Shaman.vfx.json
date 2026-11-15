@@ -441,6 +441,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.shadow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },

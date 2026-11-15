@@ -79,6 +79,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.blood",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -583,6 +592,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.blood",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },

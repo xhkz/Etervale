@@ -162,7 +162,7 @@
       "damageMin": [80, 85, 90, 95, 100, 105, 110, 115, 120, 125], "damageMax": [95, 100, 105, 110, 115, 120, 125, 130, 135, 140],
       "attackRating": [500, 550, 600, 650, 700, 750, 800, 850, 900, 950], "life": [2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800] },
     "motionIndex": 69, "motionFrames": 50, "motionEvents": [36], "motionSpeed": 80,
-    "castEffect": "vfx.magician.castcircle", "castSound": "wav/Effects/Skill/Morion/FireElemental 01.wav", "keepIcon": "Mg4_F_ELEMENTAL"
+    "castEffect": "vfx.magician.castcircle", "impactEffect": "vfx.common.summon", "castSound": "wav/Effects/Skill/Morion/FireElemental 01.wav", "keepIcon": "Mg4_F_ELEMENTAL"
   },
   {
     "code": "0x08080002", "name": "Flame Wave", "tier": "Job4", "category": "AreaAttack", "icon": "MM63 F_Wave",
@@ -184,7 +184,7 @@
     "buff": { "durationTenths": [40, 60, 80, 100, 120, 140, 160, 180, 200, 220], "control": "Slow", "harmful": true,
       "modifiers": [{ "stat": "MoveSpeed", "op": "Percent", "values": [-10, -12, -14, -16, -17, -19, -21, -23, -25, -27] }] },
     "motionIndex": 68, "motionFrames": 50, "motionEvents": [26], "motionSpeed": 80,
-    "castEffect": "vfx.magician.castcircle", "castSound": "wav/Effects/Skill/Morion/Distortion 01.wav", "keepIcon": "Mg4_DISTORTION",
+    "castEffect": "vfx.magician.castcircle", "impactEffect": "vfx.common.surge.shadow", "castSound": "wav/Effects/Skill/Morion/Distortion 01.wav", "keepIcon": "Mg4_DISTORTION",
       "statusLook": "Distortion" },
   {
     "code": "0x08080004", "name": "Meteo", "tier": "Job4", "category": "AreaAttack", "icon": "MM70 Meteo",

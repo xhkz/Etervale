@@ -134,6 +134,11 @@ internal static class CharacterSelectTests
         var sixLeft = CharacterSelectScene.UserCharacterPosition(CharacterSlots.Maximum, 0);
         var sixRight = CharacterSelectScene.UserCharacterPosition(CharacterSlots.Maximum, 1);
         Assert.True(sixLeft.X == -sixRight.X && sixLeft.Z == sixRight.Z, "six-character extension is not balanced");
+        // The statues flanking the stage hide anything wider than the original fifth slot at its depth; the sixth
+        // character's ends stand inside it and nearer the camera.
+        var fifth = CharacterSelectScene.UserCharacterPosition(5, 4);
+        var sixEnd = CharacterSelectScene.UserCharacterPosition(CharacterSlots.Maximum, CharacterSlots.Maximum - 1);
+        Assert.True(MathF.Abs(sixEnd.X) <= MathF.Abs(fifth.X) + 5f && sixEnd.Z < fifth.Z, $"six-character end {sixEnd} stands behind the statues");
         Assert.True(
             CharacterSelectScene.JobClassForBrood(CharacterBrood.Tempskron, 0) == PlayerClass.Mechanician &&
             CharacterSelectScene.JobClassForBrood(CharacterBrood.Tempskron, 3) == PlayerClass.Archer &&

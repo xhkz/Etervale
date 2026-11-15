@@ -202,7 +202,7 @@
       "attackRatingPercent": [30, 45, 60, 75, 90, 105, 120, 135, 150, 165],
       "damage": {"attackPower": true, "percent": [80, 95, 110, 125, 140, 155, 170, 185, 200, 215], "noCritical": true},
       "motionIndex": 108, "motionFrames": 77, "motionEvents": [50], "castEffect": "vfx.atalanta.galaxycoup.cast",
-      "castSound": "wav/Effects/Skill/Tempskron/Jumping_Crash 01.wav", "impactSound": "wav/Effects/Skill/Tempskron/Scout_Hawk 01.wav" },
+      "impactEffect": "vfx.atalanta.galaxycoup.hit", "castSound": "wav/Effects/Skill/Tempskron/Jumping_Crash 01.wav", "impactSound": "wav/Effects/Skill/Tempskron/Scout_Hawk 01.wav" },
     { "code": "0x06100003", "name": "Summon Arcuda", "tier": "Job5", "category": "Summon", "icon": "MA86 S_Arcuda", "description": "Summons Arcuda.", "requiredLevel": 86, "mouse": "Right", "mana": [73, 75, 77, 80, 83, 86, 90, 94, 98, 102], "stamina": [95, 2], "weapons": [],
       "kind": "Summon", "target": "Self", "masteryBase": 720, "masteryPerRank": 0, "exclusive": ["0x06100003"],
       "summon": { "monster": "Arcuda", "lifetimeMs": 355000, "damageMin": [120, 130, 140, 150, 160, 170, 180, 190, 200, 210],

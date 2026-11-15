@@ -16,9 +16,26 @@ internal static class MaterialAdapterTests
         yield return ("material adapter makes darkening blends colour factors", ColorFactorAsync);
         yield return ("material adapter maps the second texture layer by operation and form state", LayerAsync);
         yield return ("material adapter gives water and shine their own roughness, slippery floor the ground's", SurfaceKindsAsync);
+        yield return ("a translucent shore strip of a water surface's texture becomes water; solid and other surfaces do not", ShoreWaterAsync);
         yield return ("two-sided alpha-tested lit materials transmit light as foliage", FoliageAsync);
         yield return ("late-flagged opaque cut-outs stay in the alpha-tested queue", LateCutoutAsync);
         yield return ("scenery models take the stage's authored light for their texture", StageBakedLightAsync);
+    }
+
+    private static Task ShoreWaterAsync()
+    {
+        var water = StageMaterial(flags: PristonMaterialSurfaceFlags.Water) with { TextureName = "wa01.bmp", Transparency = 0.5f };
+        var shore = water with { SurfaceFlags = PristonMaterialSurfaceFlags.None, TextureName = "WA01.BMP" };
+        var solid = shore with { MeshState = 1 };
+        var opaque = shore with { Transparency = 0f };
+        var hidden = shore with { SurfaceFlags = PristonMaterialSurfaceFlags.Invisible };
+        var other = shore with { TextureName = "sand.bmp" };
+        var result = PristonSmdReader.WithShoreWater([water, shore, solid, opaque, hidden, other]);
+        Assert.True(result[0].IsWater && result[1].IsWater, "the shore strip of the water's texture is not water");
+        Assert.True(!result[2].IsWater && !result[3].IsWater && !result[4].IsWater && !result[5].IsWater,
+            "a solid, opaque, invisible or other-textured surface became water");
+        Assert.True(!PristonSmdReader.WithShoreWater([shore])[0].IsWater, "a stage without water gained some");
+        return Task.CompletedTask;
     }
 
     private static Task FoliageAsync()

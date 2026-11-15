@@ -618,6 +618,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.steel",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -635,6 +644,15 @@
         ],
         "turn": true,
         "follow": true
+      },
+      {
+        "effect": "vfx.common.strike.holy",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -684,6 +702,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.steel",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -700,7 +727,7 @@
           0
         ],
         "local": true,
-        "rate": 7,
+        "rate": 12,
         "maxParticles": 64,
         "lifetime": [
           0.8,
@@ -726,13 +753,13 @@
           {
             "t": 0,
             "v": [
-              4
+              7
             ]
           },
           {
             "t": 1,
             "v": [
-              1.6
+              2.5
             ]
           }
         ],
@@ -764,6 +791,17 @@
               0
             ]
           }
+        ]
+      }
+    ],
+    "children": [
+      {
+        "effect": "vfx.common.surge.wind",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          0,
+          0
         ]
       }
     ]
@@ -798,6 +836,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.shadow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },

@@ -8,6 +8,8 @@ public static class GroundTraversal
 {
     public const float StepUp = Simulation.World.FieldTerrain.StepUp;
     public const float VisualOffset = 2f;
+    // The wall probe's height above the feet: a floor between StepUp and this tops an obstacle the probe passes over.
+    private const float ObstacleTop = Simulation.World.FieldTerrain.BodyProbeHeight;
     private const float SampleDistance = 4f;
     private const int MaximumSamples = 1024;
 
@@ -38,6 +40,12 @@ public static class GroundTraversal
             var planar = Vector2.Lerp(start, destination, sample / (float)samples);
             var proposed = new Vector3(planar.X, reached.Y, planar.Y);
             if (!floor(proposed, reached.Y, out var height) || !float.IsFinite(height) || height - reached.Y > StepUp)
+            {
+                return false;
+            }
+
+            // The top of a low wall or a ledge too high to step onto: the floor under it would carry the body through it.
+            if (floor(proposed, reached.Y + ObstacleTop - StepUp, out var top) && top - reached.Y > StepUp)
             {
                 return false;
             }

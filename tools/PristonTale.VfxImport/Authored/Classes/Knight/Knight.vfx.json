@@ -31,7 +31,8 @@
         "end": "LastFrame",
         "fadeOut": 0.2857,
         "every": 0.0143,
-        "everyEffect": "vfx.knight.swordblast.spark"
+        "everyEffect": "vfx.knight.swordblast.spark",
+        "endEffect": "vfx.common.strike.steel"
       }
     ],
     "lights": [
@@ -326,6 +327,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.strike.steel",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -1117,6 +1127,18 @@
         ],
         "fade": "Fall",
         "carryEffect": "vfx.knight.piercing.wake"
+      }
+    ],
+    "children": [
+      {
+        "effect": "vfx.common.strike.holy",
+        "anchor": "Target",
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "delay": 0.15
       }
     ]
   },

@@ -558,6 +558,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.surge.holy",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -1412,6 +1421,15 @@
           0
         ],
         "turn": true
+      },
+      {
+        "effect": "vfx.common.surge.ice",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   },
@@ -2076,9 +2094,320 @@
         "anchor": "Point",
         "offset": [
           0,
-          19.5312,
+          24,
           0
+        ],
+        "size": [
+          70,
+          70
         ]
+      },
+      {
+        "shape": "Ground",
+        "texture": "Effect/ImageData/SkillSilraphim/Particle2.bmp",
+        "anchor": "Point",
+        "offset": [
+          0,
+          2,
+          0
+        ],
+        "turn": false,
+        "size": [
+          60,
+          60
+        ],
+        "growth": 160,
+        "spin": 240,
+        "color": [
+          160,
+          255,
+          255,
+          255
+        ],
+        "lifetime": [
+          0.9,
+          0.9
+        ],
+        "fade": "InOut",
+        "fadeIn": 0.08,
+        "fadeOut": 0.5
+      },
+      {
+        "texture": "Effect/ImageData/SkillSilraphim/Particle1.bmp",
+        "anchor": "Point",
+        "offset": [
+          0,
+          6,
+          0
+        ],
+        "count": 10,
+        "ring": [
+          20,
+          60
+        ],
+        "ringRandom": true,
+        "rise": [
+          60,
+          110
+        ],
+        "gravity": [
+          -40,
+          -20
+        ],
+        "size": [
+          14,
+          22
+        ],
+        "lifetime": [
+          0.6,
+          0.9
+        ],
+        "delayRandom": 0.12,
+        "fade": "Fall"
+      }
+    ],
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Point",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.55,
+          0.55
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.6,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              12
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              110
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.35,
+              0.95,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.1,
+              0.5,
+              0.9,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Point",
+        "offset": [
+          0,
+          3,
+          0
+        ],
+        "delay": 0.12,
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.5,
+          0.5
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.2,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              8
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              80
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.6,
+              1.0,
+              1.0,
+              0.9
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.2,
+              0.6,
+              1.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:spark",
+        "anchor": "Point",
+        "offset": [
+          0,
+          24,
+          0
+        ],
+        "burst": 36,
+        "maxParticles": 36,
+        "lifetime": [
+          0.35,
+          0.65
+        ],
+        "speed": [
+          160,
+          320
+        ],
+        "spread": 180,
+        "drag": 2.5,
+        "gravity": [
+          0,
+          -120,
+          0
+        ],
+        "align": "Velocity",
+        "stretch": 0.03,
+        "intensity": 2.0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              2.2
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.6
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.6,
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.1,
+              0.6,
+              1.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Point",
+        "offset": [
+          0,
+          24,
+          0
+        ],
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.35,
+          0.35
+        ],
+        "intensity": 2.2,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              18
+            ]
+          },
+          {
+            "t": 0.3,
+            "v": [
+              34
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              40
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.5,
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.1,
+              0.5,
+              1.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Point",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.3,
+          0.9,
+          1.0
+        ],
+        "power": 240,
+        "decay": 6
       }
     ]
   },
@@ -2087,13 +2416,382 @@
     "duration": 2.0,
     "parts": [
       {
+        "shape": "Beam",
+        "texture": "Effect/ImageData/SkillVisTenus/Particle2.bmp",
+        "color": [
+          200,
+          160,
+          255,
+          255
+        ],
+        "anchor": "Caster",
+        "bone": "Bip01 R Hand",
+        "goal": "Target",
+        "goalOffset": [
+          0,
+          28,
+          0
+        ],
+        "width": [
+          10,
+          10
+        ],
+        "lifetime": [
+          0.8,
+          0.8
+        ],
+        "fade": "InOut",
+        "fadeIn": 0.05,
+        "fadeOut": 0.45,
+        "follow": true
+      },
+      {
+        "shape": "Beam",
+        "texture": "builtin:beam",
+        "color": [
+          235,
+          215,
+          255,
+          255
+        ],
+        "anchor": "Caster",
+        "bone": "Bip01 R Hand",
+        "goal": "Target",
+        "goalOffset": [
+          0,
+          28,
+          0
+        ],
+        "width": [
+          3.5,
+          3.5
+        ],
+        "lifetime": [
+          0.8,
+          0.8
+        ],
+        "fade": "InOut",
+        "fadeIn": 0.05,
+        "fadeOut": 0.45,
+        "follow": true
+      },
+      {
         "animation": "SkillVisTenus1.ini",
-        "anchor": "Point",
+        "anchor": "Target",
         "offset": [
           0,
-          0,
+          28,
           0
+        ],
+        "size": [
+          56,
+          56
+        ],
+        "follow": true
+      },
+      {
+        "texture": "Effect/ImageData/SkillVisTenus/Particle1.bmp",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "count": 16,
+        "shell": [
+          34,
+          26,
+          34
+        ],
+        "goal": "Target",
+        "goalOffset": [
+          0,
+          28,
+          0
+        ],
+        "speed": 70,
+        "reach": 4,
+        "end": "Vanish",
+        "size": [
+          14,
+          20
+        ],
+        "color": [
+          225,
+          190,
+          255,
+          255
+        ],
+        "delayRandom": 0.25,
+        "fade": "Rise"
+      }
+    ],
+    "emitters": [
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          48,
+          0
+        ],
+        "local": true,
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.7,
+          0.7
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.4,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              44
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              4
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.75,
+              0.5,
+              1.0,
+              0.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              0.75,
+              0.5,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.3,
+              1.0,
+              0.0
+            ]
+          }
         ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          26,
+          0
+        ],
+        "local": true,
+        "delay": 0.12,
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.7,
+          0.7
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.4,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              40
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              4
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.75,
+              0.5,
+              1.0,
+              0.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              0.75,
+              0.5,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.3,
+              1.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:ring",
+        "anchor": "Target",
+        "offset": [
+          0,
+          4,
+          0
+        ],
+        "local": true,
+        "delay": 0.24,
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.7,
+          0.7
+        ],
+        "align": "Ground",
+        "softness": 0,
+        "intensity": 1.4,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              36
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              4
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.75,
+              0.5,
+              1.0,
+              0.0
+            ]
+          },
+          {
+            "t": 0.2,
+            "v": [
+              0.75,
+              0.5,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.5,
+              0.3,
+              1.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "texture": "builtin:glow",
+        "anchor": "Target",
+        "offset": [
+          0,
+          28,
+          0
+        ],
+        "local": true,
+        "burst": 1,
+        "maxParticles": 1,
+        "lifetime": [
+          0.75,
+          0.75
+        ],
+        "intensity": 2.0,
+        "softness": 0,
+        "size": [
+          {
+            "t": 0,
+            "v": [
+              26
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              5
+            ]
+          }
+        ],
+        "color": [
+          {
+            "t": 0,
+            "v": [
+              0.8,
+              0.55,
+              1.0,
+              0.0
+            ]
+          },
+          {
+            "t": 0.15,
+            "v": [
+              0.8,
+              0.55,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "t": 1,
+            "v": [
+              0.55,
+              0.35,
+              1.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "anchor": "Target",
+        "offset": [
+          0,
+          30,
+          0
+        ],
+        "color": [
+          0.7,
+          0.45,
+          1.0
+        ],
+        "power": 180,
+        "decay": 5
       }
     ]
   },
@@ -2260,6 +2958,17 @@
         "orbitRadius": 16,
         "orbitSpeed": 153.8086,
         "orbitPhase": 247.5
+      }
+    ],
+    "children": [
+      {
+        "effect": "vfx.common.surge.earth",
+        "anchor": "Caster",
+        "offset": [
+          0,
+          0,
+          0
+        ]
       }
     ]
   }

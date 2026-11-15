@@ -16,6 +16,7 @@ internal static class ClientSettingsTests
         yield return ("settings write failures are observable without faulting gameplay", WriteFailureAsync);
         yield return ("frame pacing has no catch-up bursts and separates foreground limits", PacingAsync);
         yield return ("a texture named with another extension is found in the subfolder its name points to", TextureExtensionAsync);
+        yield return ("the opening's stage takes the textures its folder lacks from Ricarten", BorrowedTextureAsync);
         yield return ("--resolution sets the window size for one start, with --settings in any order, and refuses sizes the settings refuse", LaunchOptionsAsync);
     }
 
@@ -68,6 +69,36 @@ internal static class ClientSettingsTests
         finally
         {
             Directory.Delete(directory, recursive: true);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static Task BorrowedTextureAsync()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "priston-textures-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var opening = Path.Combine(root, "StartImage", "Opening", "Map");
+            var ricarten = Path.Combine(root, "Field", "Ricarten");
+            var other = Path.Combine(root, "Field", "forest");
+            Directory.CreateDirectory(opening);
+            Directory.CreateDirectory(ricarten);
+            Directory.CreateDirectory(other);
+            var own = Path.Combine(opening, "sea_0.bmp");
+            var borrowed = Path.Combine(ricarten, "riy-w017.bmp");
+            File.WriteAllBytes(own, []);
+            File.WriteAllBytes(Path.Combine(ricarten, "sea_0.bmp"), []);
+            File.WriteAllBytes(borrowed, []);
+            Assert.True(Path.GetFullPath(PristonTextureLoader.ResolvePath(opening, "riy-w017.bmp")) == Path.GetFullPath(borrowed),
+                "the opening's stage does not find a texture its folder lacks in Ricarten");
+            Assert.True(Path.GetFullPath(PristonTextureLoader.ResolvePath(opening, "sea_0.bmp")) == Path.GetFullPath(own),
+                "the opening's stage takes Ricarten's texture over its own");
+            Assert.True(PristonTextureLoader.ResolvePath(other, "riy-w017.bmp").Length == 0, "a field borrows textures it does not name");
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
         }
 
         return Task.CompletedTask;

@@ -492,29 +492,10 @@ public sealed partial class PristonRenderer
     private static Matrix[] BuildBindPoseTransforms(PristonModel model) =>
         new PristonModelAnimator(model).Evaluate(0f);
 
-    private static PristonMotionInfo SelectActorMotion(PristonActor actor)
+    private static PristonMotionInfo SelectActorMotion(PristonActor actor, bool holdOneShot)
     {
-        var info = actor.Info;
-        for (var i = PristonFormatConstants.CharacterMotionBase; i < info.Motions.Count; i++)
-        {
-            var motion = info.Motions[i];
-            if (motion.State == (uint)MotionCode.Stand && motion.Repeat != 0 && motion.EndFrame > motion.StartFrame)
-                return ApplyMotionFrameOffset(actor, motion);
-        }
-
-        for (var i = PristonFormatConstants.CharacterMotionBase; i < info.Motions.Count; i++)
-        {
-            var motion = info.Motions[i];
-            if (motion.Repeat != 0 && motion.EndFrame > motion.StartFrame)
-                return ApplyMotionFrameOffset(actor, motion);
-        }
-
-        for (var i = PristonFormatConstants.CharacterMotionBase; i < info.Motions.Count; i++)
-        {
-            var motion = info.Motions[i];
-            if (motion.EndFrame > motion.StartFrame)
-                return ApplyMotionFrameOffset(actor, motion);
-        }
+        if (PristonMotionSelection.Idle(actor.Info, holdOneShot) is { } idle)
+            return ApplyMotionFrameOffset(actor, idle);
 
         return new PristonMotionInfo(
             0,
@@ -533,11 +514,11 @@ public sealed partial class PristonRenderer
     {
         if (desiredMotion == MotionCode.Any)
         {
-            return SelectActorMotion(actor);
+            return SelectActorMotion(actor, holdOneShot: false);
         }
 
         var selected = PristonMotionSelection.Select(actor.Info, desiredMotion, context);
-        return selected is null ? SelectActorMotion(actor) : ApplyMotionFrameOffset(actor, selected);
+        return selected is null ? SelectActorMotion(actor, holdOneShot: true) : ApplyMotionFrameOffset(actor, selected);
     }
 
     private static PristonMotionInfo ApplyMotionFrameOffset(PristonActor actor, PristonMotionInfo motion)

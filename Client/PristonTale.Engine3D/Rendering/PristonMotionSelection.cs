@@ -45,6 +45,39 @@ public static class PristonMotionSelection
         return unrestricted ?? fallback;
     }
 
+    // The clip shown when no motion is asked for, or (holdOneShot) for a state the model has no clip for: its looping
+    // Stand, else any looping clip, else its first clip. Held, a one-shot clip stays on its first frame: the castle door's
+    // only clip is its collapse, which must not play while it stands and takes hits.
+    public static PristonMotionInfo Idle(PristonModelInfo info, bool holdOneShot)
+    {
+        PristonMotionInfo looping = null;
+        PristonMotionInfo first = null;
+        for (var index = PristonFormatConstants.CharacterMotionBase; index < info.Motions.Count; index++)
+        {
+            var motion = info.Motions[index];
+            if (motion.EndFrame <= motion.StartFrame)
+            {
+                continue;
+            }
+
+            if (motion.Repeat != 0 && motion.State == (uint)MotionCode.Stand)
+            {
+                return motion;
+            }
+
+            looping ??= motion.Repeat != 0 ? motion : null;
+            first ??= motion;
+        }
+
+        if (looping is not null || first is null)
+        {
+            return looping;
+        }
+
+        // One frame, not an empty range: the renderer plays an empty range as the whole timeline.
+        return holdOneShot ? first with { EndFrame = first.StartFrame + 1, Repeat = 0 } : first;
+    }
+
     // A skill clip is authored once per weapon group: the clips that share the indexed clip's state and skill tags differ
     // only in the weapons they list. Returns the sibling whose weapons include the context's, else the indexed clip.
     public static int SkillVariant(PristonModelInfo info, int motionIndex, PristonMotionContext context)

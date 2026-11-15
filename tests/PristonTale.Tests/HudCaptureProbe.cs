@@ -132,7 +132,8 @@ internal sealed class HudCaptureProbe : Game
         ProbeQuest Quest = ProbeQuest.None, bool Dead = false, bool FieldOpen = true, ProbeCarry Carry = ProbeCarry.None,
         ProbeHelp Help = ProbeHelp.None, bool TrainingEnter = false, bool FifthTier = false, bool SecondPage = false, bool Clan = false, ProbePlates Plates = ProbePlates.None, bool ClanPage = false,
         bool Siege = false, int CastleButton = -1, bool CastleChief = true, bool Bellatra = false, int BellatraButton = -1,
-        ProbeBellatraResult BellatraResult = ProbeBellatraResult.None, ProbeBellatraShow BellatraShow = ProbeBellatraShow.None, ProbeSiegeEnd SiegeEnd = ProbeSiegeEnd.None, bool Portuguese = false);
+        ProbeBellatraResult BellatraResult = ProbeBellatraResult.None, ProbeBellatraShow BellatraShow = ProbeBellatraShow.None, ProbeSiegeEnd SiegeEnd = ProbeSiegeEnd.None, bool Portuguese = false,
+        bool Cooldown = false);
 
     private static readonly Scenario[] Scenarios =
     [
@@ -182,6 +183,8 @@ internal sealed class HudCaptureProbe : Game
         new("skill-details-800", 800, 600, Keys.S, Hover.SkillNode),
         new("skill-basic-800", 800, 600, Keys.S, Hover.SkillBasic),
         new("skill-right-select-800", 800, 600, Keys.S, Learned: true, RightSelect: 1),
+        new("skill-cooldown-800", 800, 600, Keys.S, Learned: true, RightSelect: 1, Cooldown: true),
+        new("skill-cooldown-1600x1200-scale2", 1600, 1200, Keys.S, Learned: true, RightSelect: 1, Cooldown: true),
         new("skills-fighter-800", 800, 600, Keys.S, Class: PlayerClass.Fighter),
         new("skills-knight-800", 800, 600, Keys.S, Class: PlayerClass.Knight),
         new("skills-priestess-800", 800, 600, Keys.S, Class: PlayerClass.Priestess),
@@ -573,6 +576,15 @@ internal sealed class HudCaptureProbe : Game
                 _hud.Update(state, default, new MouseState(x, y, 0, ButtonState.Released, ButtonState.Released, ButtonState.Released,
                     ButtonState.Released, ButtonState.Released));
                 Console.WriteLine($"HUD {scenario.Name}: right socket {_hud.Bindings.RightSkillId:X8}");
+            }
+
+            if (scenario.Cooldown)
+            {
+                // The right socket's skill 60% into a ten-second cooldown that started at the clock's origin.
+                var cooldowns = new PristonTale.Gameplay.Effects.SkillCooldownBook();
+                cooldowns.Apply(new SkillCooldownSnapshot(null, [new SkillCooldownInfo(_hud.Bindings.RightSkillId, 6000, 10000)]), 0d);
+                _hud.Cooldowns = cooldowns;
+                _hud.SkillClockMs = 0d;
             }
 
             if (scenario.Quest == ProbeQuest.Confirm)

@@ -138,7 +138,10 @@ One element of a converted effect group with its own clock, loops and keyed even
 `spawnMin`/`spawnMax`, `count`, `rate`, `velocityMin`/`velocityMax`, `outward`, `beams`, and `events`
 `[t, kind Color|Size, ramp, value]`. A set event replaces the value; a ramp event is a target that the event before
 it moves towards, and the last step keeps going after the last ramp. Every loop restarts the events at 0 without
-resetting values. Particle pools hold at most 100 live particles.
+resetting values. Particle pools hold at most 100 live particles. A component anchored at the effect's own point
+(`Point`, every converted one) sits on the group's parent and is placed there every frame, so it moves with a followed
+child or a travelling effect (God Bless's shield, Force of Nature's light, the Assassin's Eye mark); one anchored on an
+entity is placed once unless it has `follow`. Its particles keep their world position.
 
 ### Sequence (`VfxSequenceDefinition`)
 
@@ -167,6 +170,8 @@ seconds; a zero lifetime lives as long as its animation, model clip or flight, o
 | Effects | `endEffect` (where a part arrives or its life ends), `everyEffect` every `every` seconds at each part, `carryEffect` (started at birth, moved with the part, stopped when it ends) |
 
 Use `carryEffect` for converted particle scripts that stream until stopped; `everyEffect` only for finite effects.
+An `animation` whose file lists no sizes draws at the part's `size` (10 by default), so give such a part its size;
+`SkillPresentationTests` refuses an effect made only of such parts at the default size, which shows a dot.
 
 ## Runtime: `VfxSystem`
 
@@ -396,7 +401,7 @@ converted scripts.
 | Storm Javelin | Per hit a rolling storm javelin with light strips flying ahead; twist burst on the target | `storm.javelin` |
 | X-Rage, Vengeance | Shots diving from above the caster (Vengeance: from the hand), each ending in a hit group | `xrage.cast`, `vengeance.cast` |
 | Talaria | A burst at the caster; a burst and an aura on the holder while active | `vfx.atalanta.talaria.*` |
-| Galaxy Coup | Particles at the caster and at the target | `vfx.atalanta.galaxycoup.cast` |
+| Galaxy Coup | Particles at the caster; at the hit a javelin of light falls on the target and bursts: a star flash, two rings spreading over the area, sparks, rising stars and a violet light, with the original target particles | `vfx.atalanta.galaxycoup.*` |
 | Summon Arcuda | Summoning particles at the caster | `vfx.atalanta.arcuda.cast` |
 | Snippy Fear | A particle javelin flying from the hand to the target at each throw | `vfx.atalanta.snippyfear.shot` |
 
@@ -419,8 +424,8 @@ Every active skill draws `vfx.priestess.castcircle` at the feet: the animated ci
 | Regeneration Field | The field model and particles while channelling | `regenfield.cast` |
 | Chain Lightning | A sky bolt at the hit; flickering beams between the chained targets | `chainlightning.cast`, `chainlightning.link` |
 | Summon Muspell | The spirit hovering above the caster with flames; its strikes | `muspell.*` |
-| Spirit Impact | Shockwave flashes at the caster and at the target | `vfx.priestess.spiritimpact.hit` |
-| Piercing Ice | Casting circle; an ice spear flying to the target and bursting | `vfx.priestess.piercingice.*` |
+| Spirit Impact | A crackling flash and ring at the caster; at the target a burst, two shock rings spreading to the area's radius, sparks, mist and blue light | `vfx.priestess.spiritimpact.hit` |
+| Piercing Ice | Casting circle; a glowing ice spear leaving a frost trail, bursting into shards, a ring, mist and cold light | `vfx.priestess.piercingice.*` |
 | Summon Ramiel | The angel model and its particles over the caster while active; hit particles and the hand's glow at each strike | `vfx.priestess.ramiel.*` |
 | Blessing Krishna | Casting circle; a burst and an aura while active | `vfx.priestess.krishna.*` |
 
@@ -442,8 +447,8 @@ Every cast draws `vfx.magician.castcircle` (the Magician's circle textures) unle
 | Fire Elemental, Distortion | The cast circle; distorted targets glow red-yellow and wobble | `castcircle`; `statusLook` Distortion |
 | Flame Wave | Five fire streams fanning ahead | `flamewave.wave` |
 | Meteo | Four burning meteors falling around the target, a burst where each lands, on each of the clip's two events | `meteo.fall`, `meteo.hit` |
-| Silraphim | Casting circle; the Silraphim flash at the target | `vfx.magician.castcircle`, `vfx.magician.silraphim.hit` |
-| Vis Tenus | The shrinking flash at the target, which draws at half its size while shrunk | `vfx.magician.vistenus.beam` |
+| Silraphim | Casting circle; at the target a cyan starburst with sparks and a glow, two shock rings spreading over the area, a spinning swirl on the ground and rising motes, and a cyan light | `vfx.magician.castcircle`, `vfx.magician.silraphim.hit` |
+| Vis Tenus | A violet beam from the staff hand to the target, the Vis Tenus flash on it, motes drawn in, a glow and three rings closing in around it from head to feet; the target draws at half its size while shrunk | `vfx.magician.vistenus.beam` |
 | Prima Ignis | Casting circle; the primal fire rolling ahead of the caster | `vfx.magician.primaignis.shot` |
 | Third Anima | Casting circle; five sigils orbiting the holder while active (Zenith's aura) | `vfx.magician.thirdanima.aura` |
 
@@ -517,6 +522,21 @@ staff; other classes strike with it. A glowing bow or javelin sheds about 3.5 sp
 0.7 s). The flying weapons and sparks go through `VfxRenderer.AddModel` and `AddBillboard`; `VfxContent.LoadModel` reads
 a model no effect definition names. A status naming a `shotEffect` (Frost Javelin) throws that effect from the weapon to
 the target instead of the javelin, which stays in the hand, and the shot ends in the effect's own hit.
+
+### Accents
+
+Skills whose own effect is small at play distance add a shared accent from `Common.vfx.json` as a child (or as the
+projectile's `endEffect`, or as the rule's `impactEffect` where the skill had none), so each accent is defined once:
+
+| Accent | Look | Skills |
+|---|---|---|
+| `vfx.common.strike.<element>` | At the target's feet: a flash, a ground ring spreading to 80, 28 sparks and a light | Arrow of Rage, Avalanche (and Evade Shot, Nature Splash), Circle Trap, Elemental Shot, Perforation; Running Hit, Stinger, Venom Thorn; Fire, Split, Twist, Lightning and Storm Javelin, Farina, Snippy Fear, Soul Sucker, X-Rage; Brutal Swing, Avenging Crash; Double Crash, Piercing, Soul Breaker, Sword Blast; Impulsion; Assassin Eye, Charging Strike, Chain Lance, Shadow Master; Haunt |
+| `vfx.common.surge.<element>` | Around the caster: a ground ring, a glow, motes rising from a ring and a light | Falcon, Golden Falcon; Shield Strike, Frost Javelin, Triumph of Valhalla; Vague; Zenith, Spirit Elemental, Third Anima, Distortion |
+| `vfx.common.summon` | A gold ground ring closing on the caster, a flash and rising motes | Recall Wolverine, Metal Golem, Fire Elemental |
+
+Elements: `fire`, `ice`, `lightning`, `holy`, `poison`, `shadow`, `wind`, `blood`, `steel`, `earth` (the colours are in
+the accent definitions). The `builtin:` sprites fade to zero inside their square (the beam across its width only), so
+large bright additive layers show no square edge or cut-off spark tip.
 
 ### Hit bursts and blood
 

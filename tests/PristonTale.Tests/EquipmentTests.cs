@@ -158,6 +158,16 @@ internal static class EquipmentTests
         info = info with { Motions = slots, MotionCount = 91 };
         Assert.True(PristonMotionSelection.SkillVariant(info, 92, new(15, 1, 2)) == skillSlot,
             "an out-of-range skill motion did not fall back to a valid skill clip");
+
+        var collapse = new PristonMotionInfo((uint)MotionCode.Dead, 0, 92, [], 0, 0, 0, 0, 0, 0);
+        var door = info with { Motions = [.. Enumerable.Repeat(empty, 11), collapse], MotionCount = 12 };
+        Assert.True(PristonMotionSelection.Select(door, MotionCode.Damage, default) is null
+            && PristonMotionSelection.Idle(door, holdOneShot: true) is { StartFrame: 0, EndFrame: 1, Repeat: 0 },
+            "a model whose only clip is its death plays that death while it stands or takes hits");
+        Assert.True(PristonMotionSelection.Idle(door, holdOneShot: false) == collapse, "an unrequested motion no longer plays the model's first clip");
+        var idle = collapse with { State = (uint)MotionCode.Stand, StartFrame = 100, EndFrame = 140, Repeat = 1 };
+        Assert.True(PristonMotionSelection.Idle(door with { Motions = [.. door.Motions, idle], MotionCount = 13 }, holdOneShot: true) == idle,
+            "a model's looping Stand is not its idle");
         return Task.CompletedTask;
     }
 

@@ -337,10 +337,16 @@ internal sealed class SkillCaptureProbe : Game, ISkillSceneHost
         var serverFacing = MathF.Atan2(TargetPosition.X - CasterPosition.X, -(TargetPosition.Z - CasterPosition.Z));
         var start = new SkillEventInfo(CasterId, target, skill, SkillEventPhase.Start, 5, 0, timing.DurationMs, timing.HitsAtMs[0],
             transport, serverFacing, 0, rule.At(rule.Radius, 5));
-        var impactAt = timing.HitsAtMs[0] + (rule.Projectile ? SkillProjectile.FlightMs(Vector3.Distance(CasterPosition, TargetPosition)) : 0f);
+        var flightMs = rule.Projectile ? SkillProjectile.FlightMs(Vector3.Distance(CasterPosition, TargetPosition)) : 0f;
+        var impactAt = timing.HitsAtMs[0] + flightMs;
         var impact = start with { Phase = SkillEventPhase.Impact, TargetCount = 1 };
         _presentation.Observe(new PresenceUpdate(0, [], [], [], []) { SkillEvents = [start] }, _clockMs);
-        _scheduled = (impact, _clockMs + impactAt);
+        _scheduled.Clear();
+        foreach (var hitMs in timing.HitsAtMs)
+        {
+            _scheduled.Enqueue((impact, _clockMs + hitMs + flightMs));
+        }
+
         if (rule.Kind is SkillKind.SelfBuff)
         {
             var status = new StatusEffectInfo(CasterId, CasterId, skill, StatusEffectOp.Add, 1, 2, 0, 0, 60000, 60000, 5);
@@ -354,14 +360,15 @@ internal sealed class SkillCaptureProbe : Game, ISkillSceneHost
         }
     }
 
-    private (SkillEventInfo Event, double AtMs)? _scheduled;
+    // Every hit of the cast, in order: per-hit effects and sounds pick their entry by the impact's index.
+    private readonly Queue<(SkillEventInfo Event, double AtMs)> _scheduled = new();
     private (StatusEffectInfo Status, double AtMs)? _scheduledStatus;
 
     private void DispatchScheduled()
     {
-        if (_scheduled is { } scheduled && _clockMs >= scheduled.AtMs)
+        while (_scheduled.TryPeek(out var scheduled) && _clockMs >= scheduled.AtMs)
         {
-            _scheduled = null;
+            _scheduled.Dequeue();
             _presentation.Observe(new PresenceUpdate(0, [], [], [], []) { SkillEvents = [scheduled.Event] }, _clockMs);
         }
 

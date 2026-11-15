@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using PristonTale.Client.Net.Presence;
+using PristonTale.Effects.Scripts;
 using PristonTale.Effects.Vfx;
 using PristonTale.Engine3D.IO;
 using PristonTale.Gameplay.Effects;
@@ -189,6 +190,11 @@ internal static class SkillPresentationTests
                 }
             }
 
+            if (DrawsOnlyDots(definition, root))
+            {
+                problems.Add($"{definition.Name} draws only animations with no size of their own at the default size");
+            }
+
             foreach (var part in definition.Parts)
             {
                 if (part.Animation.Length > 0 && !AssetFiles.Exists(Path.Combine(root, "Effect", "AnimationData", part.Animation)))
@@ -229,6 +235,35 @@ internal static class SkillPresentationTests
 
         Assert.True(problems.Count == 0, string.Join("; ", problems.Distinct().Take(20)));
         return Task.CompletedTask;
+    }
+
+    // An effect made only of animated billboards whose files give no sizes and whose parts keep the default size shows
+    // a dot where the skill lands.
+    private static bool DrawsOnlyDots(VfxDefinition definition, string root)
+    {
+        if (definition.Parts.Length == 0 || definition.Emitters.Length > 0 || definition.Trails.Length > 0 || definition.Components.Length > 0
+            || definition.Sequences.Length > 0 || definition.Children.Length > 0)
+        {
+            return false;
+        }
+
+        var defaultSize = new VfxPartDefinition().Size;
+        foreach (var part in definition.Parts)
+        {
+            if (part.Animation.Length == 0 || part.Shape != VfxPartShape.Billboard || !part.Size.SequenceEqual(defaultSize)
+                || !AssetFiles.Exists(Path.Combine(root, "Effect", "AnimationData", part.Animation)))
+            {
+                return false;
+            }
+
+            var sequence = BillboardSequence.Read(part.Animation, path => AssetFiles.OpenRead(Path.Combine(root, path)));
+            if (sequence.Channels != BillboardChannels.Opacity)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static Task SystemAsync()

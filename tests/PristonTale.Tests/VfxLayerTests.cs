@@ -11,7 +11,7 @@ internal static class VfxLayerTests
         yield return ("component layers keep the original keyed-event, loop and delay rules", ComponentsAsync);
         yield return ("component particle pools respect their count, loops and the 100-particle cap", ComponentParticlesAsync);
         yield return ("sequence layers emit their budget, loop on clock events and stop on request", SequencesAsync);
-        yield return ("child effects start late, follow their anchor with the particles that live until they stop, and stop with the parent", ChildrenAsync);
+        yield return ("child effects start late, follow their anchor with their components and the particles that live until they stop, and stop with the parent", ChildrenAsync);
         yield return ("component and sequence updates allocate nothing once warmed up", AllocationsAsync);
         yield return ("parts wait for their delays, start on their ring and end with their life", PartRingAsync);
         yield return ("parts fly to their goal, start their end effect there and fade out", PartGoalAsync);
@@ -20,6 +20,25 @@ internal static class VfxLayerTests
         yield return ("spiral parts follow their straight path turned by the swirl, settle at their move time and fade", PartSpiralAsync);
         yield return ("a handle reaches only its own effect once the pooled instance runs another", HandleAsync);
         yield return ("a part's degree angles turn it about X, then Y, then Z", RotationAsync);
+        yield return ("built-in sprites fade to nothing at their border, the beam only across its width", BuiltinEdgesAsync);
+    }
+
+    private static Task BuiltinEdgesAsync()
+    {
+        foreach (var (name, alpha) in VfxBuiltinTextures.Shapes)
+        {
+            var open = name == "beam";
+            for (var step = -10; step <= 10; step++)
+            {
+                var along = step / 10f;
+                var across = alpha(along, 1f) + alpha(along, -1f);
+                var ends = alpha(1f, along) + alpha(-1f, along);
+                Assert.True(across < 0.5f / 255f && (open || ends < 0.5f / 255f), $"builtin:{name} is visible at its border ({across}, {ends}) at {along}");
+            }
+        }
+
+        Assert.True(VfxBuiltinTextures.Shapes["beam"](1f, 0f) > 0.9f, "the beam faded along its length");
+        return Task.CompletedTask;
     }
 
     private static Task RotationAsync()
@@ -359,7 +378,8 @@ internal static class VfxLayerTests
         {
             Name = "test.child",
             Duration = 30f,
-            Sequences = [new VfxSequenceDefinition { Texture = "x.bmp", Count = 1, Rate = [10f, 10f], Lifetime = [100f, 100f] }]
+            Sequences = [new VfxSequenceDefinition { Texture = "x.bmp", Count = 1, Rate = [10f, 10f], Lifetime = [100f, 100f] }],
+            Components = [new VfxComponentDefinition { Kind = VfxComponentKind.Ground, Texture = "x.bmp", EndTime = [1f, 1f], Offset = [0f, 2f, 0f] }]
         });
         library.Register(new VfxDefinition
         {
@@ -380,6 +400,8 @@ internal static class VfxLayerTests
         Assert.Near(50f, child.Spawn.Point.X, 0.01f);
         Assert.Near(5f, child.Spawn.Point.Y, 0.01f);
         Assert.Near(50f, child.SequenceStates[0].Particles[0].World.X, 0.01f);
+        Assert.True(Vector3.Distance(child.ComponentStates[0].Origin, new Vector3(50f, 7f, 0f)) < 0.01f,
+            "a component at a followed child's own point stayed where the child started (an aura left behind its holder)");
         instance.Stop();
         Run(system, 0.05f);
         Assert.True(child.SequenceStates[0].LiveCount == 1, "a stopped child must let its particles play out");
