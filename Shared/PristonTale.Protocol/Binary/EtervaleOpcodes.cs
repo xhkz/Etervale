@@ -29,6 +29,7 @@ public static class EtervaleOpcodes
     public const uint SkillEvents = 0x45540202;
     public const uint StatusEffects = 0x45540203;
     public const uint SkillCooldowns = 0x45540204;
+    public const uint SkillBindings = 0x45540205;
 
     public const uint ItemDetails = 0x45540300;
     public const uint OwnerItemStatus = 0x45540301;

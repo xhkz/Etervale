@@ -96,6 +96,12 @@ internal static class SpawnScheduleTests
         }
 
         Assert.True(sink.Count == 3, "missing anchor or empty hour list produced a boss");
+
+        var midnight = new FieldSpawner(data with { BossSpawns = [new BossSpawn(1, 1, 2, [24])] }, catalog, new CombatRng(1));
+        midnight.SpawnScheduledBosses(23, sink, sink);
+        Assert.True(sink.Count == 3, "a boss scheduled for hour 24 came at 23");
+        midnight.SpawnScheduledBosses(0, sink, sink);
+        Assert.True(sink.Count == 6, "a boss scheduled for hour 24 skipped midnight");
         return Task.CompletedTask;
     }
 

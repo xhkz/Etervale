@@ -1,8 +1,9 @@
 namespace PristonTale.Simulation.Progression;
 
-// Cumulative experience to enter each of the 180 levels, on the designed curve: at a normal kill of the player's level
-// and 360 kills an hour, 2 h to level 30, 40 h to 80, 200 h to 120 and 1700 h to 180, each level longer than the one
-// before. The last level is open up to Ceiling.
+// Cumulative experience to enter each of the 200 levels, on the designed curve: at a normal kill of the player's level
+// and 360 kills an hour, 2 h to level 30, 40 h to 80, 200 h to 120, 1700 h to 180 and about 3400 h to 200, each level
+// longer than the one before. From level 140 a level's span is the one before grown by about 10.5%, to three significant
+// figures. The last level is open up to Ceiling.
 public static class ExperienceTable
 {
     private static readonly ulong[] Thresholds =
@@ -37,6 +38,10 @@ public static class ExperienceTable
         1489624927060UL, 1646624927060UL, 1818624927060UL, 2008624927060UL, 2218624927060UL, 2451624927060UL,
         2708624927060UL, 2992624927060UL, 3306624927060UL, 3654624927060UL, 4039624927060UL, 4463624927060UL,
         4932624927060UL, 5451624927060UL, 6024624927060UL, 6656624927060UL, 7355624927060UL, 8127624927060UL,
+        8980624927060UL, 9922624927060UL, 10962624927060UL, 12112624927060UL, 13382624927060UL, 14782624927060UL,
+        16332624927060UL, 18042624927060UL, 19932624927060UL, 22022624927060UL, 24332624927060UL, 26882624927060UL,
+        29702624927060UL, 32812624927060UL, 36252624927060UL, 40052624927060UL, 44242624927060UL, 48872624927060UL,
+        53992624927060UL, 59642624927060UL,
     ];
 
     public static int MaximumLevel => Thresholds.Length;
@@ -53,6 +58,21 @@ public static class ExperienceTable
 
         return Thresholds[level - 1];
     }
+
+    // Where a level's experience bar ends: the next level's threshold. The last level, open-ended, fills its bar over one
+    // more step of the curve (its own span grown by the ratio of its span to the one before) and shows it full past it.
+    public static ulong LevelEnd(int level)
+    {
+        if (level < MaximumLevel)
+        {
+            return ForLevel(level + 1);
+        }
+
+        return ForLevel(level) + LastLevelSpan;
+    }
+
+    private static readonly ulong LastLevelSpan = (ulong)((double)(Thresholds[^1] - Thresholds[^2]) * (Thresholds[^1] - Thresholds[^2])
+        / (Thresholds[^2] - Thresholds[^3]));
 
     public static int LevelFor(ulong experience)
     {

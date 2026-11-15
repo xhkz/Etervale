@@ -155,7 +155,7 @@ internal sealed class HudCaptureProbe : Game
         new("target-1920", 1920, 1080),
         new("life-tooltip-800", 800, 600, Hover: Hover.Life, HealthPercent: 60),
         new("mana-tooltip-800", 800, 600, Hover: Hover.Mana),
-        new("experience-tooltip-800", 800, 600, Hover: Hover.Experience),
+        new("experience-800", 800, 600, Hover: Hover.Experience),
         new("menu-button-hover-800", 800, 600, Hover: Hover.InventoryButton),
         new("map-toggle-hover-800", 800, 600, Hover: Hover.MapToggle),
         new("low-resources-800", 800, 600, LowHealth: true),

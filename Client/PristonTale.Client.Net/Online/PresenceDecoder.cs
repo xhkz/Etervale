@@ -8,6 +8,7 @@ using PristonTale.Protocol.Packets;
 using PristonTale.Simulation.Characters;
 using PristonTale.Simulation.Items;
 using PristonTale.Simulation.Items.Usable;
+using PristonTale.Simulation.Skills;
 using PristonTale.Simulation.World.Loot;
 using PristonTale.Simulation.World.Monsters;
 using PristonTale.Simulation.World.Npcs;
@@ -45,6 +46,7 @@ internal sealed class PresenceDecoder : IEventHandleReader
     private IReadOnlyList<OwnedItemView> _items = [];
     private long _skillsRevision = -1;
     private IReadOnlyList<OwnedSkillView> _skills = [];
+    private SkillBindings _skillBindings = SkillBindings.Default;
     private long _tick;
     private double? _clockMs;
     private IReadOnlyList<ItemDetailEntry> _tradeDetails = [];
@@ -701,6 +703,8 @@ internal sealed class PresenceDecoder : IEventHandleReader
     public PresenceUpdate? OnSkills(SkillsPacket skills)
     {
         _skills = skills.Skills.Select(skill => new OwnedSkillView(skill.Code, skill.Rank, skill.Uses)).ToArray();
+        _skillBindings = new SkillBindings(skills.Bindings.Left, skills.Bindings.Right,
+            [.. skills.Bindings.Shortcuts.Select(static shortcut => new SkillShortcut(shortcut.Code, (SkillMouseUse)shortcut.Side))]);
         _skillsRevision = skills.Revision;
         return OwnerUpdate();
     }
@@ -726,7 +730,8 @@ internal sealed class PresenceDecoder : IEventHandleReader
             EliteSkillPoints = status.EliteSkillPoints,
             BagPage = status.BagPage,
             WeaponSet = status.WeaponSet,
-            Skills = _skills
+            Skills = _skills,
+            SkillBindings = _skillBindings
         };
         return new PresenceUpdate(_tick, [], [], [], [], FieldId) { Owner = _ownerItems.Apply(owner) };
     }

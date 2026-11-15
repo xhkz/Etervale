@@ -3,7 +3,7 @@ namespace PristonTale.Simulation.World;
 // The level each field opens at, by field code: the walking check, the warp gates (WorldCatalog gives a gate its
 // destination's level), the NPC and wing teleports and the teleport core read this one table. A field it does not name is
 // open. Up to Ancient Weapons the levels are the original client's; the later fields' follow their monsters' levels,
-// stretched to the level cap of 180. Office's Closed refuses every entry a level is checked for, but a character placed
+// stretched over levels up to 180. Office's Closed refuses every entry a level is checked for, but a character placed
 // there by a game master stays.
 public static class FieldEntryLevels
 {

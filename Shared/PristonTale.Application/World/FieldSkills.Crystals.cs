@@ -24,6 +24,8 @@ internal sealed partial class FieldSkills
 
     public bool HasCrystalPetSlot(WorldPlayer owner) => FreePetSlot(owner) >= 0;
 
+    public int FreeCrystalPetSlots(WorldPlayer owner) => MonsterCrystals.PetSlots - BitOperations.PopCount((uint)TakenPetSlots(owner));
+
     // Calls the pet beside its owner with the owner-level lifetime and life bonus, and starts the owner's status for it
     // with the next step; returns where it stands, or null when every pet slot of the owner is taken.
     public Vector3? CallCrystalPet(WorldPlayer owner, MonsterCrystalDefinition crystal, MonsterDefinition definition)
@@ -60,6 +62,20 @@ internal sealed partial class FieldSkills
     // status ends with the next step), or -1 when all are taken.
     private int FreePetSlot(WorldPlayer owner)
     {
+        var taken = TakenPetSlots(owner);
+        for (var slot = 0; slot < MonsterCrystals.PetSlots; slot++)
+        {
+            if ((taken & (1 << slot)) == 0)
+            {
+                return slot;
+            }
+        }
+
+        return -1;
+    }
+
+    private int TakenPetSlots(WorldPlayer owner)
+    {
         var taken = 0;
         foreach (var pet in _crystalPets.Values)
         {
@@ -77,15 +93,7 @@ internal sealed partial class FieldSkills
             }
         }
 
-        for (var slot = 0; slot < MonsterCrystals.PetSlots; slot++)
-        {
-            if ((taken & (1 << slot)) == 0)
-            {
-                return slot;
-            }
-        }
-
-        return -1;
+        return taken;
     }
 
     // The owner's request (the icon's right click, confirmed): the pet of that status dies now and the status ends with

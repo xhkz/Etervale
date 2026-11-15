@@ -42,13 +42,15 @@ public readonly record struct DefenderProfile(
     public static DefenderProfile FromMonster(MonsterInstance monster) =>
         FromMonster(monster.Def.Combat, monster.Life) with { CritChanceTaken = monster.Effects.Totals.Flat(Modifiers.StatKind.CriticalChanceTaken) };
 
+    // A monster's bionic resistance stands against statuses and bionic spells, which read the monster's own resistances;
+    // the blows struck at this profile are weapon hits, plain physical damage it does not reduce.
     public static DefenderProfile FromMonster(MonsterCombatStats stats, int currentLife) =>
         new(
             Defence: stats.Defence,
             Absorption: stats.Absorption,
             BlockChance: stats.BlockChance,
             Level: stats.Level,
-            Resistances: stats.Resistances,
+            Resistances: stats.Resistances with { Bionic = 0 },
             MaxLife: stats.MaxLife,
             CurrentLife: currentLife,
             IsMonster: true);

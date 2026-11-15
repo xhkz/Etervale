@@ -155,11 +155,11 @@ public sealed class FieldSpawner
         ArgumentNullException.ThrowIfNull(proximity);
         ArgumentNullException.ThrowIfNull(sink);
         ArgumentOutOfRangeException.ThrowIfNegative(hour);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(hour, 23);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(hour, BossSpawn.HoursPerDay);
 
         foreach (BossSpawn boss in _data.BossSpawns)
         {
-            if (!boss.SpawnHours.Contains(hour)
+            if (!boss.AppearsAt(hour)
                 || !_catalog.TryGet(boss.BossMonsterCode, out MonsterDefinition masterDef))
             {
                 continue;

@@ -96,6 +96,30 @@ internal class NativeGameWindow : GameWindow
             MGP.Window_Maximize(_handle);
     }
 
+    // Etervale fork: the clipboard's text (monogame/issues/022-clipboard-text.md). The runtime returns the full UTF-8
+    // length, so a text longer than the buffer is read again into one that holds it.
+    public override unsafe string GetClipboardText()
+    {
+        if (!HasCreatedWindow)
+            return string.Empty;
+
+        var buffer = new byte[256];
+        while (true)
+        {
+            int length;
+            fixed (byte* bytes = buffer)
+                length = MGP.Clipboard_GetText(bytes, buffer.Length);
+
+            if (length <= 0)
+                return string.Empty;
+
+            if (length < buffer.Length)
+                return System.Text.Encoding.UTF8.GetString(buffer, 0, length);
+
+            buffer = new byte[length + 1];
+        }
+    }
+
     public bool IsFullScreen { get; private set; }
 
     public bool HardwareModeSwitch { get; private set; }

@@ -463,6 +463,7 @@ go on to the high tower.</value></data>
   <data name="Hud.RightClickDismiss" xml:space="preserve"><value>Right-click to dismiss</value></data>
   <data name="Hud.Stamina" xml:space="preserve"><value>STM : {0}/{1}</value></data>
   <data name="Hud.Target" xml:space="preserve"><value>Target</value></data>
+  <data name="Hud.TargetEntityId" xml:space="preserve"><value>ID {0}</value></data>
   <data name="Hud.TargetLevel" xml:space="preserve"><value>Lv. {0}</value></data>
   <data name="Hud.TimeLeft" xml:space="preserve"><value>Time left: {0}</value></data>
   <data name="Hud.TimeLeftSeconds" xml:space="preserve"><value>Time left: {0} s</value></data>
@@ -562,6 +563,7 @@ go on to the high tower.</value></data>
   <data name="Login.Hint" xml:space="preserve"><value>Connect to the game server</value></data>
   <data name="Login.LogIn" xml:space="preserve"><value>Log in</value></data>
   <data name="Login.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Login.Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Login.Subtitle" xml:space="preserve"><value>Your adventure begins here</value></data>
   <data name="Login.Unreachable" xml:space="preserve"><value>Could not reach the game server.</value></data>
   <data name="Loot.Gold" xml:space="preserve"><value>{0} Gold</value></data>
@@ -630,6 +632,110 @@ go on to the high tower.</value></data>
   <data name="NpcService.Teleport" xml:space="preserve"><value>Teleport</value></data>
   <data name="NpcService.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
   <data name="NpcService.WarpGate" xml:space="preserve"><value>Warp gate</value></data>
+  <data name="Options.AmbientOcclusion" xml:space="preserve"><value>Ambient occlusion</value></data>
+  <data name="Options.AntiAliasing" xml:space="preserve"><value>Anti-aliasing</value></data>
+  <data name="Options.Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Options.AutoExposure" xml:space="preserve"><value>Automatic exposure</value></data>
+  <data name="Options.Automatic" xml:space="preserve"><value>Automatic</value></data>
+  <data name="Options.BackgroundFps" xml:space="preserve"><value>Background FPS</value></data>
+  <data name="Options.Bloom" xml:space="preserve"><value>Bloom</value></data>
+  <data name="Options.CalibrationSpheres" xml:space="preserve"><value>Calibration spheres</value></data>
+  <data name="Options.CameraMode" xml:space="preserve"><value>Camera mode</value></data>
+  <data name="Options.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Options.ClassicNamePlates" xml:space="preserve"><value>Classic name plates</value></data>
+  <data name="Options.ClassicTargetHealth" xml:space="preserve"><value>Classic target HP</value></data>
+  <data name="Options.Clouds" xml:space="preserve"><value>Clouds</value></data>
+  <data name="Options.ColorGrading" xml:space="preserve"><value>Colour grading</value></data>
+  <data name="Options.ColorGradingLut" xml:space="preserve"><value>Colour grading LUT file</value></data>
+  <data name="Options.ContactShadows" xml:space="preserve"><value>Contact shadows</value></data>
+  <data name="Options.Count" xml:space="preserve"><value>{0}</value></data>
+  <data name="Options.CurrentMonitor" xml:space="preserve"><value>Current monitor</value></data>
+  <data name="Options.DebugView" xml:space="preserve"><value>Debug view</value></data>
+  <data name="Options.Defaults" xml:space="preserve"><value>Defaults</value></data>
+  <data name="Options.Desktop" xml:space="preserve"><value>Desktop</value></data>
+  <data name="Options.DistanceFog" xml:space="preserve"><value>Distance fog</value></data>
+  <data name="Options.EveryFrame" xml:space="preserve"><value>Every frame</value></data>
+  <data name="Options.Exposure" xml:space="preserve"><value>Exposure compensation</value></data>
+  <data name="Options.ForegroundLimit" xml:space="preserve"><value>Same as foreground</value></data>
+  <data name="Options.Fps" xml:space="preserve"><value>{0} FPS</value></data>
+  <data name="Options.Hertz" xml:space="preserve"><value>{0} Hz</value></data>
+  <data name="Options.HiResWorldTextures" xml:space="preserve"><value>High-resolution world textures</value></data>
+  <data name="Options.Hint" xml:space="preserve"><value>Display changes ask for confirmation; world texture detail changes from the next field.</value></data>
+  <data name="Options.ImageBasedLighting" xml:space="preserve"><value>Sky lighting</value></data>
+  <data name="Options.LampShadowSize" xml:space="preserve"><value>Lamp shadow resolution</value></data>
+  <data name="Options.LampShadows" xml:space="preserve"><value>Lamp shadows</value></data>
+  <data name="Options.Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Options.LevelGuide" xml:space="preserve"><value>Level guide</value></data>
+  <data name="Options.LocalLights" xml:space="preserve"><value>Local lights</value></data>
+  <data name="Options.MaxFps" xml:space="preserve"><value>Maximum FPS</value></data>
+  <data name="Options.Monitor" xml:space="preserve"><value>Monitor</value></data>
+  <data name="Options.MonitorNumber" xml:space="preserve"><value>Monitor {0}</value></data>
+  <data name="Options.MsaaSamples" xml:space="preserve"><value>MSAA samples</value></data>
+  <data name="Options.Music" xml:space="preserve"><value>Music</value></data>
+  <data name="Options.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Options.On" xml:space="preserve"><value>On</value></data>
+  <data name="Options.Percent" xml:space="preserve"><value>{0} %</value></data>
+  <data name="Options.Pixels" xml:space="preserve"><value>{0} px</value></data>
+  <data name="Options.Quality" xml:space="preserve"><value>Graphics quality</value></data>
+  <data name="Options.RealisticSky" xml:space="preserve"><value>Realistic sky</value></data>
+  <data name="Options.Reflections" xml:space="preserve"><value>Screen-space reflections</value></data>
+  <data name="Options.RefreshRate" xml:space="preserve"><value>Refresh rate</value></data>
+  <data name="Options.Resolution" xml:space="preserve"><value>Resolution</value></data>
+  <data name="Options.Samples" xml:space="preserve"><value>{0}x</value></data>
+  <data name="Options.ServerAddress" xml:space="preserve"><value>Server address</value></data>
+  <data name="Options.ShadowCascades" xml:space="preserve"><value>Shadow cascades</value></data>
+  <data name="Options.ShadowFilter" xml:space="preserve"><value>Shadow filter</value></data>
+  <data name="Options.ShadowMapSize" xml:space="preserve"><value>Sun shadow resolution</value></data>
+  <data name="Options.ShadowUpdateRate" xml:space="preserve"><value>Shadow animation</value></data>
+  <data name="Options.Shadows" xml:space="preserve"><value>Shadows</value></data>
+  <data name="Options.Sharpening" xml:space="preserve"><value>Sharpening</value></data>
+  <data name="Options.Size" xml:space="preserve"><value>{0} x {1}</value></data>
+  <data name="Options.Sound" xml:space="preserve"><value>Sound</value></data>
+  <data name="Options.Stops" xml:space="preserve"><value>{0} EV</value></data>
+  <data name="Options.Tab.Display" xml:space="preserve"><value>Display</value></data>
+  <data name="Options.Tab.Effects" xml:space="preserve"><value>Effects</value></data>
+  <data name="Options.Tab.Game" xml:space="preserve"><value>Game &amp; audio</value></data>
+  <data name="Options.Tab.Graphics" xml:space="preserve"><value>Graphics</value></data>
+  <data name="Options.Tonemapper" xml:space="preserve"><value>Tone mapping</value></data>
+  <data name="Options.Unlimited" xml:space="preserve"><value>Unlimited</value></data>
+  <data name="Options.Value.Aces" xml:space="preserve"><value>ACES</value></data>
+  <data name="Options.Value.AgX" xml:space="preserve"><value>AgX</value></data>
+  <data name="Options.Value.Albedo" xml:space="preserve"><value>Albedo</value></data>
+  <data name="Options.Value.AmbientOcclusion" xml:space="preserve"><value>Ambient occlusion</value></data>
+  <data name="Options.Value.Atmospheric" xml:space="preserve"><value>Atmospheric</value></data>
+  <data name="Options.Value.Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="Options.Value.Borderless" xml:space="preserve"><value>Borderless</value></data>
+  <data name="Options.Value.Classic" xml:space="preserve"><value>Classic</value></data>
+  <data name="Options.Value.Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="Options.Value.ExposureFalseColour" xml:space="preserve"><value>Exposure false colour</value></data>
+  <data name="Options.Value.Fullscreen" xml:space="preserve"><value>Fullscreen</value></data>
+  <data name="Options.Value.Fxaa" xml:space="preserve"><value>FXAA</value></data>
+  <data name="Options.Value.High" xml:space="preserve"><value>High</value></data>
+  <data name="Options.Value.Lighting" xml:space="preserve"><value>Lighting</value></data>
+  <data name="Options.Value.Lock" xml:space="preserve"><value>Lock</value></data>
+  <data name="Options.Value.Low" xml:space="preserve"><value>Low</value></data>
+  <data name="Options.Value.Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Options.Value.Medium" xml:space="preserve"><value>Medium</value></data>
+  <data name="Options.Value.Metallic" xml:space="preserve"><value>Metallic</value></data>
+  <data name="Options.Value.Msaa" xml:space="preserve"><value>MSAA</value></data>
+  <data name="Options.Value.Normals" xml:space="preserve"><value>Normals</value></data>
+  <data name="Options.Value.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Options.Value.Overdraw" xml:space="preserve"><value>Overdraw</value></data>
+  <data name="Options.Value.PbrNeutral" xml:space="preserve"><value>PBR Neutral</value></data>
+  <data name="Options.Value.Pcf" xml:space="preserve"><value>PCF</value></data>
+  <data name="Options.Value.Pcss" xml:space="preserve"><value>PCSS (soft)</value></data>
+  <data name="Options.Value.Roughness" xml:space="preserve"><value>Roughness</value></data>
+  <data name="Options.Value.Shaded" xml:space="preserve"><value>Shaded</value></data>
+  <data name="Options.Value.Smaa" xml:space="preserve"><value>SMAA</value></data>
+  <data name="Options.Value.Specular" xml:space="preserve"><value>Specular</value></data>
+  <data name="Options.Value.Taa" xml:space="preserve"><value>TAA</value></data>
+  <data name="Options.Value.Ultra" xml:space="preserve"><value>Ultra</value></data>
+  <data name="Options.Value.VertexColour" xml:space="preserve"><value>Vertex colour</value></data>
+  <data name="Options.Value.Windowed" xml:space="preserve"><value>Windowed</value></data>
+  <data name="Options.VerticalSync" xml:space="preserve"><value>Vertical sync</value></data>
+  <data name="Options.VolumetricLight" xml:space="preserve"><value>Volumetric light</value></data>
+  <data name="Options.Weather" xml:space="preserve"><value>Weather</value></data>
+  <data name="Options.WindowMode" xml:space="preserve"><value>Window mode</value></data>
   <data name="PersonalShop.BuyItem" xml:space="preserve"><value>buy the item?</value></data>
   <data name="PersonalShop.CancelRegister" xml:space="preserve"><value>cancel the Register?</value></data>
   <data name="PersonalShop.NoRoom" xml:space="preserve"><value>The shop has no room for this item</value></data>
@@ -925,6 +1031,7 @@ go on to the high tower.</value></data>
   <data name="Usable.OrbDamage" xml:space="preserve"><value>AddedATKPOWER: {0}</value></data>
   <data name="Usable.OrbPercent" xml:space="preserve"><value>AddATKPOWER%: {0}%</value></data>
   <data name="Usable.Pet" xml:space="preserve"><value>Summons a {0} to fight for you</value></data>
+  <data name="Usable.Pets" xml:space="preserve"><value>Summons {0} {1} pets to fight for you</value></data>
   <data name="Usable.Pet2" xml:space="preserve"><value>for {0} minutes, longer at higher levels.</value></data>
   <data name="Usable.PuzzleBag" xml:space="preserve"><value>Reveal the puzzle piece inside for {0} gold.</value></data>
   <data name="Usable.PuzzleBoard" xml:space="preserve"><value>Lay the set out on the puzzle board.</value></data>

@@ -463,6 +463,7 @@ seguem para a torre alta.</value></data>
   <data name="Hud.RightClickDismiss" xml:space="preserve"><value>Clique direito para dispensar</value></data>
   <data name="Hud.Stamina" xml:space="preserve"><value>STM : {0}/{1}</value></data>
   <data name="Hud.Target" xml:space="preserve"><value>Alvo</value></data>
+  <data name="Hud.TargetEntityId" xml:space="preserve"><value>ID {0}</value></data>
   <data name="Hud.TargetLevel" xml:space="preserve"><value>Nv. {0}</value></data>
   <data name="Hud.TimeLeft" xml:space="preserve"><value>Tempo restante: {0}</value></data>
   <data name="Hud.TimeLeftSeconds" xml:space="preserve"><value>Tempo restante: {0} s</value></data>
@@ -562,6 +563,7 @@ seguem para a torre alta.</value></data>
   <data name="Login.Hint" xml:space="preserve"><value>Conecte-se ao servidor do jogo</value></data>
   <data name="Login.LogIn" xml:space="preserve"><value>Entrar</value></data>
   <data name="Login.Password" xml:space="preserve"><value>Senha</value></data>
+  <data name="Login.Settings" xml:space="preserve"><value>Configurações</value></data>
   <data name="Login.Subtitle" xml:space="preserve"><value>Sua aventura começa aqui</value></data>
   <data name="Login.Unreachable" xml:space="preserve"><value>Não foi possível alcançar o servidor do jogo.</value></data>
   <data name="Loot.Gold" xml:space="preserve"><value>{0} de ouro</value></data>
@@ -630,6 +632,110 @@ seguem para a torre alta.</value></data>
   <data name="NpcService.Teleport" xml:space="preserve"><value>Teleporte</value></data>
   <data name="NpcService.Warehouse" xml:space="preserve"><value>Armazém</value></data>
   <data name="NpcService.WarpGate" xml:space="preserve"><value>Portal</value></data>
+  <data name="Options.AmbientOcclusion" xml:space="preserve"><value>Oclusão de ambiente</value></data>
+  <data name="Options.AntiAliasing" xml:space="preserve"><value>Suavização de bordas</value></data>
+  <data name="Options.Apply" xml:space="preserve"><value>Aplicar</value></data>
+  <data name="Options.AutoExposure" xml:space="preserve"><value>Exposição automática</value></data>
+  <data name="Options.Automatic" xml:space="preserve"><value>Automático</value></data>
+  <data name="Options.BackgroundFps" xml:space="preserve"><value>FPS em segundo plano</value></data>
+  <data name="Options.Bloom" xml:space="preserve"><value>Brilho (bloom)</value></data>
+  <data name="Options.CalibrationSpheres" xml:space="preserve"><value>Esferas de calibração</value></data>
+  <data name="Options.CameraMode" xml:space="preserve"><value>Modo de câmera</value></data>
+  <data name="Options.Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Options.ClassicNamePlates" xml:space="preserve"><value>Placas de nome clássicas</value></data>
+  <data name="Options.ClassicTargetHealth" xml:space="preserve"><value>HP do alvo clássico</value></data>
+  <data name="Options.Clouds" xml:space="preserve"><value>Nuvens</value></data>
+  <data name="Options.ColorGrading" xml:space="preserve"><value>Gradação de cor</value></data>
+  <data name="Options.ColorGradingLut" xml:space="preserve"><value>Arquivo LUT de gradação de cor</value></data>
+  <data name="Options.ContactShadows" xml:space="preserve"><value>Sombras de contato</value></data>
+  <data name="Options.Count" xml:space="preserve"><value>{0}</value></data>
+  <data name="Options.CurrentMonitor" xml:space="preserve"><value>Monitor atual</value></data>
+  <data name="Options.DebugView" xml:space="preserve"><value>Visão de depuração</value></data>
+  <data name="Options.Defaults" xml:space="preserve"><value>Padrões</value></data>
+  <data name="Options.Desktop" xml:space="preserve"><value>Área de trabalho</value></data>
+  <data name="Options.DistanceFog" xml:space="preserve"><value>Névoa de distância</value></data>
+  <data name="Options.EveryFrame" xml:space="preserve"><value>Todo quadro</value></data>
+  <data name="Options.Exposure" xml:space="preserve"><value>Compensação de exposição</value></data>
+  <data name="Options.ForegroundLimit" xml:space="preserve"><value>Igual ao primeiro plano</value></data>
+  <data name="Options.Fps" xml:space="preserve"><value>{0} FPS</value></data>
+  <data name="Options.Hertz" xml:space="preserve"><value>{0} Hz</value></data>
+  <data name="Options.HiResWorldTextures" xml:space="preserve"><value>Texturas do mundo em alta resolução</value></data>
+  <data name="Options.Hint" xml:space="preserve"><value>Mudanças de tela pedem confirmação; o detalhe das texturas do mundo muda a partir do próximo mapa.</value></data>
+  <data name="Options.ImageBasedLighting" xml:space="preserve"><value>Iluminação do céu</value></data>
+  <data name="Options.LampShadowSize" xml:space="preserve"><value>Resolução das sombras de lâmpadas</value></data>
+  <data name="Options.LampShadows" xml:space="preserve"><value>Sombras de lâmpadas</value></data>
+  <data name="Options.Language" xml:space="preserve"><value>Idioma</value></data>
+  <data name="Options.LevelGuide" xml:space="preserve"><value>Guia de nível</value></data>
+  <data name="Options.LocalLights" xml:space="preserve"><value>Luzes locais</value></data>
+  <data name="Options.MaxFps" xml:space="preserve"><value>FPS máximo</value></data>
+  <data name="Options.Monitor" xml:space="preserve"><value>Monitor</value></data>
+  <data name="Options.MonitorNumber" xml:space="preserve"><value>Monitor {0}</value></data>
+  <data name="Options.MsaaSamples" xml:space="preserve"><value>Amostras MSAA</value></data>
+  <data name="Options.Music" xml:space="preserve"><value>Música</value></data>
+  <data name="Options.Off" xml:space="preserve"><value>Desligado</value></data>
+  <data name="Options.On" xml:space="preserve"><value>Ligado</value></data>
+  <data name="Options.Percent" xml:space="preserve"><value>{0} %</value></data>
+  <data name="Options.Pixels" xml:space="preserve"><value>{0} px</value></data>
+  <data name="Options.Quality" xml:space="preserve"><value>Qualidade gráfica</value></data>
+  <data name="Options.RealisticSky" xml:space="preserve"><value>Céu realista</value></data>
+  <data name="Options.Reflections" xml:space="preserve"><value>Reflexos em espaço de tela</value></data>
+  <data name="Options.RefreshRate" xml:space="preserve"><value>Taxa de atualização</value></data>
+  <data name="Options.Resolution" xml:space="preserve"><value>Resolução</value></data>
+  <data name="Options.Samples" xml:space="preserve"><value>{0}x</value></data>
+  <data name="Options.ServerAddress" xml:space="preserve"><value>Endereço do servidor</value></data>
+  <data name="Options.ShadowCascades" xml:space="preserve"><value>Cascatas de sombra</value></data>
+  <data name="Options.ShadowFilter" xml:space="preserve"><value>Filtro de sombra</value></data>
+  <data name="Options.ShadowMapSize" xml:space="preserve"><value>Resolução da sombra do sol</value></data>
+  <data name="Options.ShadowUpdateRate" xml:space="preserve"><value>Animação das sombras</value></data>
+  <data name="Options.Shadows" xml:space="preserve"><value>Sombras</value></data>
+  <data name="Options.Sharpening" xml:space="preserve"><value>Nitidez</value></data>
+  <data name="Options.Size" xml:space="preserve"><value>{0} x {1}</value></data>
+  <data name="Options.Sound" xml:space="preserve"><value>Som</value></data>
+  <data name="Options.Stops" xml:space="preserve"><value>{0} EV</value></data>
+  <data name="Options.Tab.Display" xml:space="preserve"><value>Tela</value></data>
+  <data name="Options.Tab.Effects" xml:space="preserve"><value>Efeitos</value></data>
+  <data name="Options.Tab.Game" xml:space="preserve"><value>Jogo e áudio</value></data>
+  <data name="Options.Tab.Graphics" xml:space="preserve"><value>Gráficos</value></data>
+  <data name="Options.Tonemapper" xml:space="preserve"><value>Mapeamento de tons</value></data>
+  <data name="Options.Unlimited" xml:space="preserve"><value>Ilimitado</value></data>
+  <data name="Options.Value.Aces" xml:space="preserve"><value>ACES</value></data>
+  <data name="Options.Value.AgX" xml:space="preserve"><value>AgX</value></data>
+  <data name="Options.Value.Albedo" xml:space="preserve"><value>Albedo</value></data>
+  <data name="Options.Value.AmbientOcclusion" xml:space="preserve"><value>Oclusão de ambiente</value></data>
+  <data name="Options.Value.Atmospheric" xml:space="preserve"><value>Atmosférica</value></data>
+  <data name="Options.Value.Auto" xml:space="preserve"><value>Automático</value></data>
+  <data name="Options.Value.Borderless" xml:space="preserve"><value>Sem bordas</value></data>
+  <data name="Options.Value.Classic" xml:space="preserve"><value>Clássico</value></data>
+  <data name="Options.Value.Custom" xml:space="preserve"><value>Personalizada</value></data>
+  <data name="Options.Value.ExposureFalseColour" xml:space="preserve"><value>Exposição em cor falsa</value></data>
+  <data name="Options.Value.Fullscreen" xml:space="preserve"><value>Tela cheia</value></data>
+  <data name="Options.Value.Fxaa" xml:space="preserve"><value>FXAA</value></data>
+  <data name="Options.Value.High" xml:space="preserve"><value>Alto</value></data>
+  <data name="Options.Value.Lighting" xml:space="preserve"><value>Iluminação</value></data>
+  <data name="Options.Value.Lock" xml:space="preserve"><value>Travado</value></data>
+  <data name="Options.Value.Low" xml:space="preserve"><value>Baixo</value></data>
+  <data name="Options.Value.Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Options.Value.Medium" xml:space="preserve"><value>Médio</value></data>
+  <data name="Options.Value.Metallic" xml:space="preserve"><value>Metálico</value></data>
+  <data name="Options.Value.Msaa" xml:space="preserve"><value>MSAA</value></data>
+  <data name="Options.Value.Normals" xml:space="preserve"><value>Normais</value></data>
+  <data name="Options.Value.Off" xml:space="preserve"><value>Desligado</value></data>
+  <data name="Options.Value.Overdraw" xml:space="preserve"><value>Sobreposição</value></data>
+  <data name="Options.Value.PbrNeutral" xml:space="preserve"><value>PBR Neutral</value></data>
+  <data name="Options.Value.Pcf" xml:space="preserve"><value>PCF</value></data>
+  <data name="Options.Value.Pcss" xml:space="preserve"><value>PCSS (suave)</value></data>
+  <data name="Options.Value.Roughness" xml:space="preserve"><value>Rugosidade</value></data>
+  <data name="Options.Value.Shaded" xml:space="preserve"><value>Sombreado</value></data>
+  <data name="Options.Value.Smaa" xml:space="preserve"><value>SMAA</value></data>
+  <data name="Options.Value.Specular" xml:space="preserve"><value>Especular</value></data>
+  <data name="Options.Value.Taa" xml:space="preserve"><value>TAA</value></data>
+  <data name="Options.Value.Ultra" xml:space="preserve"><value>Ultra</value></data>
+  <data name="Options.Value.VertexColour" xml:space="preserve"><value>Cor de vértice</value></data>
+  <data name="Options.Value.Windowed" xml:space="preserve"><value>Janela</value></data>
+  <data name="Options.VerticalSync" xml:space="preserve"><value>Sincronização vertical</value></data>
+  <data name="Options.VolumetricLight" xml:space="preserve"><value>Luz volumétrica</value></data>
+  <data name="Options.Weather" xml:space="preserve"><value>Clima</value></data>
+  <data name="Options.WindowMode" xml:space="preserve"><value>Modo da janela</value></data>
   <data name="PersonalShop.BuyItem" xml:space="preserve"><value>comprar o item?</value></data>
   <data name="PersonalShop.CancelRegister" xml:space="preserve"><value>cancelar o registro?</value></data>
   <data name="PersonalShop.NoRoom" xml:space="preserve"><value>A loja não tem espaço para este item</value></data>
@@ -925,6 +1031,7 @@ seguem para a torre alta.</value></data>
   <data name="Usable.OrbDamage" xml:space="preserve"><value>Poder de ataque adicional: {0}</value></data>
   <data name="Usable.OrbPercent" xml:space="preserve"><value>Poder de ataque adicional: {0}%</value></data>
   <data name="Usable.Pet" xml:space="preserve"><value>Invoca {0} para lutar por você</value></data>
+  <data name="Usable.Pets" xml:space="preserve"><value>Invoca {0} mascotes {1} para lutar por você</value></data>
   <data name="Usable.Pet2" xml:space="preserve"><value>por {0} minutos, mais tempo em níveis maiores.</value></data>
   <data name="Usable.PuzzleBag" xml:space="preserve"><value>Revele a peça de quebra-cabeça por {0} de ouro.</value></data>
   <data name="Usable.PuzzleBoard" xml:space="preserve"><value>Monte o conjunto no tabuleiro do quebra-cabeça.</value></data>

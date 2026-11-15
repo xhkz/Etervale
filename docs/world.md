@@ -95,12 +95,12 @@ the Land of Nurwn. The action fields are reached by no gate; a kill in `fall_gam
 |---|---|
 | `StageSmd` | Asset-relative stage path with Windows separators; source of collision and of the importer's join key |
 | `StageObjectSmds` | Animated stage props; client only |
-| `State` (`FieldState`) | `Village` sets the player's in-village flag on entry; `Dungeon` sets `Underground` (no sky); `Action` is a side-scrolling field (no minimap; controls in [client.md](client.md#input)) |
+| `State` (`FieldState`) | `Village` sets the player's in-village flag on entry (a nightmare town's only by day); `Dungeon` sets `Underground` (no sky); `Action` is a side-scrolling field (no minimap; controls in [client.md](client.md#input)) |
 | `ActionCamera` | An action field's camera: fixed-point height (the camera rises 80 units above it), depth `Z` and the `LeftX`-`RightX` range it follows the player along x; it looks along +z |
 | `Center`, `StartPoints` | `StartPoints[0]` is the NPC teleport arrival; a field restart stands up at the start point nearest to the fall, a town restart at a random one; `Center` is the fallback |
 | `Gates` | Seamless boundaries to an adjacent field (`DestinationFieldId`, X/Z, angle) |
 | `WarpGates` | Portals: trigger X/Z/Y and Width/Height, destination field and X/Z/Y, `MoreExits` (further destination points: the traveller comes out at one of them, picked at random; Cursed Temple 1F to 2F, 2F to 3F and back, Ancient Prison 3F to 2F, Endless Tower 2F to 3F, Kelvezu's Lair to the Heart of Fire, Stemple to the Sea of Abyss), `LimitLevel` (set by `WorldCatalog`: the destination field's), `SpecialEffect` (1: a delayed warp with the return sparkle; 2: a wing warp stone, its destination point the stone's exit in its own field; see [Wing warp gates](#wing-warp-gates)) |
-| `LimitLevel` | Minimum character level to walk, warp or be sent (a wing stone, a teleporter, a Teleport Core) into the field, from one table, `FieldEntryLevels` by field code, which `WorldCatalog` gives the shipped fields: Desert 3 and 4 (11, 12) 55, Ancient Prison 1F-3F (13-15) 40, 50, 60, the office (16) 1000 (`Closed`), Cursed Temple 1F-3F (22, 23, 42) 70, 75, 80, the caves (24-26) 55, 55, 65, Iron 1 (27) 80, Iron 2 (28) 85, Eura (29), Ice 1 (31), Ice 2 (35) and Kelvezu's Lair (36) 90, Greedy Lake (34) 70, Lost Island (37) 95, the Lost Temple (38) and the Endless Tower's first two floors (40, 41) 100, its third (43) 102, Ice Mine (44) 105, Secret Laboratory (46) 108, Ancient Weapons (48) 110; the later fields follow their monsters' levels stretched to the cap of 180: Sea of Abyss (49) 115, Deep Sea Temple (50) 124, Heart of Fire (51) 129, Crystal Nest (52) 133, Land of Nurwn (53) 143. `SendsAway(level)`: a character of a lower level saved in the field logs in at its home town (`SessionAppService.EnterWorldAsync`); a `Closed` field keeps one a game master placed there |
+| `LimitLevel` | Minimum character level to walk, warp or be sent (a wing stone, a teleporter, a Teleport Core) into the field, from one table, `FieldEntryLevels` by field code, which `WorldCatalog` gives the shipped fields: Desert 3 and 4 (11, 12) 55, Ancient Prison 1F-3F (13-15) 40, 50, 60, the office (16) 1000 (`Closed`), Cursed Temple 1F-3F (22, 23, 42) 70, 75, 80, the caves (24-26) 55, 55, 65, Iron 1 (27) 80, Iron 2 (28) 85, Eura (29), Ice 1 (31), Ice 2 (35) and Kelvezu's Lair (36) 90, Greedy Lake (34) 70, Lost Island (37) 95, the Lost Temple (38) and the Endless Tower's first two floors (40, 41) 100, its third (43) 102, Ice Mine (44) 105, Secret Laboratory (46) 108, Ancient Weapons (48) 110; the later fields follow their monsters' levels stretched over levels up to 180: Sea of Abyss (49) 115, Deep Sea Temple (50) 124, Heart of Fire (51) 129, Crystal Nest (52) 133, Land of Nurwn (53) 143. `SendsAway(level)`: a character of a lower level saved in the field logs in at its home town (`SessionAppService.EnterWorldAsync`); a `Closed` field keeps one a game master placed there |
 | `Ambients`, `Lighting`, `Camera`, `DayNight`, `Backdrop`, `BackMusicCode` | Client presentation |
 | `FieldEvent` | `Nightmare` (Navisko): see Night and day |
 | `HazeReduction`, `SightCells` | The share of the distance haze the field clears (Ricarten 0.2) and the 64-unit cells of sight added before it starts (Ice Ura 1); client presentation |
@@ -400,7 +400,11 @@ sends it in `WorldJoined`; each tick it sets `FieldInstance.Night` for every fie
 - A nightmare field (`FieldDef.FieldEvent` = `Nightmare`: Navisko) spawns its monsters only at night; at nightfall each
   of its people turns into the night creature (the monster whose model is `Wolverin_A`) where it stands; at dawn its
   hostile monsters die without reward and its people return, those with an appearance draw (`NpcDefinition.AppearSlot`,
-  `AppearCycle`) only when the dawn's new draw picks them.
+  `AppearCycle`) only when the dawn's new draw picks them. A nightmare town is a village only by day
+  (`FieldDef.IsVillageAt(night)`): at night its players are out of the village state (skills, crystals and the field
+  stance with the weapon in hand; a personal shop open there closes at nightfall), which `WorldServer.ApplyVillageNight`
+  sets for the players inside at nightfall and dawn and every entry takes from the hour; the client follows the same rule
+  for its own player (`GameScene.InVillage`).
 
 ## Weather
 
@@ -443,7 +447,8 @@ spawn files; see [world-import.md](world-import.md)): `SpawnPoints` (X/Z, `Activ
 
 Bosses: `BossSpawnSchedule` (one per server) picks a random minute 1-45 each local day and opens a pass at that minute
 of every hour, at most once per hour slot and never within 10 minutes of the last pass. `WorldServer` hands the hour to
-every live field; `SpawnScheduledBosses(hour)` spawns each `BossSpawn` whose hours contain it at the first active
+every live field; `SpawnScheduledBosses(hour)` spawns each `BossSpawn` that appears at that local hour (0-23;
+`BossSpawn.AppearsAt` reads an authored hour 24 as midnight, as the stored schedules write it) at the first active
 point with a player near (else the first active point), plus escorts scattered within 64 units.
 
 ## Loot and kill rewards

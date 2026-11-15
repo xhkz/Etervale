@@ -33,9 +33,12 @@ public sealed class GameClient : IDisposable
     private PristonAudioLibrary _audio;
     private readonly PresentationSettings _presentation;
     private DisplayConfirmation _displayConfirmation;
+    private readonly Func<string> _readClipboard;
 
-    public GameClient(GraphicsDevice graphicsDevice, ContentManager content, string assetRoot, string serverAddress, PresentationSettings presentation = null)
+    public GameClient(GraphicsDevice graphicsDevice, ContentManager content, string assetRoot, string serverAddress, PresentationSettings presentation = null,
+        Func<string> readClipboard = null)
     {
+        _readClipboard = readClipboard;
         _graphicsDevice = graphicsDevice;
         _content = content;
         _assetRoot = assetRoot;
@@ -84,13 +87,16 @@ public sealed class GameClient : IDisposable
             _sky,
             _effects,
             _audio,
-            RenewBackend);
+            RenewBackend)
+        {
+            ReadClipboard = _readClipboard ?? (static () => "")
+        };
         _displayConfirmation = new DisplayConfirmation(_context);
         // First screen: the opening / authentication scene (the login form overlays it next).
         SetScreen(new OpeningScreen(_context));
     }
 
-    public bool HandleEscape() => _screen?.HandleEscape() == true;
+    public void HandleEscape() => _screen?.HandleEscape();
 
     // The diagnostics overlay (F9, as the original's debug display): the frame timing and the screen's status, drawn at
     // the top left over everything.

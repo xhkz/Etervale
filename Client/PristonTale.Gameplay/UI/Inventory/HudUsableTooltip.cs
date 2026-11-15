@@ -155,6 +155,7 @@ public static class HudUsableTooltip
         CrystalKind.ClanPet => [ClientText.Format("Usable.ClanPet", crystal.Name), ClientText.Get("Usable.ClanOnly")],
         CrystalKind.CastleMercenary => [ClientText.Format("Usable.Mercenary", crystal.Name), ClientText.Get("Usable.Mercenary2")],
         CrystalKind.SoulStone => [ClientText.Format("Usable.SoulStone", PetMinutes)],
+        _ when crystal.Count > 1 => [ClientText.Format("Usable.Pets", crystal.Count, crystal.Name), ClientText.Format("Usable.Pet2", PetMinutes)],
         _ => [ClientText.Format("Usable.Pet", crystal.Name), ClientText.Format("Usable.Pet2", PetMinutes)]
     };
 

@@ -388,6 +388,10 @@ internal static unsafe partial class MGP
     [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Window_Maximize", ExactSpelling = true)]
     public static extern void Window_Maximize(MGP_Window* window);
 
+    // Etervale fork: the clipboard's text (monogame/issues/022-clipboard-text.md).
+    [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Clipboard_GetText", ExactSpelling = true)]
+    public static extern int Clipboard_GetText(byte* buffer, int capacity);
+
     [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Window_SetClientSize", ExactSpelling = true)]
     public static extern void Window_SetClientSize(MGP_Window* window, int width, int height);
 

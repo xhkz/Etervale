@@ -83,6 +83,8 @@ public sealed partial class FieldInstance
 
     public bool HasCrystalPetSlot(WorldPlayer owner) => _skills.HasCrystalPetSlot(owner);
 
+    public int FreeCrystalPetSlots(WorldPlayer owner) => _skills.FreeCrystalPetSlots(owner);
+
     // The owner dismisses the pet of one status (the code its icon shows); false when the owner keeps no such pet here.
     public bool DismissCrystalPets(WorldPlayer owner, uint statusCode) =>
         _players.TryGetValue(owner.EntityId, out var present) && ReferenceEquals(present, owner) && _skills.DismissCrystalPets(owner, statusCode);

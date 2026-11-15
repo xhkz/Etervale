@@ -56,6 +56,16 @@ namespace Microsoft.Xna.Framework
         {
         }
 
+        // Etervale fork: the clipboard's text (monogame/issues/022-clipboard-text.md).
+        /// <summary>
+        /// The text the system clipboard holds, or an empty string when it holds none. Empty on platforms without
+        /// clipboard access.
+        /// </summary>
+        public virtual string GetClipboardText()
+        {
+            return string.Empty;
+        }
+
 	    /// <summary>
 	    /// The display orientation on a mobile device.
 	    /// </summary>

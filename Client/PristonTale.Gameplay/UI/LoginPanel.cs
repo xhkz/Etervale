@@ -9,7 +9,8 @@ namespace PristonTale.Gameplay.UI;
 public enum LoginIntent
 {
     None,
-    SubmitLogin
+    SubmitLogin,
+    OpenSettings
 }
 
 public sealed class LoginPanel
@@ -18,8 +19,11 @@ public sealed class LoginPanel
     {
         Account,
         Password,
-        Login
+        Login,
+        Settings
     }
+
+    private const int FocusTargets = (int)FocusTarget.Settings + 1;
 
     private readonly HudCanvas _canvas;
     // Starts held: the button of the click that revealed the panel is not a click on it until released.
@@ -63,7 +67,7 @@ public sealed class LoginPanel
             if (Pressed(keyboard, previousKeyboard, Keys.Tab))
             {
                 var direction = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift) ? -1 : 1;
-                SetFocus((FocusTarget)(((int)_focus + direction + 3) % 3));
+                SetFocus((FocusTarget)(((int)_focus + direction + FocusTargets) % FocusTargets));
             }
 
             if (clicked)
@@ -81,6 +85,11 @@ public sealed class LoginPanel
                     SetFocus(FocusTarget.Login);
                     intent = LoginIntent.SubmitLogin;
                 }
+                else if (layout.Settings.Contains(cursor))
+                {
+                    SetFocus(FocusTarget.Settings);
+                    intent = LoginIntent.OpenSettings;
+                }
             }
 
             Account.Update(typed, dtSeconds);
@@ -88,13 +97,16 @@ public sealed class LoginPanel
             if (Pressed(keyboard, previousKeyboard, Keys.Enter)
                 || _focus >= FocusTarget.Login && Pressed(keyboard, previousKeyboard, Keys.Space))
             {
-                intent = LoginIntent.SubmitLogin;
+                intent = _focus == FocusTarget.Settings ? LoginIntent.OpenSettings : LoginIntent.SubmitLogin;
             }
         }
 
         _previousMouse = mouse;
         return intent;
     }
+
+    // After another form closes: the button that closed it is no click on this one until released.
+    public void HoldPointer() => _previousMouse = HeldMouse;
 
     internal static bool Clicked(in MouseState mouse, in MouseState previous) =>
         mouse.LeftButton == ButtonState.Pressed && previous.LeftButton == ButtonState.Released;
@@ -109,7 +121,7 @@ public sealed class LoginPanel
     public void Draw(Viewport viewport)
     {
         var layout = LoginLayout.Create(viewport.Width, viewport.Height);
-        var tint = InputEnabled ? Color.White : new Color(155, 155, 155);
+        var tint = InputEnabled ? Color.White : LoginWidgets.Disabled;
         _canvas.Begin(layout.Scale);
         _canvas.Image("LoginPanel", layout.Panel);
         _canvas.Text("ETERVALE", layout.Title, pixels: 30f, centered: true);
@@ -117,6 +129,7 @@ public sealed class LoginPanel
         DrawField(ClientText.Get("Login.Account"), Account, layout.Account, tint);
         DrawField(ClientText.Get("Login.Password"), Password, layout.Password, tint);
         DrawButton(ClientText.Get("Login.LogIn"), layout.Login, _focus == FocusTarget.Login, layout, tint);
+        DrawButton(ClientText.Get("Login.Settings"), layout.Settings, _focus == FocusTarget.Settings, layout, tint);
         _canvas.Text(Status, layout.Status, HudCanvas.Gold, 16f, centered: true);
         _canvas.Text(ClientText.Get("Login.Hint"), layout.Hint, HudCanvas.Muted, 13f, centered: true);
         _canvas.End();
@@ -126,7 +139,7 @@ public sealed class LoginPanel
     {
         var focused = InputEnabled && field.Focused;
         _canvas.Text(label, new Rectangle(box.X, box.Y - 28, box.Width, 24), HudCanvas.Muted, 17f);
-        _canvas.Frame(box, "Inset", 8, focused ? HudCanvas.Gold : tint);
+        LoginWidgets.Field(_canvas, box, focused, tint);
         var text = field.DisplayText;
         if (focused && field.CaretVisible)
         {
@@ -141,14 +154,7 @@ public sealed class LoginPanel
         var hovered = box.Contains(layout.Pointer(_previousMouse.Position));
         var highlighted = InputEnabled && (focused || hovered);
         var pressed = InputEnabled && hovered && _previousMouse.LeftButton == ButtonState.Pressed;
-        var color = highlighted ? new Color(255, 230, 180) : tint;
-        if (pressed)
-        {
-            color *= 0.7f;
-        }
-
-        _canvas.Frame(box, "Button", 12, color);
-        _canvas.Text(label, box, highlighted ? Color.White : HudCanvas.Gold, 20f, centered: true);
+        LoginWidgets.Button(_canvas, label, box, highlighted, pressed, tint);
     }
 
     private static bool Pressed(in KeyboardState current, in KeyboardState previous, Keys key)

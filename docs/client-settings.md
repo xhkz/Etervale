@@ -9,7 +9,7 @@ the in-game Settings panel, and how a change reaches the display, the renderer a
 
 - Adding, renaming or removing a client option.
 - A user's settings file is ignored ("using defaults") or a value silently resets.
-- Changing a quality preset or the Settings panel rows.
+- Changing a quality preset, the Settings panel rows or the login settings form.
 - Investigating why a display change reverted after 15 seconds.
 - Running a benchmark or capture with a specific settings file (`--settings`, `--benchmark-render`).
 
@@ -17,7 +17,7 @@ the in-game Settings panel, and how a change reaches the display, the renderer a
 
 | Path | Responsibility |
 |---|---|
-| [`ClientSettings.cs`](../Client/PristonTale.Engine3D/Rendering/ClientSettings.cs) | The record: fields and defaults, `Validate`, `WithQuality` (presets), `HasSameRendering`, `HasSameDisplay`, `FrameLimit`. |
+| [`ClientSettings.cs`](../Client/PristonTale.Engine3D/Rendering/ClientSettings.cs) | The record: fields and defaults, the accepted values of the discrete options (`ShadowMapSizes`, `LampShadowTileSizes`, `LampShadowCounts`, `ShadowUpdateRates`, `LocalLightLimits`, `MultiSampleCounts`), `Validate`, `WithQuality` (presets), `WithQualityLabel`, `HasSameRendering`, `HasSameDisplay`, `FrameLimit`. |
 | `Client/PristonTale.Engine3D/Rendering/GraphicsOptions.cs` | Enums `GraphicsQuality`, `AntiAliasingMode`, `TonemapperMode`, `BloomQuality`, `ShadowFilterMode` (serialized by name). |
 | `Client/PristonTale.Engine3D/Rendering/DistanceFogMode.cs` | `DistanceFogMode` and its converter (accepts older booleans). |
 | `Client/PristonTale.Engine3D/Rendering/PristonFrameContext.cs` | `PristonDebugView`; `PristonDistanceFog.For` (fog mode to fog parameters). |
@@ -28,6 +28,8 @@ the in-game Settings panel, and how a change reaches the display, the renderer a
 | `Client/PristonTale.Engine3D/Rendering/WindowPlacement.cs` | Where the windowed window goes: centred on the primary monitor, or its saved position while the title bar stays on screen (`DisplayController` applies it and maximizes a window that was). |
 | `Client/PristonTale/Display/DisplayValidationProbe.cs` | `--validate-display REPORT.json`: cycles display configurations and checks pacing. |
 | `Client/PristonTale.Gameplay/UI/Widgets/HudSettingsPanel.cs` | The in-game Settings panel (system menu, entry Settings). |
+| `Client/PristonTale.Gameplay/UI/SettingsForm.cs`, `SettingsFormLayout.cs`, `SettingsOptions.cs` | The login screen's settings form: every option as a dropdown, slider or text field, by tab. |
+| `Client/PristonTale.Gameplay/UI/SettingsChoices.cs` | The frame limits, presets, window sizes and refresh rates both settings screens offer. |
 | `Client/PristonTale.Gameplay/UI/DisplayConfirmation.cs` | Confirm (Enter or button) / revert (Escape or button) prompt of a display change. |
 | `Client/PristonTale.Engine3D/Rendering/PristonRenderer.cs` (`ApplyQuality`) | Reads the rendering fields when `RenderingChanged` fires. |
 | `tests/PristonTale.Tests/ClientSettingsTests.cs`, `PhotorealTests.cs` | Validation, older fog booleans, persistence, invalid documents, pacing; preset contents. |
@@ -89,9 +91,9 @@ renderer through `PresentationSettings.ApplyRendering` and apply at once.
 
 | Field | Type, default | Valid values (else default) | Panel | Effect |
 |---|---|---|---|---|
-| `quality` | `High` (default), `Low`, `Medium`, `Ultra`, `Custom` | defined enum | yes (Graphics quality) | Label of the preset the fields came from. The panel applies a preset with `WithQuality`; editing any preset field in the panel sets `Custom`. Loading a file never applies a preset. |
+| `quality` | `High` (default), `Low`, `Medium`, `Ultra`, `Custom` | defined enum | yes (Graphics quality) | Label of the preset the fields came from. The panels apply a preset with `WithQuality`; editing a preset field turns it to `Custom` once it differs from the preset (`WithQualityLabel`). Loading a file never applies a preset. |
 | `antiAliasing` | `Taa` (default), `Off`, `Fxaa`, `Smaa`, `Msaa` | defined enum | yes | `Taa`: jittered projection, motion vectors (skinned actors from their previous pose), history resolve. `Msaa`: multisampled HDR scene, no depth pre-pass. `Fxaa`/`Smaa`: 1x filter on the 8-bit display image. |
-| `multiSampleCount` | int, `4` | 0, 2, 4, 8 | label only | Samples of the HDR scene with `antiAliasing` `Msaa` only; the renderer clamps to 2-4 (`PristonRenderer.ApplyQuality`). Also a Display field: a change goes through confirmation. |
+| `multiSampleCount` | int, `4` | 0, 2, 4 | label only | Samples of the HDR scene with `antiAliasing` `Msaa` only; the renderer clamps to 2-4 (`PristonRenderer.ApplyQuality`). Also a Display field: a change goes through confirmation. |
 | `autoExposure` | bool, `true` | | | GPU histogram and adaptation; `false` holds the light model's incident reading. |
 | `exposureCompensation` | float stops, `0` | finite, -3 to 3 | | Added to the automatic or fixed exposure. |
 | `tonemapper` | `PbrNeutral` (default), `AgX`, `Aces` | defined enum | | Display transform of the final pass. |
@@ -138,16 +140,48 @@ asset. English has translations too, `Texts/en`, for the quest dialogs the asset
 guide's subjects, the helper pet, the quest dialogs and every quest window description, and translate nothing else, and
 that the English texts are only translated quest dialogs.
 
+## Login settings form
+
+The login form's Settings button (beside Log in; Tab focuses it and Enter or Space opens it) opens `SettingsForm`, drawn
+in the login screen's frame, buttons and fields. It edits every field of the file on four tabs (`SettingsOptions.All`,
+in order):
+
+- Display: window mode, monitor, resolution, refresh rate, vertical sync, maximum and background FPS, language, server
+  address.
+- Graphics: quality, anti-aliasing, MSAA samples, sharpening, shadows, sun shadow resolution, cascades, shadow filter,
+  shadow animation, lamp shadows and their resolution, local lights, high-resolution world textures.
+- Effects: ambient occlusion, contact shadows, image-based lighting, screen-space reflections, volumetric light, bloom,
+  automatic exposure, exposure compensation, tone mapping, colour grading and its LUT file, distance fog, realistic sky,
+  clouds.
+- Game & audio: music, sound, weather, camera mode, target HP, name plates, level guide, debug view, calibration
+  spheres.
+
+Not listed: `version`, the window's place (`windowX`, `windowY`, `windowMaximized`, which follow the window) and
+`uiScale`, which nothing reads. Sliders: sharpening (0 to 100 % by 5), cascades (1 to 4) and exposure compensation
+(-3 to +3 EV by 0.25); the server address and the LUT file are text fields. Dropdowns list only valid values: the
+discrete options' tables in `ClientSettings`, the frame limits of `SettingsChoices`, the window sizes and refresh rates
+the monitor reports (as the in-game panel), MSAA's 2 and 4 samples, and distance fog without `Classic`; a valid value the
+file holds that a list lacks (a frame limit of 75, MSAA 0, a size the monitor does not report) is listed too. An open
+list shows 8 values and scrolls one value per wheel step.
+
+The form edits a copy of `Requested`, whose quality it names again on opening (a file may name a preset its options no
+longer match: `Custom`). Apply (or Enter outside a text field) hands it to `PresentationSettings.Requested`,
+which applies it as the panel's changes are applied below, a display change with its confirmation; Cancel or Escape
+drops it (Escape closes an open list first); Defaults resets every option but the server address and the window's
+place. Picking a quality applies its preset; changing an option a preset sets turns the quality to `Custom` only once
+it differs from the named preset (`WithQualityLabel`).
+
 ## In-game Settings panel
 
 `HudSettingsPanel` rows, in order: Window, Monitor, Resolution, Frequency, VSync, BGM, Audio, Maximum FPS, Background
 FPS, Anti-aliasing, Sun shadow, Graphics quality, Shadow animation, Shadows, Target HP, Name plates, Weather, Sky,
 Clouds, Language. Click cycles
 forward, Shift+click backward. Resolution offers only the sizes the primary monitor reports (at least 800x600,
-`HudSettingsPanel.Resolutions`): any of them in fullscreen, those that fit on the desktop below the window's title bar
+`SettingsChoices.Resolutions`): any of them in fullscreen, those that fit on the desktop below the window's title bar
 when windowed, and none when borderless (it covers the desktop). Graphics quality cycles Low, Medium, High, Ultra;
-from `Custom` it goes to Low (forward) or Ultra (backward). Anti-aliasing, Sun shadow, Shadow animation and Shadows set
-`quality` to `Custom`. Rows are inert while a display change awaits confirmation.
+from `Custom` it goes to Low (forward) or Ultra (backward). A row that changes an option the named preset sets (Anti-aliasing,
+Sun shadow, Shadow animation, Shadows, Clouds) turns `quality` to `Custom` once it differs from that preset
+(`WithQualityLabel`). Rows are inert while a display change awaits confirmation.
 
 ## Apply and confirm
 

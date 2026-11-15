@@ -1,6 +1,7 @@
 using PristonTale.Simulation.Items;
 using PristonTale.Simulation.Items.Usable;
 using PristonTale.Simulation.Progression;
+using PristonTale.Simulation.Skills;
 
 namespace PristonTale.Simulation.Characters;
 
@@ -85,6 +86,7 @@ public sealed record OwnerState(
     public int Tier { get; init; }
     public int EliteSkillPoints { get; init; }
     public IReadOnlyList<OwnedSkillView> Skills { get; init; } = Array.Empty<OwnedSkillView>();
+    public SkillBindings SkillBindings { get; init; } = SkillBindings.Default;
 
     // What the worn items add beyond the status values above.
     public int CarriedWeight { get; init; }
@@ -137,7 +139,7 @@ public sealed record OwnerState(
         var damage = Combat.WeaponDamage.ComputeForHit(character);
         var current = new OwnerState(character.Level, character.Experience,
             ExperienceTable.ForLevel(Math.Clamp(character.Level, 1, ExperienceTable.MaximumLevel)),
-            ExperienceTable.ForLevel(Math.Clamp(character.Level + 1, 1, ExperienceTable.MaximumLevel)),
+            ExperienceTable.LevelEnd(Math.Clamp(character.Level, 1, ExperienceTable.MaximumLevel)),
             character.Money, character.Life, character.MaxLife, character.Mana, character.MaxMana, character.Stamina, character.MaxStamina,
             character.StatPoints, character.SkillPoints, attributes.Strength, attributes.Spirit, attributes.Talent, attributes.Agility, attributes.Health,
             damage.Min, damage.Max, character.Derived.Defence, character.Derived.Absorption, character.InventoryRevision, items)
@@ -152,6 +154,7 @@ public sealed record OwnerState(
             WeaponSet = character.WeaponSet,
             EliteSkillPoints = character.EliteSkillPoints,
             Skills = previous is not null && previous.SkillsRevision == character.Skills.Revision ? previous.Skills : SkillViews(character.Skills),
+            SkillBindings = character.SkillBindings,
             CarriedWeight = character.Derived.CarriedWeight,
             MaxWeight = character.Derived.MaxWeight,
             CriticalChance = Combat.CombatProfileFactory.CriticalChance(character),

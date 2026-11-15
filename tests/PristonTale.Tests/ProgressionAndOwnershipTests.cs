@@ -52,12 +52,13 @@ internal static class ProgressionAndOwnershipTests
         Assert.True(character.Experience == ulong.MaxValue, "overflow or loss of saved XP above cap");
         character.RestoreProgress(ExperienceTable.ForLevel(110), 0, tier: 3);
         character.AwardExperience(ulong.MaxValue);
-        Assert.True(character.Experience == ExperienceTable.Ceiling && character.Level == ExperienceTable.MaximumLevel && ExperienceTable.MaximumLevel == 180,
-            "a 64-bit award wrapped or the 180 levels are not reachable");
-        Assert.True(ExperienceTable.ForLevel(121) == 21_744_927_060UL && ExperienceTable.ForLevel(180) == 8_127_624_927_060UL,
+        Assert.True(character.Experience == ExperienceTable.Ceiling && character.Level == ExperienceTable.MaximumLevel && ExperienceTable.MaximumLevel == 200,
+            "a 64-bit award wrapped or the 200 levels are not reachable");
+        Assert.True(ExperienceTable.ForLevel(121) == 21_744_927_060UL && ExperienceTable.ForLevel(180) == 8_127_624_927_060UL
+            && ExperienceTable.ForLevel(181) == 8_980_624_927_060UL && ExperienceTable.ForLevel(200) == 59_642_624_927_060UL,
             "the level table past 120 differs");
         var lost = character.LoseExperience(ulong.MaxValue);
-        Assert.True(character.Experience == ExperienceTable.ForLevel(180) && lost == ExperienceTable.Ceiling - ExperienceTable.ForLevel(180),
+        Assert.True(character.Experience == ExperienceTable.ForLevel(ExperienceTable.MaximumLevel) && lost == ExperienceTable.Ceiling - ExperienceTable.ForLevel(ExperienceTable.MaximumLevel),
             "a loss went below the level's start or wrapped");
         Assert.True(KillReward.ExpForKill(ulong.MaxValue, 1, 1, 5) == ulong.MaxValue
             && PremiumRules.BoostExperience(ulong.MaxValue / 2, new PremiumTimers()) == ulong.MaxValue / 2, "kill experience wrapped");

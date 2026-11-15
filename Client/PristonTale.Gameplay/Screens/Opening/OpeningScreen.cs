@@ -105,6 +105,14 @@ public sealed class OpeningScreen : GameScreen
         }
     }
 
+    public override void HandleEscape()
+    {
+        if (_loginRevealed)
+        {
+            _loginController.HandleEscape();
+        }
+    }
+
     public override void Dispose()
     {
         _loginController?.Dispose();

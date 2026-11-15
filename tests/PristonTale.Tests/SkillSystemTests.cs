@@ -97,8 +97,8 @@ internal static class SkillSystemTests
         mage.Skills.RecordUses(0x08010002, 100);
         Assert.True(mage.Skills.Revision == revision + 1 && OwnerState.Capture(mage).Skills.Single().Uses == 100,
             "a trained skill did not reach the owner's skill list");
-        var buffer = new byte[64];
-        var read = SkillsPacket.Read(buffer.AsSpan(0, new SkillsPacket(7, [(0x08010002u, 3, 4200)]).Write(buffer)));
+        var buffer = new byte[128];
+        var read = SkillsPacket.Read(buffer.AsSpan(0, new SkillsPacket(7, [(0x08010002u, 3, 4200)], Server.Net.WireMapping.Bindings(SkillBindings.Default)).Write(buffer)));
         Assert.True(read.Revision == 7 && read.Skills.Single() == (0x08010002u, 3, 4200), "the skills packet lost the uses");
         return Task.CompletedTask;
     }

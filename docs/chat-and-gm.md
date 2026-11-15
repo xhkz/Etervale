@@ -97,7 +97,9 @@ Kinds: 0 server, 1 whisper, 2 system, 3 notice, 4 party, 5 clan, 6 trade, 9 assi
 - Colours: server (255,128,96), whisper (150,190,255), notice (230,160,255), party (200,255,0), clan (255,255,80),
   trade (200,255,255), assistant (200,128,128), players (255,255,192).
 - Enter opens the input or sends; Escape closes the window before anything else; Up and Down recall the last 16
-  commands (by first word). The input holds 78 characters. Typing suppresses the HUD and movement keys.
+  commands (by first word). The input holds 78 characters. Ctrl+V (Cmd+V on macOS) pastes the clipboard's text as if
+  typed (`HudChatInput.Paste`: line breaks and tabs become spaces, characters the HUD font cannot draw are left out, the
+  paste stops at the limit). Typing suppresses the HUD and movement keys.
 - On the All tab a line is spoken; on the Clan and Trade tabs it is prefixed `/CLAN> ` or `/TRADE> `; on the Party tab,
   or with a leading `@`, it goes as party chat. After a whisper the input keeps `/:name ` for the next line. The classic
   routing marks `~/` (every server) and `` `/ `` (the data server) are dropped before a command is sent, and the server
@@ -151,14 +153,18 @@ Commands match by exact, case-sensitive prefix in table order. Levels:
   player until that player leaves the world.
 - Items: `/@get code` or `/@get "name"` drops an item (`code#U<n>` or a named unique's name makes that named unique,
   `code#Q` the quest variant), `/@get_perf code [class] [aging]` its best copy, aged to the level when one is given
-  (0 to 20, `AgingRules.MaxLevel`; the class may be `none`), `/@put name code` writes
-  a copy into a player's bag before delivering it, `/@put_perf name code [class] [aging]` the same with the best copy, `/AgingSetting code level [class 1-8]` drops a weapon or armour aged
+  (0 to 20, `AgingRules.MaxLevel`; the class is any of the 11 by name, short name FS MS AS PS ATA KS MG PRS ASN SHA MA
+  or number 1 to 11, or `none`), `/@put name code` writes
+  a copy into a player's bag before delivering it, `/@put_perf name code [class] [aging]` the same with the best copy, `/AgingSetting code level [class 1-11]` drops a weapon or armour aged
   to the level; `/specific job` and `/Performance value` force the class and middle
   roll of items made in the next minute; `/init_premiumitem n` ends a premium timer.
 - Monsters: `/monster name [count]` spawns up to 21 (only the highest level drops items), `/mymonster name [count]` as
   many pets for four minutes (each call adds to the ones still standing; none replaces another or the caller's skill
   summon), `/event_monster name minutes permille` replaces spawns by chance, `/set_absorb id value`, `/talk id text`
   makes an entity speak in a bubble.
+- Entity ids (`/talk`, `/set_absorb`, `/usercode`): a game master's target frame shows the clicked or hovered entity's
+  id in its portrait's top left corner ("ID 123"); ids are given at run time, so they change when the server restarts
+  and when a monster respawns.
 - Server: `/user_limit [n]`, the blocked-login list, `/shutdown` (8 minutes: five notices, reminders every 30 s and
   every 5 s in the last minute, then every client is asked to close and the server stops), `/weather
   clear|overcast|rain|storm [1-255]` sets the weather of every field that takes rain (the density, heavy by default)

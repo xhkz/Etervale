@@ -79,6 +79,14 @@ internal static class EquipmentTests
         Assert.True(EquipmentVisuals.MotionIndex("WA126") == EquipmentVisuals.MotionIndex("WA105")
             && EquipmentVisuals.MeshPath("WA126").EndsWith("itWA126.smd", StringComparison.Ordinal) && EquipmentVisuals.HeldInLeftHand("DS125"),
             "an item newer than the motion files has no model, motion or hand");
+        Assert.True(EquipmentVisuals.MeshPath("PR503").EndsWith("itPR503.smd", StringComparison.Ordinal)
+            && EquipmentVisuals.MeshPath("GP135").EndsWith("itGP135.smd", StringComparison.Ordinal)
+            && EquipmentVisuals.MeshPath("EC106").EndsWith("itec106.smd", StringComparison.Ordinal)
+            && EquipmentVisuals.MeshPath("bc137").EndsWith("itBC137.smd", StringComparison.Ordinal) && EquipmentVisuals.MotionIndex("PR503") == -1,
+            "a later item with its own drop model has no ground model, or took a motion index");
+        Assert.True(EquipmentVisuals.HeldInLeftHand("DS130") && EquipmentVisuals.HeldInLeftHand("OM131") && !EquipmentVisuals.HeldInLeftHand("DG132")
+            && EquipmentVisuals.MeshPath("OR136").EndsWith("itOR136.smd", StringComparison.Ordinal) && EquipmentVisuals.MotionIndex("DA130") == -1,
+            "a shield, orb, ring or armour of levels 105-136 has no model or the wrong hand");
         var missingVisual = EquipmentVisuals.Apply(definition.DefaultVisuals, "", "WV199", "DS999", false, definition.MotionJobMask);
         Assert.True(missingVisual.WeaponKey == "" && missingVisual.OffHandKey == "", "an item without a client model stopped the player appearance");
         Assert.True(EquipmentVisuals.WeaponBone("WA101", true) == "Bip in01", "city weapon not sheathed");
@@ -95,7 +103,8 @@ internal static class EquipmentTests
             && EquipmentVisuals.MotionIndex("WD101") == 293 && EquipmentVisuals.MotionIndex("WD153") == 324
             && EquipmentVisuals.MotionIndex("WD137") == 293, "the phantoms and daggers lost their motion indices");
         Assert.True(EquipmentVisuals.MeshPath("WN151").EndsWith("itWN120.smd", StringComparison.Ordinal)
-            && EquipmentVisuals.MeshPath("WD136").EndsWith("itWD135.smd", StringComparison.Ordinal), "a phantom or dagger draws another model");
+            && EquipmentVisuals.MeshPath("WD136").EndsWith("itWD136.smd", StringComparison.Ordinal)
+            && EquipmentVisuals.MeshPath("WN137").EndsWith("itWN137.smd", StringComparison.Ordinal), "a phantom or dagger draws another model");
 
         var registry = new CharacterClassRegistry();
         CharacterVisualSet Armed(PlayerClass playerClass, string weapon)
@@ -103,6 +112,10 @@ internal static class EquipmentTests
             var definition = registry.Get(playerClass).Definition;
             return EquipmentVisuals.Apply(definition.DefaultVisuals, "", weapon, "", false, definition.MotionJobMask);
         }
+
+        Assert.True(EquipmentVisuals.TwinMeshPath(Armed(PlayerClass.MartialArtist, "WV136")).EndsWith("LitWV136.smd", StringComparison.Ordinal)
+            && EquipmentVisuals.TwinMeshPath(Armed(PlayerClass.Assassin, "WD137")).EndsWith("itWD137.smd", StringComparison.Ordinal),
+            "an Ibuki or Anima weapon draws another model in its second hand");
 
         var assassin = Armed(PlayerClass.Assassin, "WD101");
         Assert.True(EquipmentVisuals.WeaponBone(assassin, false) == "Bip weapon01" && EquipmentVisuals.TwinBone(assassin, false) == "Bip weapon05"
@@ -115,6 +128,12 @@ internal static class EquipmentTests
         Assert.True(EquipmentVisuals.WeaponBone(shaman, false) == "Bip in01" && EquipmentVisuals.WeaponBone(shaman, true) == "Bip in01"
             && EquipmentVisuals.TwinBone(shaman, false) is null && EquipmentVisuals.WeaponHover(shaman) is { Lift: > 3.9f and < 3.91f },
             "the shaman's phantom does not hover at its back");
+        // The turn is about the bone's file Y axis, Z after the model axis mapping; turning about another axis rolls the
+        // phantom over a shoulder.
+        var hover = EquipmentVisuals.WeaponHover(shaman)!.Value.Offset;
+        Assert.True(Vector3.Distance(Vector3.TransformNormal(Vector3.UnitZ, hover), Vector3.UnitZ) < 0.001f
+            && Vector3.Distance(hover.Translation, new Vector3(0f, 10f, 0f)) < 0.001f,
+            "the shaman's phantom turns about the wrong bone axis");
         Assert.True(PlayerEquipmentTiming.TryGet(PlayerClass.Assassin, "WD101", out var stab) && stab.Frames == 40
             && PlayerEquipmentTiming.TryGet(PlayerClass.Shaman, "WN101", out var phantom) && phantom.Frames == 40,
             "the server has no attack timing for the new classes' weapons");

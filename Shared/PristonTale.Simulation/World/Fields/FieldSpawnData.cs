@@ -8,7 +8,24 @@ public sealed record BossSpawn(
     int BossMonsterCode,
     int EscortMonsterCode,
     int EscortCount,
-    IReadOnlyList<int> SpawnHours);
+    IReadOnlyList<int> SpawnHours)
+{
+    public const int HoursPerDay = 24;
+
+    // The authored schedules write midnight as 24 as well as 0.
+    public bool AppearsAt(int hour)
+    {
+        for (var index = 0; index < SpawnHours.Count; index++)
+        {
+            if (SpawnHours[index] % HoursPerDay == hour)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
 
 public sealed record FixedNpc(int NpcCode, int X, int Z, int Angle, int Y = 0);
 

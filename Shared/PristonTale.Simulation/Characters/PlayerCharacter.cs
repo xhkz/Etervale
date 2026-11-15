@@ -88,6 +88,23 @@ public sealed partial class PlayerCharacter
         return true;
     }
 
+    // The owner's mouse socket and function key choices (SkillBindings), saved with the character.
+    public SkillBindings SkillBindings { get; private set; } = SkillBindings.Default;
+
+    // False, keeping the current choices, when the class does not offer one of the new ones on its side.
+    public bool SetSkillBindings(SkillBindings bindings)
+    {
+        if (bindings is null || !bindings.IsValidFor(Class.Skills))
+        {
+            return false;
+        }
+
+        SkillBindings = bindings;
+        return true;
+    }
+
+    public void RestoreSkillBindings(SkillBindings bindings) => SkillBindings = bindings.Sanitized(Class.Skills);
+
     // Quest progress: the running quest, finished quests and the logs whose bits pay lasting rewards.
     public QuestJournal Quests { get; private set; } = new();
 
@@ -721,6 +738,7 @@ public sealed partial class PlayerCharacter
         clone.Quests = Quests.Clone();
         clone.RestoreStarterGifts(StarterGiftsReceived);
         clone.RestoreHelpPet(HelpPet, HelpPetHidden);
+        clone.SkillBindings = SkillBindings;
         clone.Premium.CopyFrom(Premium);
         clone.ItemUses.CopyFrom(ItemUses);
         clone.Recompute();

@@ -15,6 +15,8 @@ using PristonTale.Simulation.Quests;
 using PristonTale.Simulation.Items.Mixing;
 using PristonTale.Simulation.Items.Usable;
 
+using PristonTale.Gameplay.UI;
+
 namespace PristonTale.Tests;
 
 // The client's phrases: every language file holds every phrase with the same placeholders, every key the client code
@@ -89,6 +91,10 @@ internal static partial class LocalizationTests
     // Keys the client builds from a prefix and a value it shows.
     private static IEnumerable<string> BuiltKeys() =>
         Enum.GetNames<WindowMode>().Select(static name => "Settings.WindowMode." + name)
+            .Concat(SettingsOptions.All.Select(static option => option.LabelKey))
+            .Concat(SettingsOptions.ValueKeys())
+            .Concat(Enum.GetNames<SettingsTab>().Select(static name => "Options.Tab." + name))
+            .Concat(["Options.Fps", "Options.Samples", "Options.Pixels", "Options.Count", "Options.Hertz"])
             .Concat(Enum.GetNames<GraphicsQuality>().Select(static name => "Settings.Quality." + name))
             .Concat(Enum.GetNames<CloudQuality>().Select(static name => "Settings.Clouds." + name))
             .Concat(ClientSettings.SupportedLanguages.Select(static language => "Language." + language))

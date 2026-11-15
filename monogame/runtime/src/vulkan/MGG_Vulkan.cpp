@@ -7172,7 +7172,7 @@ MG_EXPORT void MGG_GraphicsDevice_GetNativeHandles(const MGG_GraphicsDevice* dev
 // MGG.EnsureRuntimeVersion) checks before anything else: a library built from other sources (the official package, or
 // a stale build of the fork) would fail later at the first missing export, or worse, call an export whose arguments
 // changed. Bumped with every change of an exported function (monogame/issues/002-runtime-version.md).
-#define MGVK_ETERVALE_RUNTIME_VERSION 8
+#define MGVK_ETERVALE_RUNTIME_VERSION 9
 
 MG_EXPORT mgint MGG_Etervale_RuntimeVersion()
 {

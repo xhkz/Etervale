@@ -16,12 +16,8 @@ internal sealed class HudSettingsPanel
     private const int RowHeight = 17;
     private const int CloudQualities = (int)CloudQuality.High + 1;
 
-    private static readonly int[] FrameLimits = [0, 30, 60, 90, 120, 144, 165, 240, 360];
-    private static readonly int[] ShadowSizes = [1024, 2048, 4096, 8192];
     private static readonly int WindowModes = Enum.GetValues<WindowMode>().Length;
     private static readonly int AntiAliasingModes = Enum.GetValues<AntiAliasingMode>().Length;
-    private static readonly GraphicsQuality[] Presets = [GraphicsQuality.Low, GraphicsQuality.Medium, GraphicsQuality.High, GraphicsQuality.Ultra];
-    private static readonly int[] ShadowUpdateRates = [30, 60, 120, 0];
     private readonly PresentationSettings _settings;
     private readonly string[] _labels = new string[20];
     private ClientSettings _labelSettings;
@@ -50,7 +46,7 @@ internal sealed class HudSettingsPanel
             }
 
             var direction = backwards ? -1 : 1;
-            _settings.Requested = row switch
+            _settings.Requested = (row switch
             {
                 0 => current with { WindowMode = (WindowMode)(((int)current.WindowMode + direction + WindowModes) % WindowModes) },
                 1 => current with { Monitor = ((current.Monitor + 1 + direction + _settings.MonitorCount + 1) % (_settings.MonitorCount + 1)) - 1 },
@@ -59,21 +55,21 @@ internal sealed class HudSettingsPanel
                 4 => current with { VerticalSync = !current.VerticalSync },
                 5 => current with { MusicEnabled = !current.MusicEnabled },
                 6 => current with { SoundEnabled = !current.SoundEnabled },
-                7 => current with { MaxFps = Cycle(FrameLimits, current.MaxFps, direction) },
-                8 => current with { BackgroundMaxFps = Cycle(FrameLimits, current.BackgroundMaxFps, direction) },
-                9 => current with { Quality = GraphicsQuality.Custom, AntiAliasing = (AntiAliasingMode)(((int)current.AntiAliasing + direction + AntiAliasingModes) % AntiAliasingModes) },
-                10 => current with { Quality = GraphicsQuality.Custom, ShadowMapSize = Cycle(ShadowSizes, current.ShadowMapSize, direction) },
+                7 => current with { MaxFps = Cycle(SettingsChoices.FrameLimits, current.MaxFps, direction) },
+                8 => current with { BackgroundMaxFps = Cycle(SettingsChoices.FrameLimits, current.BackgroundMaxFps, direction) },
+                9 => current with { AntiAliasing = (AntiAliasingMode)(((int)current.AntiAliasing + direction + AntiAliasingModes) % AntiAliasingModes) },
+                10 => current with { ShadowMapSize = Cycle(ClientSettings.ShadowMapSizes, current.ShadowMapSize, direction) },
                 11 => current.WithQuality(NextPreset(current.Quality, direction)),
-                12 => current with { Quality = GraphicsQuality.Custom, ShadowUpdateRate = Cycle(ShadowUpdateRates, current.ShadowUpdateRate, direction) },
-                13 => current with { Quality = GraphicsQuality.Custom, ShadowsEnabled = !current.ShadowsEnabled },
+                12 => current with { ShadowUpdateRate = Cycle(ClientSettings.ShadowUpdateRates, current.ShadowUpdateRate, direction) },
+                13 => current with { ShadowsEnabled = !current.ShadowsEnabled },
                 14 => current with { ClassicTargetHealthBar = !current.ClassicTargetHealthBar },
                 15 => current with { ClassicNamePlates = !current.ClassicNamePlates },
                 16 => current with { WeatherEnabled = !current.WeatherEnabled },
                 17 => current with { RealisticSky = !current.RealisticSky },
-                18 => current with { Quality = GraphicsQuality.Custom, CloudQuality = (CloudQuality)(((int)current.CloudQuality + direction + CloudQualities) % CloudQualities) },
+                18 => current with { CloudQuality = (CloudQuality)(((int)current.CloudQuality + direction + CloudQualities) % CloudQualities) },
                 19 => current with { Language = NextLanguage(current.Language, direction) },
                 _ => current
-            };
+            }).WithQualityLabel();
             return;
         }
     }
@@ -107,7 +103,7 @@ internal sealed class HudSettingsPanel
 
     private ClientSettings NextResolution(ClientSettings current, int direction)
     {
-        var sizes = Resolutions(current.WindowMode, _settings.DisplayModes, _settings.Desktop);
+        var sizes = SettingsChoices.Resolutions(current.WindowMode, _settings.DisplayModes, _settings.Desktop);
         if (sizes.Count == 0)
         {
             return current;
@@ -118,60 +114,18 @@ internal sealed class HudSettingsPanel
         return current with { WindowWidth = next.X, WindowHeight = next.Y };
     }
 
-    // The sizes a mode offers, smallest first, all from the modes the monitor reports: fullscreen any of them; a window
-    // those that fit on the desktop below its title bar; borderless none, since it always covers the desktop.
-    internal static List<Point> Resolutions(WindowMode mode, IReadOnlyList<DisplayModeOption> modes, DisplayModeOption desktop)
-    {
-        var sizes = new List<Point>();
-        if (mode == WindowMode.Borderless)
-        {
-            return sizes;
-        }
-
-        foreach (var option in modes)
-        {
-            var size = new Point(option.Width, option.Height);
-            var fits = mode == WindowMode.Fullscreen || option.Width <= desktop.Width && option.Height <= desktop.Height - WindowPlacement.TitleBar;
-            if (fits && !sizes.Contains(size))
-            {
-                sizes.Add(size);
-            }
-        }
-
-        sizes.Sort(static (left, right) => ((long)left.X * left.Y).CompareTo((long)right.X * right.Y));
-        return sizes;
-    }
-
-    private int NextFrequency(ClientSettings current, int direction)
-    {
-        if (current.WindowMode != WindowMode.Fullscreen)
-        {
-            return 0;
-        }
-
-        var frequencies = new List<int> { 0 };
-        foreach (var mode in _settings.DisplayModes)
-        {
-            if ((current.Monitor == -1 || mode.Monitor == current.Monitor)
-                && mode.Width == current.WindowWidth && mode.Height == current.WindowHeight && !frequencies.Contains(mode.RefreshRate))
-            {
-                frequencies.Add(mode.RefreshRate);
-            }
-        }
-
-        frequencies.Sort();
-        return Cycle(frequencies, current.RefreshRate, direction);
-    }
+    private int NextFrequency(ClientSettings current, int direction) =>
+        current.WindowMode != WindowMode.Fullscreen ? 0 : Cycle(SettingsChoices.Frequencies(current, _settings.DisplayModes), current.RefreshRate, direction);
 
     private static GraphicsQuality NextPreset(GraphicsQuality quality, int direction)
     {
-        var index = Array.IndexOf(Presets, quality);
+        var index = Array.IndexOf(SettingsChoices.Presets, quality);
         if (index < 0)
         {
-            return direction > 0 ? Presets[0] : Presets[^1];
+            return direction > 0 ? SettingsChoices.Presets[0] : SettingsChoices.Presets[^1];
         }
 
-        return Presets[(index + direction + Presets.Length) % Presets.Length];
+        return SettingsChoices.Presets[(index + direction + SettingsChoices.Presets.Length) % SettingsChoices.Presets.Length];
     }
 
     private static int Cycle(IReadOnlyList<int> values, int value, int direction)

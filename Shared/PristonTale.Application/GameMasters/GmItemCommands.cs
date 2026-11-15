@@ -77,8 +77,8 @@ internal static class GmItemCommands
         }
     }
 
-    // The arguments of a perfect copy: the item code, optionally a class (a class name, a short name MS FS PS AS KS ATA PRS
-    // MG, its number 1 to 8, or none) and an aging level (0 to AgingRules.MaxLevel, as /AgingSetting); null after telling
+    // The arguments of a perfect copy: the item code, optionally a class (a class name, a short name in ShortClassNames, its
+    // number 1 to 11, or none) and an aging level (0 to AgingRules.MaxLevel, as /AgingSetting); null after telling
     // what was wrong.
     private static PerfectCopy? ReadPerfect(GmCommandContext context)
     {
@@ -88,7 +88,7 @@ internal static class GmItemCommands
         var job = SpecJobCode(specName);
         if (job < 0)
         {
-            context.Reply(Format("Unknown spec {0} (a class name, MS FS PS AS KS ATA PRS MG, 1-8 or none)", specName));
+            context.Reply(Format("Unknown spec {0} ({1})", specName, SpecChoices));
             return null;
         }
 
@@ -246,7 +246,16 @@ internal static class GmItemCommands
         return await context.Commands.World.DropAsync(context.Issuer.EntityId, rng => ItemRoller.Create(definition, 1, rng, overrides), 0);
     }
 
-    // 0 for none, a class number 1 to 8, else -1.
+    private static readonly (string Alias, PlayerClass Class)[] ShortClassNames =
+    [
+        ("FS", PlayerClass.Fighter), ("MS", PlayerClass.Mechanician), ("AS", PlayerClass.Archer), ("PS", PlayerClass.Pikeman), ("ATA", PlayerClass.Atalanta),
+        ("KS", PlayerClass.Knight), ("MG", PlayerClass.Magician), ("PRS", PlayerClass.Priestess), ("ASN", PlayerClass.Assassin), ("SHA", PlayerClass.Shaman),
+        ("MA", PlayerClass.MartialArtist)
+    ];
+
+    private const string SpecChoices = "a class name, FS MS AS PS ATA KS MG PRS ASN SHA MA, 1-11 or none";
+
+    // 0 for none, a class number 1 to 11, else -1.
     public static int SpecJobCode(string name)
     {
         if (name.Length == 0 || name.Equals("none", StringComparison.OrdinalIgnoreCase))
@@ -254,17 +263,16 @@ internal static class GmItemCommands
             return 0;
         }
 
-        if (name.Length == 1 && name[0] - '0' is var digit && Enum.IsDefined((PlayerClass)digit) && ClassProfiles.Specializes((PlayerClass)digit))
+        if (int.TryParse(name, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var number))
         {
-            return digit;
+            return Enum.IsDefined((PlayerClass)number) && ClassProfiles.Specializes((PlayerClass)number) ? number : -1;
         }
 
-        var shortNames = new[] { ("FS", 1), ("MS", 2), ("AS", 3), ("PS", 4), ("ATA", 5), ("KS", 6), ("MG", 7), ("PRS", 8) };
-        foreach (var (alias, code) in shortNames)
+        foreach (var (alias, playerClass) in ShortClassNames)
         {
             if (alias.Equals(name, StringComparison.OrdinalIgnoreCase))
             {
-                return code;
+                return (int)playerClass;
             }
         }
 

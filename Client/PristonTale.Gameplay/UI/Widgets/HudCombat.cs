@@ -52,6 +52,11 @@ public sealed partial class HudCombat
     private string _levelText = "";
     private int _percentValue = -1;
     private string _percentText = "";
+    private ulong _idValue;
+    private string _idText = "";
+
+    // Set for game masters: the frame shows the target's entity id in its portrait's top left corner.
+    public bool ShowEntityIds { get; set; }
 
     public void SetCatalog(WorldRenderCatalog catalog) => _catalog = catalog;
 
@@ -237,6 +242,11 @@ public sealed partial class HudCombat
         painter.ColorBox(frame.Portrait, 60, 68, 74, 255);
         painter.Stretch(HudArt.TargetBox, box);
         painter.Image(portrait, frame.Portrait);
+        if (ShowEntityIds)
+        {
+            painter.Text(IdText(target), frame.Portrait.X + 2, frame.Portrait.Y + 2, LevelColor);
+        }
+
         if (entity.Spawn.Kind == EntityKind.Monster && BroodIcon(_catalog.GetMonster(entity.Spawn.TemplateId)?.Brood ?? MonsterBrood.Normal) is { } icon)
         {
             painter.Stretch(icon, frame.Brood);
@@ -293,6 +303,17 @@ public sealed partial class HudCombat
         }
 
         return _levelText;
+    }
+
+    public string IdText(ulong target)
+    {
+        if (target != _idValue)
+        {
+            _idValue = target;
+            _idText = ClientText.Format("Hud.TargetEntityId", target);
+        }
+
+        return _idText;
     }
 
     private string PercentText(int percent)

@@ -10,6 +10,8 @@ public sealed class TextInputField
     public bool Focused { get; set; }
     public bool Masked { get; init; }
     public int MaxLength { get; init; } = 20;
+    // Taken besides letters and digits.
+    public string Symbols { get; init; } = ".-_";
 
     public string Text => _text.ToString();
     public string DisplayText => Masked ? new string('*', _text.Length) : _text.ToString();
@@ -17,8 +19,20 @@ public sealed class TextInputField
 
     public void Clear() => _text.Clear();
 
+    public void SetText(string text)
+    {
+        _text.Clear();
+        foreach (var ch in text)
+        {
+            if (_text.Length < MaxLength && Accepts(ch))
+            {
+                _text.Append(ch);
+            }
+        }
+    }
+
     // The characters the window typed since the last frame (TypedText): the system's own key repeat makes a held
-    // Backspace ('\b') or letter repeat, as in any text box. Letters, digits, '.', '-' and '_' are taken.
+    // Backspace ('\b') or letter repeat, as in any text box. Letters, digits and the field's symbols are taken.
     public void Update(ReadOnlySpan<char> typed, double dtSeconds)
     {
         _caretSeconds += dtSeconds;
@@ -39,5 +53,5 @@ public sealed class TextInputField
         }
     }
 
-    private static bool Accepts(char ch) => char.IsAsciiLetterOrDigit(ch) || ch is '.' or '-' or '_';
+    private bool Accepts(char ch) => char.IsAsciiLetterOrDigit(ch) || Symbols.Contains(ch);
 }

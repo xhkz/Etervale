@@ -63,6 +63,9 @@ public sealed class ScreenContext
     // chat input each frame.
     public TypedText TypedText { get; } = new();
 
+    // The text the system clipboard holds (empty when none), for pasting into the chat line.
+    public Func<string> ReadClipboard { get; init; } = static () => "";
+
     // Set when the server asked the client to save and quit; the game closes like the window's close button.
     public bool ExitRequested { get; set; }
 

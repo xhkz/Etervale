@@ -583,6 +583,12 @@ public sealed class WorldPlayer
         _inVillage = inVillage;
     }
 
+    // A nightmare town turning into a battlefield at nightfall, or back at dawn.
+    public void SetVillage(bool inVillage)
+    {
+        _inVillage = inVillage;
+    }
+
     public void CrossGate(bool inVillage)
     {
         // A chase target belongs to the previous field.

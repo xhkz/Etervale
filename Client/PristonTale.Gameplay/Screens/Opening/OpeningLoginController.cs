@@ -15,6 +15,8 @@ internal sealed class OpeningLoginController : IDisposable
     private readonly ScreenContext _context;
     private readonly LoginAudio _audio;
     private readonly LoginPanel _login;
+    private readonly SettingsForm _settings;
+    private bool _settingsOpen;
     private Phase _phase = Phase.Login;
     private Task<LoginOutcome> _loginTask;
     private CancellationTokenSource _loginCts;
@@ -24,6 +26,7 @@ internal sealed class OpeningLoginController : IDisposable
         _context = context;
         _audio = audio;
         _login = new LoginPanel(context.SpriteBatch, context.Font, context.UiAtlas);
+        _settings = new SettingsForm(context.SpriteBatch, context.Font, context.UiAtlas, context.Presentation);
     }
 
     public enum LoginResult { None, Succeeded }
@@ -31,9 +34,27 @@ internal sealed class OpeningLoginController : IDisposable
     public LoginResult Update(in KeyboardState keyboard, in KeyboardState lastKeyboard, float dt)
     {
         var typed = _context.TypedText.Drain();
-        if (_phase == Phase.Login && _login.Update(keyboard, lastKeyboard, typed, dt, _context.GraphicsDevice.Viewport) == LoginIntent.SubmitLogin)
+        var viewport = _context.GraphicsDevice.Viewport;
+        if (_settingsOpen)
         {
-            BeginLogin();
+            if (_settings.Update(keyboard, lastKeyboard, typed, dt, viewport) == SettingsFormResult.Closed)
+            {
+                CloseSettings();
+            }
+        }
+        else if (_phase == Phase.Login)
+        {
+            switch (_login.Update(keyboard, lastKeyboard, typed, dt, viewport))
+            {
+                case LoginIntent.SubmitLogin:
+                    BeginLogin();
+                    break;
+                case LoginIntent.OpenSettings:
+                    _audio.Play(LoginCue.Button);
+                    _settings.Open();
+                    _settingsOpen = true;
+                    break;
+            }
         }
 
         return _phase == Phase.Authenticating ? PollLogin() : LoginResult.None;
@@ -84,7 +105,33 @@ internal sealed class OpeningLoginController : IDisposable
         return succeeded ? LoginResult.Succeeded : LoginResult.None;
     }
 
-    public void Draw(Viewport viewport) => _login.Draw(viewport);
+    // Escape closes the settings form (an open list first); it does nothing while the form is shut.
+    public void HandleEscape()
+    {
+        if (_settingsOpen && _settings.Escape() == SettingsFormResult.Closed)
+        {
+            CloseSettings();
+        }
+    }
+
+    private void CloseSettings()
+    {
+        _settingsOpen = false;
+        _audio.Play(LoginCue.Back);
+        _login.HoldPointer();
+    }
+
+    public void Draw(Viewport viewport)
+    {
+        if (_settingsOpen)
+        {
+            _settings.Draw(viewport);
+        }
+        else
+        {
+            _login.Draw(viewport);
+        }
+    }
 
     public void Dispose()
     {

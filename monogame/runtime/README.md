@@ -172,6 +172,8 @@ Since the C# half was forked too (`../issues/001-framework-from-source.md`), eac
     interface version 8): on macOS the window asks for its full resolution (`SDL_WINDOW_ALLOW_HIGHDPI`), and every
     size, position, display mode and mouse coordinate the runtime exchanges is in pixels (`mg_display_pixel_density`
     and each window's density); elsewhere the density is 1.
+33. **Clipboard text** (`MGP_Clipboard_GetText`, `../issues/022-clipboard-text.md`; interface version 9): the
+    clipboard's text in UTF-8 (`SDL_GetClipboardText`), copied into the caller's buffer with its full length returned.
 
 The runtime also prints the swapchain image count and present mode, an early submission when the uniform buffer is
 full, and a warning when two resources of one shader share a binding.

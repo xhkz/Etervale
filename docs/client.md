@@ -33,7 +33,7 @@ rendering internals, skill presentation and VFX data have their own documents (s
 | `Client/PristonTale.Gameplay/World/*.cs` (other) | `TargetSelection` (target frame owner), `NpcApproach`, `GroundTraversal`, `FieldCollisionQuery`, `LoadedField`, `EnteredCharacter` |
 | `Client/PristonTale.Gameplay/Combat/` | `ActorMotionController` (local motion state machine), `AttackInputController` (attack press/release and server reconcile) |
 | [`Client/PristonTale.Gameplay/UI/GameplayHud.cs`](../Client/PristonTale.Gameplay/UI/GameplayHud.cs) | In-game HUD root: windows, state, update and draw order. Partials: `.Input` (keys, click routing by priority, menu buttons and toggles, captures), `.Services` (NPC service windows and their actions, drops from the bag, icons), `.Quests` (dialog, boxes, quest window), `.Parties` (party window, request box, buttons under a player's portrait), `.PersonalShops`, `.Messages` (completed requests to the chat or the notice strip), `.HelpPet` (what the helper pet speaks of), `.Help` (the help window, the level guide and its switch) |
-| `Client/PristonTale.Gameplay/UI/` (root) | `HudLayout` (800x600 design space), `LoginPanel`/`LoginLayout`/`TextInputField`, `DisplayConfirmation` |
+| `Client/PristonTale.Gameplay/UI/` (root) | `HudLayout` (800x600 design space), `LoginPanel`/`LoginLayout`/`LoginWidgets`/`TextInputField`, the login screen's `SettingsForm` ([client-settings.md](client-settings.md#login-settings-form)), `DisplayConfirmation` |
 | `Client/PristonTale.Gameplay/UI/Widgets/` | Bottom bar, status window, skill tree and sockets, minimap, target frame and combat history (`HudCombat`), 3D target portrait, NPC dialog, settings panel, system menu, notices |
 | `Client/PristonTale.Gameplay/UI/Chat/` | Chat window, tabs, input line and speech bubbles (see [chat-and-gm.md](chat-and-gm.md)) |
 | `Client/PristonTale.Gameplay/UI/Help/` | The help window and the game guide: `HudHelpWindow` (help, guide list, guide page), `LevelGuideBook` (the guide's data), `HudLevelGuide` (the level guide's notice and summary), `HudHelpArt` |
@@ -94,11 +94,13 @@ OpeningScreen --login ok--> CharacterSelectScreen --enter world ok--> GameplaySc
 - `GameScreen` lifecycle: `Enter` (after the previous screen is disposed), `Update`, `Draw`, `HandleEscape`, `Dispose`.
 - A screen requests a transition with `Context.RequestScreen(next)`. `GameClient` stores it as pending and swaps after
   the current `Update` returns: `Dispose` old, then `Enter` new. Never swap from `Draw`.
-- `OpeningScreen`: cinematic (`StartImage/Opening/Map/stage.smd` and its camera path); any key, a mouse click or the
-  end of the cinematic reveals the login form (the revealing click's held button is no click on the form). `OpeningLoginController` starts `IGameBackend.LoginAsync` and polls the task each
-  frame. The server accepts one login per connection, so when `IGameBackend.RequiresNewConnection` is set (a login
-  succeeded or the connection closed) the controller first calls `ScreenContext.RenewBackend`: `GameClient` installs a
-  new `GameServerConnection` and disposes the old one off the game thread.
+- `OpeningScreen`: cinematic (`StartImage/Opening/Map/stage.smd` and its camera path); any key, a mouse click or the end
+  of the cinematic reveals the login form (the revealing click's held button is no click on the form).
+  `OpeningLoginController` starts `IGameBackend.LoginAsync` and polls the task each frame. The form's Settings button
+  opens `SettingsForm` in its place until Apply, Cancel or Escape closes it (`OpeningScreen.HandleEscape`). The server
+  accepts one login per connection, so when `IGameBackend.RequiresNewConnection` is set
+  (a login succeeded or the connection closed) the controller first calls `ScreenContext.RenewBackend`: `GameClient`
+  installs a new `GameServerConnection` and disposes the old one off the game thread.
 - `CharacterSelectScreen`: sub-states `CharacterSelect`, `RaceSelect`, `JobSelect`, `FaceSelect`, `Name`. The roster
   shows each character in its armour, empty-handed; the hovered one's box lists name, level, tribe and class, with its
   clan on a line above them for a character in one (the list's `ClanName`). `CharacterSelectCamera` dollies along the original's rail (300 to
@@ -113,8 +115,10 @@ OpeningScreen --login ok--> CharacterSelectScreen --enter world ok--> GameplaySc
   window pixels.
 - `GameplayScreen` has no transition out; leaving it means quitting.
 - Escape: `Game1` calls `GameClient.HandleEscape` -> `GameScreen.HandleEscape`. `GameplayScreen` closes the open HUD
-  panels (`GameplayHud.ClosePanel`) and returns true if anything was open; every other case exits the game. While a
-  display change awaits confirmation, Escape reverts it and Enter confirms it instead.
+  panels (`GameplayHud.ClosePanel`), the opening screen its settings form; with nothing open Escape does nothing.
+  Escape never quits: the game quits from the exit button's menu in play, the window's close button, a gamepad's Back
+  button or the server's shutdown request. While a display change awaits
+  confirmation, Escape reverts it and Enter confirms it instead.
 
 ### Shutdown
 
@@ -401,8 +405,8 @@ destination. Renderer side of stage publication: [rendering.md](rendering.md).
 | `Z`, or the bar's camera button | `GameplayHud.CycleCameraMode` -> `ClientSettings.CameraMode` | Cycles Manual, Auto and Lock ([camera modes](#camera-modes)) |
 | `I` or `V`, `C`, `S`, `X`, `Q`, `D` | `GameplayHud.UpdateKeys` | Inventory, status, skills, system menu, quest window, party window (ignored with Ctrl held) |
 | `F1`-`F8` | `HudSkillBindings` | Select a skill shortcut; while pressing a skill in the tree, bind it ([skills.md](skills.md)) |
-| `Enter`, `Page Up`/`Page Down`, `Up`/`Down` | `HudChat.Update` | Open the chat input or send its line, scroll the chat, recall commands; while typing, HUD, binding, debug and motion keys and the `A` labels are suppressed |
-| `Esc` | `Game1` | Close the chat window first, then HUD panels, else quit |
+| `Enter`, `Page Up`/`Page Down`, `Up`/`Down`, `Ctrl+V`/`Cmd+V` | `HudChat.Update` | Open the chat input or send its line, scroll the chat, recall commands, paste the clipboard; while typing, HUD, binding, debug and motion keys and the `A` labels are suppressed |
+| `Esc` | `Game1` | Close the chat window first, then HUD panels; never quits |
 | `F9` | `Game1.Update` | Show or hide the diagnostics overlay (frame rate and timing, the screen's status; `GameClient.Diagnostics`) |
 | `Ctrl+F3` / `Ctrl+F5` / `Ctrl+F10` | `GameplayScreen.UpdateDebugKeys` | Add the render stats to the F9 diagnostics / toggle shadows / cycle `PristonDebugView` |
 | `Ctrl+1`..`Ctrl+7` | `GameplayScreen.UpdateMotionKeys` | Force Stand, Walk, Run, Attack, Damage, Dead, Skill on the local avatar |
@@ -442,7 +446,9 @@ stays captured when it closes the window under it. `GameplayHud.HoldsPlayer` (an
 master, a message box) holds the player: `GameScene.MovementLocked` stops a walk in progress and keeps every world click.
 Keys are polled with `Keyboard.GetState()` and edge-detected against the previous frame per consumer. Typed characters
 come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `ScreenContext.TypedText`) and reach
-`TextInputField` on the login and name forms and the chat input line.
+`TextInputField` on the login and name forms and the chat input line. The chat line also pastes the clipboard: `Game1`
+hands `GameWindow.GetClipboardText` (the MonoGame fork, `monogame/issues/022-clipboard-text.md`) to `GameClient`, which
+puts it in `ScreenContext.ReadClipboard` for `HudChat.ReadClipboard`.
 
 ## HUD and windows
 
@@ -532,8 +538,9 @@ come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `Scr
   window or the wing gate is open, as the original refuses it. The warehouse's own coin takes gold out.
 - Bottom bar gauges (`HudBar`): life, mana and stamina (`Bar_Life`, `Bar_Mana`, `Bar_Stamina`, 94, 94 and 76 pixels)
   and the experience (`sinGage/Bar_Exp.bmp`, 6 x 86 at (485, 508), Menu-1's slot right of the mana under its "NL." label)
-  fill from the bottom up; the experience is the level's share. Pointed at, each shows its value; the experience reads
-  `EXP: 50.000%` (thousandths, truncated, at most 99.999).
+  fill from the bottom up; the experience is the level's share. Pointed at, life, mana and stamina show their values. The
+  experience's share is always written after the "NL." label, from (512, 553) in light cyan, as `50.000%` (thousandths,
+  truncated, at most 99.999).
 - Potion belt (`HudInventoryPanel.DrawBelt`, after the bottom bar, the window open or not): the three boxes of
   `PotionBack.bmp` at (495 + 26 x box, 565), each potion centred with its count. A right click drinks one (the window
   closed too); keys 1 to 3 drink from their box, and Shift with them fills the box from the bag potion under the pointer
@@ -729,7 +736,9 @@ come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `Scr
   hovered entity. The frame stays after an attack is cancelled and closes when the entity is removed or has been dead
   for 0x50 frames at 70 Hz. With `classicTargetHealthBar` false (default) the bar shows with level and life
   percentage; when true the bar shows without numbers, only after the local player started attacking that monster at
-  full life.
+  full life. A game master (`GameScene.IsGameMaster`: the session's game master level above 0) sees the target's entity
+  id ("ID 123", `HudCombat.IdText`) in the portrait's top left corner (`HudCombat.ShowEntityIds`), the number the id
+  commands take ([chat-and-gm.md](chat-and-gm.md)).
 - Name boxes over the scene (`HudCombat.DrawNamePlates`, drawn right after the drop names in `GameplayHud.Draw`, at
   the speech bubbles' head point): an NPC's name always within 768 units of the camera (180, 180, 255, as in the chat);
   a monster's only while hovered or the clicked target (`TargetSelection.HoveredId`, `TracedId`), in (255, 210, 210),
@@ -890,8 +899,10 @@ come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `Scr
   frames. Everything comes from the presence stream, so every client near the action plays it.
 - Equipment looks (`EquipmentVisuals`, `EquipmentVisualTables` in Engine3D, where model descriptors also name weapons
   through it): every item with a model has its motion index (the
-  weapon index the character motion files list; items newer than those files take the first item of their family and
-  hand class), model (`image/sinimage/Items/DropItem/it<model>.smd`, also its ground model), hand and village bone. An
+  weapon index the character motion files list; weapons newer than those files take the first item of their family and
+  hand class, and items no hand holds that are newer than them take -1), model
+  (`image/sinimage/Items/DropItem/it<model>.smd`, also its ground model), hand and village bone. Every catalog item with
+  its own `it<code>.smd` has a row; one without a row has no ground model, and its drop shows only its name. An
   equipment item without an imported client model is kept by the server but omitted from the rendered look, so it cannot
   abort character entry or remote-player preparation. An
   armour or robe wears the body of its catalog ordinal (`ArmorSlots`: ordinals from 26 sit sixteen slots further, so
@@ -902,9 +913,12 @@ come from the window's text input (`Game1` to `GameClient.TypeCharacter` to `Scr
   261, daggers from 293, vambraces 101-137 from 325). The Assassin holds a dagger in each hand (`Bip weapon01` and
   `Bip weapon05`) and hangs the two on `Bip in07` and `Bip in08` in a village; the Martial Artist wears a vambrace on
   each forearm (`Bip01 R Forearm` and `Bip01 L Forearm`), in a village too, the left one its own model
-  (`Lit<model>.smd`); the left copy is the off-hand actor and carries the weapon's glow
-  (`EquipmentVisuals.TwinBone`, `TwinMeshPath`). The Shaman's phantom hovers behind its back at all times (`Bip in01`, turned 2250 angle units about the bone, moved 10 back and
-  raised 1000 fixed units, `SetActorAttachOffset`).
+  (`Lit<model>.smd`, the right model mirrored front to back: Z of every position and normal negated, each face's
+  corners and UVs in reverse order); the left copy is the off-hand actor and carries the weapon's glow
+  (`EquipmentVisuals.TwinBone`, `TwinMeshPath`). The Shaman's phantom hovers behind its back at all times (`Bip in01`,
+  turned 2250 angle units about the bone's file Y axis and moved 10 along its file Z axis, which the model axis mapping
+  makes a turn of -2250 about Z and a move along Y, then raised 1000 fixed units, `SetActorAttachOffset`), level and
+  centred between the shoulders.
 - Progression (`GameScene.Progression`): a `LevelUp` combat event plays `vfx.player.levelup` (with the level-up chime)
   at the player, a `SkillLearned` event the skill-learn light (`ItemVfx.Learn`) and sound, for every client near.
 - Item sounds (`ItemSoundRules`, `image/Sinimage/Sound`): an item sounds by catalog family (three characters of its key,
@@ -973,8 +987,8 @@ first frames after entry) is tried again every second.
 1. Derive from `GameScreen` in `Screens/<Name>/`; take dependencies from `ScreenContext`; load in `Enter`, release GPU
    resources and cancel backend calls in `Dispose`.
 2. Start backend calls as tasks and poll them in `Update` (see `CharacterSelectScreen.PollBusy`).
-3. Transition with `Context.RequestScreen(new NextScreen(Context, ...))`; override `HandleEscape` if Escape must not
-   quit; override `StatusText` for the window title.
+3. Transition with `Context.RequestScreen(new NextScreen(Context, ...))`; override `HandleEscape` for what Escape
+   closes; override `StatusText` for the window title.
 4. Skip input while `Context.Presentation.AwaitingConfirmation` is set.
 
 ### Handle a new server message on the client

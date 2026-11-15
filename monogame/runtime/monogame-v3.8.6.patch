@@ -2390,7 +2390,7 @@
 +// MGG.EnsureRuntimeVersion) checks before anything else: a library built from other sources (the official package, or
 +// a stale build of the fork) would fail later at the first missing export, or worse, call an export whose arguments
 +// changed. Bumped with every change of an exported function (monogame/issues/002-runtime-version.md).
-+#define MGVK_ETERVALE_RUNTIME_VERSION 8
++#define MGVK_ETERVALE_RUNTIME_VERSION 9
 +
 +MG_EXPORT mgint MGG_Etervale_RuntimeVersion()
 +{
@@ -3135,12 +3135,12 @@
  
  #if _WIN32
  #include <combaseapi.h>
- #endif
- 
++#endif
++
 +#if defined(__APPLE__)
 +#include <CoreGraphics/CoreGraphics.h>
 +#endif
- 
++
 +// Etervale fork (monogame/issues/021-retina-pixels.md): on macOS the window asks for the display's full (Retina)
 +// resolution, and every size, position and mouse coordinate the runtime exchanges is in pixels. SDL works in points
 +// there, so the runtime converts at its edge: a window's sizes and mouse by that window's density (pixels per point),
@@ -3178,14 +3178,14 @@
 +#else
 +    (void)window;
 +    return 1.0f;
-+#endif
+ #endif
 +}
-+
+ 
 +static int MGP_ToPixels(int points, float density)
 +{
 +    return (int)lroundf((float)points * density);
 +}
-+
+ 
 +static int MGP_ToPoints(int pixels, float density)
 +{
 +    return (int)lroundf((float)pixels / density);
@@ -3269,7 +3269,7 @@
  
  	if (window->window == nullptr)
  	{
-@@ -1064,8 +1133,23 @@
+@@ -1064,6 +1133,44 @@
  	assert(window != nullptr);
  
  	SDL_SetWindowBordered(window->window, borderless ? SDL_FALSE : SDL_TRUE);
@@ -3281,8 +3281,8 @@
 +	assert(window != nullptr);
 +
 +	return (SDL_GetWindowFlags(window->window) & SDL_WINDOW_MAXIMIZED) != 0;
- }
- 
++}
++
 +MG_EXPORT void MGP_Window_Maximize(MGP_Window* window)
 +{
 +	assert(window != nullptr);
@@ -3290,10 +3290,31 @@
 +	SDL_MaximizeWindow(window->window);
 +}
 +
++// Etervale fork: the clipboard's text (monogame/issues/022-clipboard-text.md). Returns the text's length in UTF-8 bytes
++// (0 when the clipboard holds no text) and copies as much as fits in buffer, zero-terminated.
++MG_EXPORT mgint MGP_Clipboard_GetText(mgbyte* buffer, mgint capacity)
++{
++	if (!SDL_HasClipboardText())
++		return 0;
++
++	char* text = SDL_GetClipboardText();
++	if (text == nullptr)
++		return 0;
++
++	mgint length = (mgint)SDL_strlen(text);
++	if (buffer != nullptr && capacity > 0)
++	{
++		mgint copied = length < capacity - 1 ? length : capacity - 1;
++		SDL_memcpy(buffer, text, copied);
++		buffer[copied] = 0;
++	}
++
++	SDL_free(text);
++	return length;
+ }
+ 
  void MGP_Window_SetTitle(MGP_Window* window, const char* title)
- {
-     assert(window != nullptr);
-@@ -1078,6 +1162,15 @@
+@@ -1078,6 +1185,15 @@
  {
  	assert(window != nullptr);
  
@@ -3309,7 +3330,7 @@
  	if (show)
  		SDL_ShowWindow(window->window);
  	else
-@@ -1088,12 +1181,15 @@
+@@ -1088,12 +1204,15 @@
  {
  	assert(window != nullptr);
  	SDL_GetWindowPosition(window->window, &x, &y);
@@ -3326,7 +3347,7 @@
  }
  
  void MGP_Window_SetClientSize(MGP_Window* window, mgint width, mgint height)
-@@ -1107,6 +1203,9 @@
+@@ -1107,6 +1226,9 @@
      // SDL_SetWindowSize() is needed.
  
      auto flags = SDL_GetWindowFlags(window->window);
@@ -3336,7 +3357,7 @@
  
      if ((flags & SDL_WINDOW_FULLSCREEN) != 0)
      {
-@@ -1200,7 +1299,8 @@
+@@ -1200,7 +1322,8 @@
  void MGP_Mouse_WarpPosition(MGP_Window* window, mgint x, mgint y)
  {
      assert(window != nullptr);

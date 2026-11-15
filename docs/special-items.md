@@ -127,6 +127,8 @@ from the inventory. Items without a rule keep the generic tooltip.
 | Items | Monster |
 | --- | --- |
 | GP101-108, GP111-113 | Hopy, Hobgoblin, Decoy, Bargon, Head Cutter, Figon, King Hopy, Hulk, Web, Dark Specter, Iron Guard (crystal event: Zzangpy, Wild Goblin, Maximum Decoy, Bauton, Vega Demir, HellSing, Horropion, Typhoon, CurseWeb, Dark Phantom, Imitir Guard) |
+| GP128, GP135-137, GP142-144 | Crow, Kelvezu, Valento, Tulla, Ice Goblin, Hell Hound, Igolation: the monster's pet variant (`Kelvezu 2`; Crow has only one), the same during the crystal event. A pet never carries the extra lives or potions of a wild spawn |
+| GP301-309, GP311-313, GP342-344 | Triple crystals: three pets of what the single crystal (GP1xx of the same number) draws, one draw for all three, each in its own pet slot and showing the single crystal's icon (the tooltip names the count, `Usable.Pets`); refused as `SummonLimit` and kept unless three slots are free. Guardian Saint has no triple (GP310): a clan member keeps one |
 | GP109 Mystic | 20/20/15/15/15/10/5% over the first seven, from the event table during the event |
 | GP121 Marvel | Bargon 20, Head Cutter 20, Figon 15, King Hopy 15, Hulk 12, Web 10, Dark Specter 5, Iron Guard 3 (event: their event monsters) |
 | GP117-119 | One of four skeletons, chaos or Inferna monsters, uniformly |
@@ -152,9 +154,11 @@ the pet's lifetime and starts with the next step (`QueueItemEffect`); a pet dies
 end, the owner's death), when the owner dismisses it (`DismissCrystalPets`, the `DismissCrystalPets` request), enters a
 town or leaves the field (`LeaveCrystalPets`; the statuses end in the field entered, `ArriveWithoutCrystalPets`); a
 pet that falls ends its status. A Web pet's blow slows its target to half speed for 36 frames (not Kelvezu). A player
-keeps at most ten pets (`MonsterCrystals.PetSlots`); an eleventh crystal is refused as `SummonLimit` and kept.
+keeps at most ten pets (`MonsterCrystals.PetSlots`); a pet crystal needs a free slot for each pet it calls
+(`MonsterCrystalDefinition.Count`, `FieldInstance.FreeCrystalPetSlots`), else it is refused as `SummonLimit` and kept.
 `events.crystal` (0 off, 1 from 12:00 to 23:59, 2 all day) switches crystals to their event monsters. A crystal whose
-drawn monster the world data lacks is refused and kept; the data's soul monsters are absent, so soul stones refuse.
+drawn monster the world data lacks is refused and kept; the data's soul monsters are absent, so soul stones refuse. GP123
+Enigma and GP124 Mirotic have no monster in the data and are not usable.
 
 ### Bless Castle items
 

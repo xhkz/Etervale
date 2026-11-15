@@ -204,6 +204,10 @@ public sealed record FieldDef(
     public string ServerCode { get; init; } = string.Empty;
     public FieldEventKind FieldEvent { get; init; }
 
+    // A town keeps its peace (no skills, weapons carried on the back) except a nightmare town at night, when its people
+    // turn into monsters and it is fought in like a field.
+    public bool IsVillageAt(bool night) => State == FieldState.Village && !(night && FieldEvent == FieldEventKind.Nightmare);
+
     // Set for an action field.
     public FieldActionCamera ActionCamera { get; init; }
 

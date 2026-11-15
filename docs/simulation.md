@@ -69,7 +69,7 @@ progression, regeneration and movement rates. `World/`, `Physics/` and `Skills/`
 | [`Modifiers/ModifierTypes.cs`](../Shared/PristonTale.Simulation/Modifiers/ModifierTypes.cs) | `StatKind`, `StatModifier`, `EffectSourceKind`, `ControlFlags`, `StackRule`, `PeriodicEffect` |
 | `Modifiers/EffectContainer.cs` | `EffectSpec`, `ActiveEffect`, `EffectContainer`, `ModifierTotals` |
 | `Modifiers/ModifierRules.cs` | How totals change derived stats, damage, resistances, dealt/taken scaling |
-| `Progression/ExperienceTable.cs` | 180-level cumulative experience thresholds (the designed curve) and the saturation ceiling |
+| `Progression/ExperienceTable.cs` | 200-level cumulative experience thresholds (the designed curve) and the saturation ceiling |
 | `Progression/SkillLearning.cs` | Skill-master training: window, prerequisites, prices, point kinds |
 | `Progression/ProgressionCommand.cs` | `ProgressionCommand` (allocate attribute, learn skill) |
 
@@ -302,7 +302,9 @@ Profiles decouple the formulas from entities. `CombatProfileFactory` builds them
   and specialization plus totals and passives; `Resistances(character)`: worn items and specializations, the element
   passives, then the resistance totals.
 - `ForMonsterBasicAttack` / `DefenderProfile.FromMonster`: from `MonsterCombatStats` (see [world.md](world.md));
-  `FromMonster(MonsterInstance)` adds the monster's `CriticalChanceTaken`.
+  `FromMonster(MonsterInstance)` adds the monster's `CriticalChanceTaken`. The defender profile carries no bionic
+  resistance: the hits struck at it (normal attacks, weapon skills, volleys, pets) are physical, and a monster's
+  bionic resistance stands only against statuses and bionic spells, which read the monster's own resistances.
 
 ### Player attacking (`CombatResolver.Resolve`)
 
@@ -514,10 +516,13 @@ totals.
 - Experience is `ulong` everywhere (character, table, kill rewards, premium boosts, owner state, wire); thresholds pass
   2^32 from level 84. Sums saturate instead of wrapping; persistence stores it as a signed 64-bit integer (the cap is far
   below 2^63) and refuses a negative stored value.
-- `ExperienceTable` holds 180 cumulative thresholds on the designed curve (at a normal kill of the player's level and
-  360 kills an hour: 2 h to level 30, 40 h to 80, 200 h to 120, 1700 h to 180, each level longer than the one before;
-  level 180 starts at 8,127,624,927,060 and is open up to the ceiling); `ForLevel(1) = 0`, `LevelFor` returns the
-  highest level whose threshold is reached.
+- `ExperienceTable` holds 200 cumulative thresholds on the designed curve (at a normal kill of the player's level and
+  360 kills an hour: 2 h to level 30, 40 h to 80, 200 h to 120, 1700 h to 180 and about 3400 h to 200, each level longer
+  than the one before; from level 140 a level's span is the one before grown by about 10.5%, to three significant
+  figures; level 180 starts at 8,127,624,927,060 and level 200 at 59,642,624,927,060 and is open up to the ceiling); `ForLevel(1) = 0`, `LevelFor` returns the
+  highest level whose threshold is reached. `LevelEnd` is where a level's experience bar ends (the owner's `NextLevel`):
+  the next threshold, or for level 200 one more step of the curve (its span times its growth over the span before), past
+  which the bar shows full.
 - `AwardExperience(amount)`: ignores zero and saturates at `ExperienceTable.Ceiling` (2^64 - 2: no wrap, not a level
   cap). `LoseExperience(amount)` (death penalties) never goes below the current level's threshold. Below tier 3, an award that
   would pass `ForLevel(100)` is rejected entirely (not clamped). Levels are applied one `LevelUp` at a time.

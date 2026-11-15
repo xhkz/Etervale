@@ -29,6 +29,7 @@ internal static class WorldDataRulesTests
         yield return ("night creatures walk at night and come back when killed, their NPCs leave, and both turn at dawn", NightCreaturesAsync);
         yield return ("a night creature opens at the field's first active spawn point a player is near, else at its first active point", NightCreaturePointsAsync);
         yield return ("a nightmare field spawns only at night, its people turn into the night creature and return at dawn", NightmareAsync);
+        yield return ("a nightmare town is fought in at night: its players leave the village state at nightfall and take it again at dawn", NightmareTownAsync);
         yield return ("a monster's magic resistance cuts a spell's damage from -100 (double) to 100 (only the least hit), not a weapon skill's", MagicResistanceAsync);
     }
 
@@ -118,6 +119,31 @@ internal static class WorldDataRulesTests
         Assert.True(GameHours.IsNight(23f) && GameHours.IsNight(3.99f) && !GameHours.IsNight(4f) && !GameHours.IsNight(22.99f),
             "night does not run from 23:00 to 4:00");
         return Task.CompletedTask;
+    }
+
+    private static async Task NightmareTownAsync()
+    {
+        var town = new FieldDef("town", "Town", FieldState.Village, new FieldBackdrop("", "", ""), "", []) { FieldEvent = FieldEventKind.Nightmare };
+        var peaceful = town with { FieldEvent = FieldEventKind.None };
+        Assert.True(town.IsVillageAt(night: false) && !town.IsVillageAt(night: true) && peaceful.IsVillageAt(night: true),
+            "a nightmare town kept its peace at night, or another town lost it");
+
+        var day = DateTimeOffset.FromUnixTimeMilliseconds(12L * 60 * WorldClock.MinuteMs);
+        var clock = new BellatraGameTests.GameClock { Now = day };
+        var fixture = new ChatFixture(state: FieldState.Village, clock: clock, fieldEvent: FieldEventKind.Nightmare);
+        var player = await fixture.JoinAsync("Watcher", 0f, 0f);
+        fixture.Tick(1);
+        Assert.True(player.Session.InVillage, "a player entering the nightmare town by day was not in the village");
+
+        clock.Now = DateTimeOffset.FromUnixTimeMilliseconds(23L * 60 * WorldClock.MinuteMs);
+        fixture.Tick(1);
+        Assert.True(!player.Session.InVillage, "nightfall left the player in the village");
+        var late = await fixture.JoinAsync("Latecomer", 10f, 0f);
+        Assert.True(!late.Session.InVillage, "a player entering the nightmare town at night was in the village");
+
+        clock.Now = day;
+        fixture.Tick(1);
+        Assert.True(player.Session.InVillage && late.Session.InVillage, "dawn did not bring the village back");
     }
 
     private static Task NightCreaturesAsync()

@@ -225,6 +225,20 @@ internal static class ChatClientTests
         chat.Update(enter, none, [], 20, chat.Window.Log.Tab);
         Assert.True(sent.Single() == ("hello", false) && chat.Window.Log.Newest(HudChatTab.All, 0).First() == new HudChatEntry("Ann: hello", ChatKind.Player)
             && chat.Bubbles.TryGet(1, out var own) && own == "Ann: hello" && chat.Window.Focused, "sending must echo the line, keep the input and show the bubble");
+        chat.Window.Input.Clear();
+        var clipboard = "one\r\ntwo\tthree";
+        chat.ReadClipboard = () => clipboard;
+        var pasteKeys = new KeyboardState(Keys.LeftControl, Keys.V);
+        chat.Update(pasteKeys, none, [], 22, chat.Window.Log.Tab);
+        chat.Update(pasteKeys, pasteKeys, [], 23, chat.Window.Log.Tab);
+        Assert.True(chat.Window.Input.Text == "one two three", $"Ctrl+V pasted {chat.Window.Input.Text}, once, with its breaks as spaces");
+        chat.Window.Input.Clear();
+        clipboard = new string('x', ChatRules.InputLimit + 10);
+        chat.Update(new KeyboardState(Keys.LeftWindows, Keys.V), none, [], 24, chat.Window.Log.Tab);
+        Assert.True(chat.Window.Input.Text.Length == ChatRules.InputLimit, "Cmd+V must paste and stop at the line's limit");
+        chat.Window.Input.Clear();
+        chat.Update(new KeyboardState(Keys.V), none, [], 25, chat.Window.Log.Tab);
+        Assert.True(chat.Window.Input.Text.Length == 0, "V alone must not paste");
         chat.Update(none, enter, [], 30, chat.Window.Log.Tab);
         chat.Update(enter, none, [], 40, chat.Window.Log.Tab);
         Assert.True(chat.Window.Open && !chat.Window.Focused, "Enter on an empty line releases the keyboard and keeps the window");

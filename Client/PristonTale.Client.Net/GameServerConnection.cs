@@ -384,6 +384,17 @@ public sealed class GameServerConnection : IGameBackend
         Send(new SwingRequestPacket());
     }
 
+    internal void SendSkillBindings(Simulation.Skills.SkillBindings bindings)
+    {
+        var shortcuts = new (uint Code, byte Side)[bindings.Shortcuts.Length];
+        for (var index = 0; index < shortcuts.Length; index++)
+        {
+            shortcuts[index] = (bindings.Shortcuts[index].Code, (byte)bindings.Shortcuts[index].Side);
+        }
+
+        Send(new SkillBindingsPacket(new SkillBindingsEntry(bindings.Left, bindings.Right, shortcuts)));
+    }
+
     internal void SendDismissCrystalPets(uint statusCode)
     {
         Send(new DismissCrystalPetsPacket(statusCode));

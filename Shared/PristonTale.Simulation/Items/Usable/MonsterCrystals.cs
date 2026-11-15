@@ -18,9 +18,10 @@ public enum CrystalKind : byte
 public readonly record struct CrystalMonster(string Key, int Weight = 0);
 
 // A crystal's monsters outside and during the crystal event; one entry means a fixed monster. SharedDelay crystals
-// refuse while the three-second delay of the last crystal runs.
+// refuse while the three-second delay of the last crystal runs. Count pets of the one drawn monster come per use (a
+// triple crystal's three), each in its own pet slot.
 public sealed record MonsterCrystalDefinition(string CatalogKey, string Name, CrystalKind Kind, IReadOnlyList<CrystalMonster> Monsters,
-    IReadOnlyList<CrystalMonster> EventMonsters, bool SharedDelay)
+    IReadOnlyList<CrystalMonster> EventMonsters, bool SharedDelay, int Count = 1)
 {
     // The monster for a roll in 0..9999: a weighted draw over percent weights, else a uniform one.
     public string Pick(int roll, bool crystalEvent)
@@ -84,10 +85,11 @@ public static class MonsterCrystals
         .Where(static crystal => crystal.Kind is CrystalKind.Pet or CrystalKind.ClanPet)
         .ToDictionary(static crystal => PetStatusCode(crystal));
 
-    // The crystals that call one monster, by that monster in and out of the event.
+    // The single crystals that call one monster, by that monster in and out of the event.
     private static readonly Dictionary<string, MonsterCrystalDefinition> ByOwnMonster = Crystals.Values
-        .Where(static crystal => crystal.Kind == CrystalKind.Pet && crystal.Monsters.Count == 1)
+        .Where(static crystal => crystal.Kind == CrystalKind.Pet && crystal.Monsters.Count == 1 && crystal.Count == 1)
         .SelectMany(static crystal => new[] { (crystal.Monsters[0].Key, crystal), (crystal.EventMonsters[0].Key, crystal) })
+        .DistinctBy(static pair => pair.Key, StringComparer.OrdinalIgnoreCase)
         .ToDictionary(static pair => pair.Key, static pair => pair.crystal, StringComparer.OrdinalIgnoreCase);
 
     public static IReadOnlyCollection<MonsterCrystalDefinition> All => Crystals.Values;
@@ -102,8 +104,8 @@ public static class MonsterCrystals
     public static EffectSpec PetStatus(MonsterCrystalDefinition crystal, int slot) =>
         new(PetStatusCode(crystal, slot), EffectSourceKind.Item, harmful: false, ReadOnlySpan<StatModifier>.Empty);
 
-    // The crystal a pet's icon shows: the crystal of its monster alone (a Mystic's Hobgoblin shows the Hobgoblin crystal),
-    // else the crystal used.
+    // The crystal a pet's icon shows: the crystal of its monster alone (a Mystic's Hobgoblin shows the Hobgoblin crystal, a
+    // triple Hopy crystal's pets the Hopy crystal), else the crystal used.
     public static MonsterCrystalDefinition ShownCrystal(MonsterCrystalDefinition used, string monsterKey) =>
         ByOwnMonster.TryGetValue(monsterKey, out var own) ? own : used;
 
@@ -137,6 +139,13 @@ public static class MonsterCrystals
         Pet("GP111", "Web", "Web 2", "CurseWeb");
         Pet("GP112", "Dark Specter", "Dark Specter 2", "Dark Phantom");
         Pet("GP113", "Iron Guard", "Iron Guard 2", "Imitir Guard");
+        Pet("GP128", "Crow", "Crow", "Crow");
+        Pet("GP135", "Kelvezu", "Kelvezu 2", "Kelvezu 2");
+        Pet("GP136", "Valento", "Valento 2", "Valento 2");
+        Pet("GP137", "Tulla", "Tulla 2", "Tulla 2");
+        Pet("GP142", "Ice Goblin", "Icegoblin 2", "Icegoblin 2");
+        Pet("GP143", "Hell Hound", "Hell Hound 2", "Hell Hound 2");
+        Pet("GP144", "Igolation", "Igolation 2", "Igolation 2");
 
         crystals["GP109"] = new MonsterCrystalDefinition("GP109", "Mystic", CrystalKind.Pet,
             [new("HOPY 2", 20), new("Hobgoblin 2", 20), new("Decoy 2", 15), new("Bargon 2", 15), new("Head Cutter 2", 15), new("Figon 2", 10), new("Hopy King 2", 5)],
@@ -149,6 +158,16 @@ public static class MonsterCrystals
             [new("Bauton 2", 20), new("Vega Demir", 20), new("HellSing 2", 15), new("Horropion 2", 15), new("Typhoon 2", 12), new("CurseWeb", 10), new("Dark Phantom", 5),
                 new("Imitir Guard", 3)],
             false);
+
+        // A triple crystal (GP3nn) calls three pets of what its single crystal (GP1nn) draws. The clan's Guardian Saint (10)
+        // has none: a member keeps one.
+        const int TriplePets = 3;
+        foreach (var number in new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 42, 43, 44 })
+        {
+            var single = crystals[$"GP1{number:D2}"];
+            var key = $"GP3{number:D2}";
+            crystals[key] = single with { CatalogKey = key, Count = TriplePets };
+        }
 
         void Billing(string key, string name, CrystalMonster[] monsters) =>
             crystals[key] = new MonsterCrystalDefinition(key, name, CrystalKind.Pet, monsters, monsters, true);

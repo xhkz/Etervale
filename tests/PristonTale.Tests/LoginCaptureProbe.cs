@@ -11,7 +11,8 @@ namespace PristonTale.Tests;
 
 internal sealed class LoginCaptureProbe : Game
 {
-    private sealed record Scenario(string Name, int Width, int Height, bool Busy = false, string Status = "", bool LoginFocus = false);
+    private sealed record Scenario(string Name, int Width, int Height, bool Busy = false, string Status = "", bool LoginFocus = false,
+        SettingsTab? Settings = null, string OpenList = "");
 
     private static readonly Scenario[] Scenarios =
     [
@@ -20,8 +21,22 @@ internal sealed class LoginCaptureProbe : Game
         new("login-ultrawide", 3440, 1440),
         new("login-connecting", 1280, 720, Busy: true, Status: "Connecting…"),
         new("login-error", 800, 600, Status: "Could not reach server. Please try again."),
-        new("login-keyboard-focus", 1280, 720, LoginFocus: true)
+        new("login-keyboard-focus", 1280, 720, LoginFocus: true),
+        new("settings-display", 1280, 720, Settings: SettingsTab.Display),
+        new("settings-graphics", 1280, 720, Settings: SettingsTab.Graphics),
+        new("settings-effects-800", 800, 600, Settings: SettingsTab.Effects),
+        new("settings-game", 1920, 1080, Settings: SettingsTab.Game),
+        new("settings-resolution-list", 1280, 720, Settings: SettingsTab.Display, OpenList: "Options.Resolution"),
+        new("settings-debug-list", 1280, 720, Settings: SettingsTab.Game, OpenList: "Options.DebugView")
     ];
+
+    private static readonly PresentationSettings Display = new()
+    {
+        MonitorCount = 2,
+        Desktop = new DisplayModeOption(0, 2560, 1440, 60),
+        DisplayModes = [new(0, 800, 600, 60), new(0, 1024, 768, 60), new(0, 1280, 720, 60), new(0, 1280, 800, 60), new(0, 1366, 768, 60),
+            new(0, 1440, 900, 60), new(0, 1600, 900, 60), new(0, 1680, 1050, 60), new(0, 1920, 1080, 60), new(0, 1920, 1200, 60), new(0, 2560, 1440, 60)]
+    };
 
     private readonly string _assetRoot;
     private readonly string _output;
@@ -89,6 +104,41 @@ internal sealed class LoginCaptureProbe : Game
         return panel;
     }
 
+    // The form on a tab, with one dropdown open when the scenario names it, clicked as a player would.
+    private SettingsForm CreateForm(Scenario scenario, SettingsTab tab)
+    {
+        var viewport = new Viewport(0, 0, scenario.Width, scenario.Height);
+        var form = new SettingsForm(_batch, _font, _atlas, Display);
+        form.Open();
+        var layout = SettingsFormLayout.Create(scenario.Width, scenario.Height);
+        void Click(Point design)
+        {
+            var x = (int)MathF.Ceiling(design.X * layout.Scale);
+            var y = (int)MathF.Ceiling(design.Y * layout.Scale);
+            form.Update(default, default, new MouseState(x, y, 0, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released,
+                ButtonState.Released), [], 0, viewport);
+            form.Update(default, default, new MouseState(x, y, 0, ButtonState.Pressed, ButtonState.Released, ButtonState.Released, ButtonState.Released,
+                ButtonState.Released), [], 0, viewport);
+            form.Update(default, default, new MouseState(x, y, 0, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released,
+                ButtonState.Released), [], 0, viewport);
+        }
+
+        Click(layout.Tab((int)tab).Center);
+        for (var row = 0; row < form.Rows.Count && scenario.OpenList.Length > 0; row++)
+        {
+            if (SettingsOptions.All[form.Rows[row]].LabelKey == scenario.OpenList)
+            {
+                Click(layout.Control(row).Center);
+                var list = layout.List(layout.Control(row), 1);
+                var hover = SettingsFormLayout.ListRow(list, 1).Center;
+                form.Update(default, default, new MouseState((int)(hover.X * layout.Scale), (int)(hover.Y * layout.Scale), 0, ButtonState.Released,
+                    ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released), [], 0, viewport);
+            }
+        }
+
+        return form;
+    }
+
     private void ValidateInput()
     {
         var viewport = new Viewport(0, 0, 800, 600);
@@ -100,6 +150,9 @@ internal sealed class LoginCaptureProbe : Game
         panel.InputEnabled = true;
         panel.Update(new KeyboardState(Keys.LeftShift, Keys.Tab), default, default, [], 0, viewport);
         intent = panel.Update(new KeyboardState(Keys.Enter), default, default, [], 0, viewport);
+        Assert.True(intent == LoginIntent.OpenSettings, "Enter on the focused Settings button did not open the settings form");
+        panel.Update(new KeyboardState(Keys.LeftShift, Keys.Tab), default, default, [], 0, viewport);
+        intent = panel.Update(new KeyboardState(Keys.Enter), default, default, [], 0, viewport);
         Assert.True(intent == LoginIntent.SubmitLogin, "keyboard focus could not activate login");
         var layout = LoginLayout.Create(viewport.Width, viewport.Height);
         var center = layout.Login.Center;
@@ -108,6 +161,13 @@ internal sealed class LoginCaptureProbe : Game
         intent = panel.Update(default, default, mouse, [], 0, viewport);
         Assert.True(intent == LoginIntent.SubmitLogin, "scaled login hit region differs from rendering");
         Assert.True(panel.Update(default, default, mouse, [], 0, viewport) == LoginIntent.None, "held button submitted twice");
+        var settings = layout.Settings.Center;
+        var press = new MouseState((int)(settings.X * layout.Scale), (int)(settings.Y * layout.Scale), 0,
+            ButtonState.Pressed, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released);
+        panel.Update(default, default, default, [], 0, viewport);
+        Assert.True(panel.Update(default, default, press, [], 0, viewport) == LoginIntent.OpenSettings, "clicking Settings did not open the settings form");
+        panel.HoldPointer();
+        Assert.True(panel.Update(default, default, press, [], 0, viewport) == LoginIntent.None, "the button that closed the settings form clicked the login form");
         Assert.True(panel.Password.DisplayText == "******", "password was exposed in presentation");
     }
 
@@ -126,7 +186,15 @@ internal sealed class LoginCaptureProbe : Game
         _batch.Begin();
         _batch.Draw(_background, new Rectangle(0, 0, scenario.Width, scenario.Height), Color.White);
         _batch.End();
-        CreatePanel(scenario).Draw(GraphicsDevice.Viewport);
+        if (scenario.Settings is { } tab)
+        {
+            CreateForm(scenario, tab).Draw(GraphicsDevice.Viewport);
+        }
+        else
+        {
+            CreatePanel(scenario).Draw(GraphicsDevice.Viewport);
+        }
+
         GraphicsDevice.SetRenderTarget(null);
         using var file = File.Create(Path.Combine(_output, scenario.Name + ".png"));
         target.SaveAsPng(file, target.Width, target.Height);

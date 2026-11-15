@@ -1150,6 +1150,29 @@ MG_EXPORT void MGP_Window_Maximize(MGP_Window* window)
 	SDL_MaximizeWindow(window->window);
 }
 
+// Etervale fork: the clipboard's text (monogame/issues/022-clipboard-text.md). Returns the text's length in UTF-8 bytes
+// (0 when the clipboard holds no text) and copies as much as fits in buffer, zero-terminated.
+MG_EXPORT mgint MGP_Clipboard_GetText(mgbyte* buffer, mgint capacity)
+{
+	if (!SDL_HasClipboardText())
+		return 0;
+
+	char* text = SDL_GetClipboardText();
+	if (text == nullptr)
+		return 0;
+
+	mgint length = (mgint)SDL_strlen(text);
+	if (buffer != nullptr && capacity > 0)
+	{
+		mgint copied = length < capacity - 1 ? length : capacity - 1;
+		SDL_memcpy(buffer, text, copied);
+		buffer[copied] = 0;
+	}
+
+	SDL_free(text);
+	return length;
+}
+
 void MGP_Window_SetTitle(MGP_Window* window, const char* title)
 {
     assert(window != nullptr);

@@ -174,7 +174,7 @@ Every message code has the high word `0x4554` ("ET"); every message keeps the `{
 | Code | Name | Direction | Content |
 | --- | --- | --- | --- |
 | `0x45540100` | `OwnerStatus` | S→C | Level, unsigned 64-bit experience (current, level start, next level), 64-bit money, resources, attributes, combat values and revisions, then the elite skill points and the class tier (0..4), the bag page shown and the weapon pair held (a byte each, 0 A, 1 B). 158 B. |
-| `0x45540101` | `Skills` | S→C | Skill revision and (code, rank, uses) entries, at most 512. |
+| `0x45540101` | `Skills` | S→C | Skill revision, (code, rank, uses) entries (at most 512) and the saved mouse sockets and `F1`-`F8` keys. |
 | `0x45540102` | `Inventory` | S→C | Inventory revision split into parts of up to 48 items, each `{Guid, uint32 Code, int32 Kind, Count, Anchor, Slot, int16 Width, Height, text Name (64 B), text Link (48 B: a bound Union Core's clan member)}`; the client replaces its inventory when all parts of a revision arrived. |
 | `0x45540110` / `0x45540111` | `InventoryCommand` / `InventoryResult` | C→S / S→C | Transactional inventory operation, correlated by operation id. A ground pickup (`InventoryAction.Pickup`) names the drop in `ItemId`, with `Destination` 0 (received as any item) or `InventoryCommand.PickupToBag` (1: into the bag as a stack of its own, for the client's cursor, or to the hand when the page shown is full; anything else is refused); a throw (`InventoryAction.Drop`) names the bag item or the item in the hand and the amount in `Count`; `Move`, `Merge` and `Swap` naming the item in the hand set it down on the page shown; a gold throw (`InventoryAction.DropGold`) only the amount. |
 | `0x45540120` / `0x45540121` | `ProgressionCommand` / `ProgressionResult` | C→S / S→C | Attribute allocation and skill learning. |
@@ -195,6 +195,7 @@ Every message code has the high word `0x4554` ("ET"); every message keeps the `{
 | `0x45540202` | `SkillEvents` | S→C | Skill starts, impacts, releases and cancels on the presence timeline. |
 | `0x45540203` | `StatusEffects` | S→C | Modifier effects added, refreshed, removed or ticking, on the presence timeline. |
 | `0x45540204` | `SkillCooldowns` | S→C | The owner's running cooldowns whenever the set changes. |
+| `0x45540205` | `SkillBindings` | C→S | The owner changed a mouse socket or a function key; the server keeps them with the character. |
 | `0x45540300` | `ItemDetails` | S→C | The values of every owned item copy at an inventory revision, in parts sent before its `Inventory` parts. |
 | `0x45540301` | `OwnerItemStatus` | S→C | Carried and maximum weight, critical, block, range, attack speed, belt capacity, regeneration, magic mastery and the eight resistances; sent before every `OwnerStatus`. |
 | `0x45540302` | `AgingProgress` | S→C | The counts of the owner's worn aging copies toward their goals, whenever a count moves. |
@@ -244,7 +245,7 @@ These bodies have no version header, except the combat event list's (see [Event 
 | `ProgressionCommand` | `Guid OperationId, int64 ExpectedRevision, int32 Action, Attribute, Amount, uint SkillCode, uint64 NpcId` | 56 |
 | `InventoryResult` / `ProgressionResult` | `Guid OperationId, int32 Ok, int64 Revision, game text Message` (none for a plain success) | 40 + texts |
 | `Inventory` | `int64 Revision, int32 Part, Parts, Count`, then items `{Guid, uint Code, int32 Kind, Count, Anchor, Slot, int16 Width, Height, text Name (64 B)}` (at most 64 per part) | 28 + up to 106n |
-| `Skills` | `int64 Revision, int32 Count`, then `{uint Code, int32 Rank, int32 Uses}` | 20 + 12n |
+| `Skills` | `int64 Revision, int32 Count`, then `{uint Code, int32 Rank, int32 Uses}`, then the bindings entry (see [Skills and status effects](#skills-and-status-effects)) | 29 + 12n + 5k |
 | `CombatEvents` | `uint16 Version (1), uint16 Count`, then compact entries (see [Event lists](#event-lists)) | 12 + 4 to 65 per entry |
 | `RemoveObjects` | `int32 Count`, then `uint64 EntityId` | 12 + 8n |
 | `GroundItems` | `uint16 Version (1), uint16 Flags, int32 Count`, then `{Guid Id, uint32 ItemCode, uint8 Flags (1 gold), uint8 0, uint16 0, int32 Amount, X, Y, Z, text Name (64 B)}` (1 to 64) | 16 + up to 106n |
@@ -290,6 +291,11 @@ entities by presence handle. Positions are fixed point (×256, `GameUnits`) and 
 | `SkillEvents` (version 4) | `uint16 Version, uint16 Count`, then compact skill entries ([Event lists](#event-lists)) | 12 + 9 to 62 per entry |
 | `StatusEffects` (version 3) | `uint16 Version, uint16 Count`, then compact status entries ([Event lists](#event-lists)) | 12 + 7 to 49 per entry |
 | `SkillCooldowns` | `uint ServerTick, int Count`, then `{uint SkillCode, uint RemainingMs, uint DurationMs}` (at most 256) | 20 + 12n |
+| `SkillBindings` | the bindings entry | 21 + 5k |
+
+The bindings entry is `{uint Left, uint Right, uint8 Count}`, then `Count` (at most 16, `F1` first) keys `{uint Code, uint8
+Side}`: the skill codes of the mouse sockets (`0x11111111` the basic attack) and of the function keys, Side 1 selecting
+the left socket and 2 the right; an empty key is `{0, 0}`. Readers check the count against the bytes left exactly.
 
 `SkillCast` flags carry the command (`SkillCastCommand`): 0 a new cast, 1 the release of the held charge of that skill, 2
 and 3 order the caster's summon of that skill to fight only the caster's target or to pick the nearest enemy; flags

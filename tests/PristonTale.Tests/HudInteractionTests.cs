@@ -423,13 +423,13 @@ internal static class HudInteractionTests
     {
         DisplayModeOption[] modes = [new(0, 1920, 1080, 0), new(0, 800, 600, 0), new(0, 1600, 900, 0), new(0, 1280, 720, 0)];
         var desktop = new DisplayModeOption(0, 1920, 1080, 0);
-        var full = HudSettingsPanel.Resolutions(WindowMode.Fullscreen, modes, desktop);
+        var full = SettingsChoices.Resolutions(WindowMode.Fullscreen, modes, desktop);
         Assert.True(full.SequenceEqual([new Point(800, 600), new Point(1280, 720), new Point(1600, 900), new Point(1920, 1080)]),
             $"fullscreen offers {string.Join(' ', full)}");
-        var windowed = HudSettingsPanel.Resolutions(WindowMode.Windowed, modes, desktop);
+        var windowed = SettingsChoices.Resolutions(WindowMode.Windowed, modes, desktop);
         Assert.True(windowed.SequenceEqual([new Point(800, 600), new Point(1280, 720), new Point(1600, 900)]),
             $"a window offers {string.Join(' ', windowed)}, more than fits below its title bar");
-        Assert.True(HudSettingsPanel.Resolutions(WindowMode.Borderless, modes, desktop).Count == 0, "borderless offers a size");
+        Assert.True(SettingsChoices.Resolutions(WindowMode.Borderless, modes, desktop).Count == 0, "borderless offers a size");
         return Task.CompletedTask;
     }
 
@@ -734,8 +734,17 @@ internal static class HudInteractionTests
             "half a level does not fill the lower half of the 6x86 experience gauge");
         Assert.True(HudBar.ExperienceHover.Contains(new Point(487, 550)) && !HudBar.ExperienceHover.Intersects(HudBar.ManaHover),
             "the experience hover is not the slot right of the mana");
-        Assert.True(HudBar.ExperienceText(halfway) == "EXP: 50.000%" && HudBar.ExperienceText(owner with { Experience = owner.NextLevel }) == "EXP: 99.999%",
+        Assert.True(HudBar.ExperienceText(halfway) == "50.000%" && HudBar.ExperienceText(owner with { Experience = owner.NextLevel }) == "99.999%",
             $"the experience text is not in thousandths with a dot: {HudBar.ExperienceText(halfway)}");
+        var last = Simulation.Progression.ExperienceTable.MaximumLevel;
+        var top = new CharacterClassRegistry().CreatePlayer(PlayerClass.Archer, "Top", last);
+        top.RestoreProgress(Simulation.Progression.ExperienceTable.ForLevel(last) + 17_402_651_212, 0);
+        var topOwner = OwnerState.Capture(top);
+        Assert.True(topOwner.LevelStart == Simulation.Progression.ExperienceTable.ForLevel(last) && topOwner.NextLevel == Simulation.Progression.ExperienceTable.LevelEnd(last)
+            && topOwner.NextLevel > topOwner.LevelStart && HudBar.ExperienceText(topOwner) == "0.279%",
+            $"the last level's bar has no span to fill: {HudBar.ExperienceText(topOwner)}");
+        Assert.True(OwnerState.Capture(new CharacterClassRegistry().CreatePlayer(PlayerClass.Archer, "Mid", 40)).NextLevel == Simulation.Progression.ExperienceTable.ForLevel(41),
+            "a level's bar does not end at the next level");
         Assert.True(HudStatusPanel.ExperienceText(1_234_567_890, 79) == "1234567890" && HudStatusPanel.ExperienceText(1_234_567_890, 80) == "1234M",
             "the status window's experience does not read in millions past level 79");
         Assert.True(HudCombat.StateColor(0, 10) == new Color(255, 0, 0) && HudCombat.StateColor(10, 10) == new Color(1, 255, 0),

@@ -158,9 +158,11 @@ public sealed record InventoryPartPacket(long Revision, int Part, int Parts, IRe
     }
 }
 
-public sealed record SkillsPacket(long Revision, IReadOnlyList<(uint Code, int Rank, int Uses)> Skills)
+// S->C {header, int64 Revision, int32 Count, Count x {uint32 Code, int32 Rank, int32 Uses}, SkillBindingsEntry}: the learned
+// skills and the saved mouse sockets and function keys.
+public sealed record SkillsPacket(long Revision, IReadOnlyList<(uint Code, int Rank, int Uses)> Skills, SkillBindingsEntry Bindings)
 {
-    public const int HeaderSize = 8 + 8 + 4;
+    public const int HeaderSize = 8 + 8 + 4 + SkillBindingsEntry.MinSize;
     public const int MaxSkills = 512;
 
     public int Write(Span<byte> destination)
@@ -175,6 +177,7 @@ public sealed record SkillsPacket(long Revision, IReadOnlyList<(uint Code, int R
             writer.Int32(uses);
         }
 
+        Bindings.Write(ref writer);
         return writer.Finish();
     }
 
@@ -183,7 +186,7 @@ public sealed record SkillsPacket(long Revision, IReadOnlyList<(uint Code, int R
         var reader = new PacketReader(packet, HeaderSize);
         var revision = reader.Int64();
         var count = reader.Int32();
-        if (count < 0 || count > MaxSkills || reader.Remaining != count * 12)
+        if (count < 0 || count > MaxSkills || reader.Remaining < count * 12 + SkillBindingsEntry.MinSize)
         {
             throw new InvalidDataException("Skill list has an invalid count.");
         }
@@ -194,7 +197,7 @@ public sealed record SkillsPacket(long Revision, IReadOnlyList<(uint Code, int R
             skills[index] = (reader.UInt32(), reader.Int32(), reader.Int32());
         }
 
-        return new SkillsPacket(revision, skills);
+        return new SkillsPacket(revision, skills, SkillBindingsEntry.Read(ref reader));
     }
 }
 

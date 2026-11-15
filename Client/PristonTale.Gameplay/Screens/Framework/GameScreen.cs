@@ -21,7 +21,9 @@ public abstract class GameScreen : IDisposable
 
     public abstract void Draw();
 
-    public virtual bool HandleEscape() => false;
+    public virtual void HandleEscape()
+    {
+    }
 
     public virtual void Dispose() { }
 

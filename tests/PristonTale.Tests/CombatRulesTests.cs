@@ -3,13 +3,16 @@ using PristonTale.Simulation.Characters;
 using PristonTale.Simulation.Combat;
 using PristonTale.Simulation.Items;
 using PristonTale.Simulation.Modifiers;
+using PristonTale.Simulation.Skills;
+using PristonTale.Simulation.World.Monsters;
 using PristonTale.Contracts.Combat;
 using PristonTale.Contracts.Characters;
 
 namespace PristonTale.Tests;
 
 // The damage rules the balance is measured with: the hit chances' one table lookup, the cut of a hit on a stronger
-// monster, no critical with a staff or a phantom, and the evasion and block a monster's skill blow still meets.
+// monster, no critical with a staff or a phantom, the evasion and block a monster's skill blow still meets, and the
+// bionic resistance a weapon hit ignores.
 internal static class CombatRulesTests
 {
     public static IEnumerable<(string, Func<Task>)> Cases()
@@ -18,6 +21,7 @@ internal static class CombatRulesTests
         yield return ("a hit above a quarter of a stronger monster's life is rolled again between an eighth and a quarter of it, at least 1", CutHitAsync);
         yield return ("a staff or a phantom in hand deals no critical hit", StaffCriticalAsync);
         yield return ("a monster's skill blow never misses but a shield still blocks it, one that lands loses the player's absorption as flat points, and a player without a block chance never blocks", SkillBlockAsync);
+        yield return ("a monster's bionic resistance does not reduce a weapon hit, its other elements still do, and a bionic spell still meets it", BionicResistanceAsync);
     }
 
     private static AttackProfile Attack(int rating, int level = 10) => new(rating, 1, 1, level, Element.Bionic, 0, 0, 0);
@@ -90,6 +94,20 @@ internal static class CombatRulesTests
             $"the skill blows missed, or the shield blocked {blocked} and let {struck.Count} through");
         var absorption = CombatProfileFactory.ForPlayerDefender(player.Character).Absorption;
         Assert.True(struck.All(value => value.Damage == Math.Max(1, 30 - absorption)), "a landed skill blow did not lose the player's absorption as flat points");
+        return Task.CompletedTask;
+    }
+
+    private static Task BionicResistanceAsync()
+    {
+        var resistances = ResistanceBlock.Zero with { Bionic = 100, Fire = 100 };
+        var stats = new MonsterCombatStats(10, 0, new MonsterRange(1, 1), 6, 30, 0, 20, 0, 1000, resistances);
+        var defender = DefenderProfile.FromMonster(stats, 1000);
+        var weapon = new AttackProfile(10000, 100, 100, 10, Element.Bionic, 0, 0, 0);
+        var normal = CombatResolver.Resolve(new CombatRng(5), weapon, defender, alwaysHit: true);
+        var fire = CombatResolver.Resolve(new CombatRng(5), weapon with { Element = Element.Fire }, defender, alwaysHit: true);
+        Assert.True(normal.Damage == 80 && fire.Damage == 1, $"a weapon hit dealt {normal.Damage} through bionic 100 and a fire hit {fire.Damage} through fire 100");
+        var spell = new SkillDamageRule { Element = Element.Bionic };
+        Assert.True(SkillFormulas.Resisted(100, spell, stats.Resistances) == 0, "a bionic spell passed the monster's bionic resistance");
         return Task.CompletedTask;
     }
 }

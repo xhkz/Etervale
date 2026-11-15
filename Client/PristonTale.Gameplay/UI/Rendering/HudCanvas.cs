@@ -95,6 +95,21 @@ public sealed class HudCanvas(SpriteBatch batch, SpriteFont font, HudAtlas atlas
         }
     }
 
+    // A downward triangle filling the bounds' width at the top, drawn as steps of the metal fill.
+    public void ArrowDown(Rectangle bounds, Color color)
+    {
+        const int Step = 2;
+        for (var y = 0; y < bounds.Height; y += Step)
+        {
+            var inset = bounds.Width * y / (2 * bounds.Height);
+            var width = bounds.Width - inset * 2;
+            if (width > 0)
+            {
+                Image("Fill", new Rectangle(bounds.X + inset, bounds.Y + y, width, Step), color);
+            }
+        }
+    }
+
     public void Bar(Rectangle bounds, long value, long maximum, Color color, string label = "")
     {
         Frame(bounds, "Inset", 4);

@@ -552,7 +552,7 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
     // Short keys: ShortKey\f<n>.bmp at the skill box left + 9, top - 6.
     private static void DrawShortcut(HudPainter painter, Rectangle node, uint skillCode, HudSkillBindings bindings)
     {
-        for (var index = 0; index < HudSkillBindings.ShortcutCount; index++)
+        for (var index = 0; index < SkillBindings.ShortcutCount; index++)
         {
             if (bindings.Shortcut(index).SkillId == skillCode)
             {

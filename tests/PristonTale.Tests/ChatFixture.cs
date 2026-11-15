@@ -32,7 +32,7 @@ internal sealed class ChatFixture
 
     public ChatFixture(GameMasterOptions? options = null, IPartyRoster? parties = null, IClanRoster? clans = null,
         FieldTerrain? terrain = null, IReadOnlyList<FieldPoint>? startPoints = null, FieldState state = FieldState.Forest, TimeProvider? clock = null,
-        IGmAudit? audit = null)
+        IGmAudit? audit = null, FieldEventKind fieldEvent = FieldEventKind.None)
     {
         var empty = WorldData.Empty;
         Data = new WorldDataHolder
@@ -43,7 +43,8 @@ internal sealed class ChatFixture
         var catalog = Catalog = new WorldCatalog([new FieldDef("fixture", "Fixture Field", state, new FieldBackdrop("", "", ""), "", [])
         {
             FieldCode = Field,
-            StartPoints = startPoints ?? []
+            StartPoints = startPoints ?? [],
+            FieldEvent = fieldEvent
         }]);
         var terrains = new FieldTerrainCatalog();
         if (terrain is not null)

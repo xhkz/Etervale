@@ -60,7 +60,7 @@ public sealed partial class WorldServer
             }
 
             var player = connection.Player;
-            var inVillage = destination.State == FieldState.Village;
+            var inVillage = InVillage(destination);
             Relocate(connection, operation.FieldId, operation.Position, inVillage);
             player.EnterField(operation.Position, inVillage);
             player.Restart(candidate.Life, DeathPenalty.RestartGuardMs);

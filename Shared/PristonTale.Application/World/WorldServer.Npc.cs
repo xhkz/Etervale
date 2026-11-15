@@ -138,7 +138,7 @@ public sealed partial class WorldServer
         }
 
         var position = GetField(arrival.FieldCode).Terrain.PlaceOnFloor(arrival.Position);
-        var inVillage = destination.State == FieldState.Village;
+        var inVillage = InVillage(destination);
         Relocate(connection, arrival.FieldCode, position, inVillage);
         connection.Player.EnterField(position, inVillage);
     }

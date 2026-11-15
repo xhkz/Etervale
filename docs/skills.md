@@ -44,7 +44,7 @@ Monster skills are a separate system (see [world.md](world.md)); they share only
 | `Client/PristonTale.Gameplay/Effects/SkillSoundBank.cs` | Skill sounds by asset path, decoded on a worker, created on the game thread |
 | `tools/PristonTale.VfxImport/Authored/Common/`, `Authored/Classes/<Class>/` | Named skill effects, installed into `<assetRoot>/Effect/Vfx` by `ptvfx import`; format in [effects.md](effects.md) |
 | `Client/PristonTale.Gameplay/UI/Widgets/HudSkillsPanel.cs`, `HudSkillTreeLayout.cs` | Skill window (`S`): 16 nodes, training and ready gauges, short-key marks, training clicks at a skill master |
-| `Client/PristonTale.Gameplay/UI/Widgets/HudSkillBindings.cs` | Left/right mouse sockets and the eight `F1`-`F8` short keys (in memory, not saved) |
+| `Client/PristonTale.Gameplay/UI/Widgets/HudSkillBindings.cs` | Left/right mouse sockets and the eight `F1`-`F8` short keys; restores the saved choices and counts changes to save |
 | `Client/PristonTale.Gameplay/UI/Widgets/HudSkillHud.cs` | Bottom-bar sockets with cooldown sweep; continuous-skill bar (keep icons, duration gauge, summon mode tooltip) |
 | `Client/PristonTale.Gameplay/UI/Widgets/HudSkillDetails.cs` | Tooltip numbers per rank, read from the same `SkillRule` |
 | `tests/PristonTale.Tests/Skill*Tests.cs`, `<Class>SkillTests.cs`, `ClassSkillDataTests.cs`, `PassiveSkillTests.cs` | Regression cases (by mechanic, or by class for a class's own skills); `SkillScenario`/`SkillFixtures` build a one-player field for server tests |
@@ -438,7 +438,14 @@ Input and cast flow (`GameScene.Skills.cs`, `HudSkillBindings`, `GameplayHud`):
 - `S` toggles the skill window. Releasing the left or right button over a learned castable skill selects it into that
   socket if its `mouse` allows it (otherwise a notice). Holding the button over a skill and pressing `F1`-`F8` binds
   that key to the skill and side (one key per skill); pressing `F1`-`F8` elsewhere selects the bound skill. `Ctrl`
-  suppresses the keys. Sockets fall back to the basic attack (`0x11111111`) when a skill is lost.
+  suppresses the keys. Sockets fall back to the basic attack (`SkillBindings.NormalAttack`, `0x11111111`) when a skill
+  is lost.
+- The sockets and keys are saved with the character (`SkillBindings` on `PlayerCharacter`, in the `skills` JSON). The
+  first `Skills` message of an entry carries them and the HUD restores them once, after the learned list: a socket whose
+  skill is not learned keeps the basic attack and a key whose skill is not learned does nothing until it is. Every later
+  change of a socket or key (`HudSkillBindings.Revision`) sends `SkillBindings`; the server keeps it when each choice is
+  the basic attack or a class skill whose `mouse` accepts its side, without checking that it is learned, so a skill lost
+  to a reset returns to its place once it is learned again. A saved skill the class no longer has resets on restore.
 - A click with a skill in the clicked socket picks the entity under the cursor: `Enemy` needs a monster (or, except a
   charm, a player of another clan where both stand in the castle's battle zone), `Ally` takes a
   picked player or none, `Self`/`None` cast at once. Local pre-checks (rank, cooldown) show a notice instead of sending;

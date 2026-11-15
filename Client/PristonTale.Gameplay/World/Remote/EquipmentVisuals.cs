@@ -23,10 +23,11 @@ public static class EquipmentVisuals
 
     private sealed record Carriage(PlayerClass Class, string Family, string Held, string Back, string TwinHeld, string TwinBack, string TwinPrefix, bool Hovers);
 
-    // A hovering weapon turns 2250 angle units about its bone's Y axis and moves 10 back along it, then rises 1000 fixed
-    // units (the bone frames are mirrored in Z, so the turn runs the other way).
+    // A hovering weapon turns 2250 angle units about its bone's file Y axis and moves 10 along the file Z axis, then
+    // rises 1000 fixed units. Model frames map file (x, y, z) to (x, z, -y), so the file Y turn is a turn the other way
+    // about Z here and the file Z move is a move along Y.
     private static readonly Matrix HoverOffset =
-        Matrix.CreateRotationY(-2250 * GameUnits.RadiansPerAngle) * Matrix.CreateTranslation(0f, 0f, -10f);
+        Matrix.CreateRotationZ(-2250 * GameUnits.RadiansPerAngle) * Matrix.CreateTranslation(0f, 10f, 0f);
 
     private const float HoverLift = 1000f / GameUnits.FixedScale;
 

@@ -144,6 +144,12 @@ internal sealed class OnlinePlayChannel : IPlayChannel
         _connection.SendSwing();
     }
 
+    public async Task SendSkillBindingsAsync(Simulation.Skills.SkillBindings bindings, CancellationToken ct = default)
+    {
+        await _start.WaitAsync(ct);
+        _connection.SendSkillBindings(bindings);
+    }
+
     public async Task SendDismissCrystalPetsAsync(uint statusCode, CancellationToken ct = default)
     {
         await _start.WaitAsync(ct);

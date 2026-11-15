@@ -16,8 +16,18 @@ public sealed record ClientSettings
 {
     // MSAA takes 2 or 4 samples.
     public const int MostMultiSamples = 4;
+    public const int MostShadowCascades = PristonShadowCascades.MaxCascades;
 
     public const int CurrentVersion = 1;
+
+    // The values the discrete rendering options accept (Validate replaces any other with the default).
+    public static IReadOnlyList<int> MultiSampleCounts { get; } = [0, 2, MostMultiSamples];
+    public static IReadOnlyList<int> ShadowMapSizes { get; } = [1024, 2048, 4096, 8192];
+    public static IReadOnlyList<int> LampShadowTileSizes { get; } = [256, 512, 1024];
+    public static IReadOnlyList<int> LampShadowCounts { get; } = [0, 2, PristonLampShadows.MaxLamps];
+    // 0: every frame.
+    public static IReadOnlyList<int> ShadowUpdateRates { get; } = [0, 30, 60, 120];
+    public static IReadOnlyList<int> LocalLightLimits { get; } = [8, 16, PristonShaderLibrary.MaxLocalLightCount];
     public const string EnglishLanguage = "en";
     public const string BrazilianPortugueseLanguage = "pt-BR";
     public static IReadOnlyList<string> SupportedLanguages { get; } = [EnglishLanguage, BrazilianPortugueseLanguage];
@@ -135,10 +145,10 @@ public sealed record ClientSettings
             MaxFps = IsValidFps(MaxFps) ? MaxFps : defaults.MaxFps,
             BackgroundMaxFps = IsValidFps(BackgroundMaxFps) ? BackgroundMaxFps : defaults.BackgroundMaxFps,
             UiScale = float.IsFinite(UiScale) && UiScale is >= 0.75f and <= 1.5f ? UiScale : defaults.UiScale,
-            MultiSampleCount = MultiSampleCount is 0 or 2 or MostMultiSamples ? MultiSampleCount : defaults.MultiSampleCount,
-            ShadowMapSize = ShadowMapSize is 1024 or 2048 or 4096 or 8192 ? ShadowMapSize : defaults.ShadowMapSize,
-            LampShadowTileSize = LampShadowTileSize is 256 or 512 or 1024 ? LampShadowTileSize : defaults.LampShadowTileSize,
-            ShadowUpdateRate = ShadowUpdateRate is 0 or 30 or 60 or 120 ? ShadowUpdateRate : defaults.ShadowUpdateRate,
+            MultiSampleCount = MultiSampleCounts.Contains(MultiSampleCount) ? MultiSampleCount : defaults.MultiSampleCount,
+            ShadowMapSize = ShadowMapSizes.Contains(ShadowMapSize) ? ShadowMapSize : defaults.ShadowMapSize,
+            LampShadowTileSize = LampShadowTileSizes.Contains(LampShadowTileSize) ? LampShadowTileSize : defaults.LampShadowTileSize,
+            ShadowUpdateRate = ShadowUpdateRates.Contains(ShadowUpdateRate) ? ShadowUpdateRate : defaults.ShadowUpdateRate,
             DistanceFog = Enum.IsDefined(DistanceFog) ? DistanceFog : defaults.DistanceFog,
             CloudQuality = Enum.IsDefined(CloudQuality) ? CloudQuality : defaults.CloudQuality,
             CameraMode = Enum.IsDefined(CameraMode) ? CameraMode : defaults.CameraMode,
@@ -152,10 +162,10 @@ public sealed record ClientSettings
             Bloom = Enum.IsDefined(Bloom) ? Bloom : defaults.Bloom,
             ColorGradingLut = ColorGradingLut ?? defaults.ColorGradingLut,
             Sharpening = float.IsFinite(Sharpening) && Sharpening is >= 0f and <= 1f ? Sharpening : defaults.Sharpening,
-            LocalLightLimit = LocalLightLimit is 8 or 16 or PristonShaderLibrary.MaxLocalLightCount ? LocalLightLimit : defaults.LocalLightLimit,
-            ShadowCascades = ShadowCascades is >= 1 and <= PristonShadowCascades.MaxCascades ? ShadowCascades : defaults.ShadowCascades,
+            LocalLightLimit = LocalLightLimits.Contains(LocalLightLimit) ? LocalLightLimit : defaults.LocalLightLimit,
+            ShadowCascades = ShadowCascades is >= 1 and <= MostShadowCascades ? ShadowCascades : defaults.ShadowCascades,
             ShadowFilter = Enum.IsDefined(ShadowFilter) ? ShadowFilter : defaults.ShadowFilter,
-            LampShadowCount = LampShadowCount is 0 or 2 or PristonLampShadows.MaxLamps ? LampShadowCount : defaults.LampShadowCount
+            LampShadowCount = LampShadowCounts.Contains(LampShadowCount) ? LampShadowCount : defaults.LampShadowCount
         };
 
         if (valid != this)
@@ -165,6 +175,11 @@ public sealed record ClientSettings
 
         return valid;
     }
+
+    // Custom once an option a preset sets differs from the preset the settings name; a preset still matched keeps its
+    // name.
+    public ClientSettings WithQualityLabel() =>
+        Quality != GraphicsQuality.Custom && WithQuality(Quality) != this ? this with { Quality = GraphicsQuality.Custom } : this;
 
     // The rendering options of a preset; display, audio and gameplay options are kept. Measured GPU frame times per
     // preset are listed in docs/client-settings.md.

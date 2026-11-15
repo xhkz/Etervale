@@ -22,6 +22,9 @@ public sealed class HudChat
     // Sends a typed line (party: the party channel); set by the screen.
     public Func<string, bool, Task> Send { get; set; }
 
+    // The system clipboard's text, pasted by Ctrl+V (Cmd+V on macOS); set by the screen.
+    public Func<string> ReadClipboard { get; set; } = static () => "";
+
     // What the client knows of an entity in view (HudCombat): its kind and a summon's owner.
     public Func<ulong, (EntityKind Kind, ulong OwnerId)> Lookup { get; set; } = static _ => (EntityKind.None, 0);
 
@@ -93,7 +96,7 @@ public sealed class HudChat
     public void Assist(string text) => Window.Log.Add(text, ChatKind.Assist);
 
     // Enter opens the input or sends its line (Escape closes the window through the HUD); Page Up and Page Down scroll; Up and Down recall
-    // commands. Typed characters (backspace included) arrive from the window's text input.
+    // commands; Ctrl+V or Cmd+V pastes the clipboard. Typed characters (backspace included) arrive from the window's text input.
     public void Update(KeyboardState keyboard, KeyboardState previous, IEnumerable<char> typed, double nowMs, HudChatTab tab)
     {
         bool Pressed(Keys key) => keyboard.IsKeyDown(key) && !previous.IsKeyDown(key);
@@ -118,6 +121,12 @@ public sealed class HudChat
             {
                 Window.Input.Type(character);
             }
+        }
+
+        var command = keyboard.IsKeyDown(Keys.LeftWindows) || keyboard.IsKeyDown(Keys.RightWindows);
+        if (Pressed(Keys.V) && (control || command))
+        {
+            Window.Input.Paste(ReadClipboard());
         }
 
         if (Pressed(Keys.PageUp))

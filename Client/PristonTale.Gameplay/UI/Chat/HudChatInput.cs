@@ -69,6 +69,23 @@ public sealed class HudChatInput
         return true;
     }
 
+    // Pasted text joins the line as if typed: line breaks and tabs become spaces, and it stops at the line's limit.
+    public void Paste(string text)
+    {
+        foreach (var value in text)
+        {
+            if (_text.Length >= ChatRules.InputLimit)
+            {
+                return;
+            }
+
+            if (value != '\r')
+            {
+                Type(value is '\n' or '\t' ? ' ' : value);
+            }
+        }
+    }
+
     public void Backspace()
     {
         if (_text.Length > 0)

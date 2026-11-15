@@ -20,6 +20,7 @@ internal static class MonsterCrystalTests
     public static IEnumerable<(string, Func<Task>)> Cases()
     {
         yield return ("crystal tables draw their monsters by weight, uniformly or from the event table, and pets scale with their owner", TablesAsync);
+        yield return ("a triple crystal calls three pets in their own slots and is refused and kept without three free slots", TripleAsync);
         yield return ("a crystal calls an owned pet beside its user, consumes itself and plays the return sparkle", SummonAsync);
         yield return ("billing crystals wait for the shared delay; towns, clan crystals, mercenaries and unknown souls refuse", RefusalsAsync);
         yield return ("a crystal pet hunts the nearest wild monster, credits its owner and dies when it expires", PetHuntsAsync);
@@ -55,8 +56,16 @@ internal static class MonsterCrystalTests
             "pet lifetime and life bonus");
         Assert.True(MonsterCrystals.EventActive(1, 12) && !MonsterCrystals.EventActive(1, 11) && MonsterCrystals.EventActive(2, 3)
             && !MonsterCrystals.EventActive(0, 15), "crystal event hours");
-        Assert.True(!UsableItemCatalog.IsUsable("GP301") && !UsableItemCatalog.IsUsable("GP123") && UsableItemCatalog.IsUsable("GP122"),
-            "crystals without a defined behaviour stay unusable");
+        Assert.True(!UsableItemCatalog.IsUsable("GP123") && !UsableItemCatalog.IsUsable("GP124") && !UsableItemCatalog.IsUsable("GP310")
+            && UsableItemCatalog.IsUsable("GP122"), "crystals without a monster to call stay unusable");
+        Assert.True(MonsterCrystals.TryGet("GP135", out var kelvezu) && kelvezu.Pick(0, false) == "Kelvezu 2" && kelvezu.Count == 1
+            && UsableItemCatalog.IsUsable("GP144"), "a boss or late-field crystal calls its pet variant");
+        Assert.True(MonsterCrystals.TryGet("GP309", out var tripleMystic) && tripleMystic.Count == 3 && tripleMystic.Pick(39, false) == "Hobgoblin 2"
+            && tripleMystic.Name == "Mystic", "a triple crystal calls three of its single crystal's draw");
+        Assert.True(MonsterCrystals.TryGet("GP342", out var tripleIce) && tripleIce.Pick(0, true) == "Icegoblin 2", "the triple ice goblin crystal is missing");
+        Assert.True(MonsterCrystals.ShownCrystal(tripleIce, "Icegoblin 2").CatalogKey == "GP142", "a triple crystal's pet does not show its single crystal");
+        Assert.True(Gameplay.UI.Inventory.HudUsableTooltip.Lines("GP301").Contains("Summons 3 Hopy pets to fight for you")
+            && Gameplay.UI.Inventory.HudUsableTooltip.Lines("GP101").Contains("Summons a Hopy to fight for you"), "the tooltip does not count a triple crystal's pets");
         return Task.CompletedTask;
     }
 
@@ -91,6 +100,34 @@ internal static class MonsterCrystalTests
         await harness.AdvanceAsync(over);
         Assert.True((await over).Outcome.Status == ItemUseStatus.SummonLimit && harness.Item("GP101") is not null, "the eleventh crystal was not refused and kept");
         Assert.True((await over).Outcome.Message == GameText.Of(GameTextId.SummonLimit, "10"), "the eleventh crystal's refusal does not name the limit");
+    }
+
+    private static async Task TripleAsync()
+    {
+        var harness = await SpecialItemTests.Harness.CreateAsync(20, [Hopy()], [], "GP301", "GP301");
+        var character = harness.Session.Character!;
+        var use = harness.Use(new ItemUseCommand(Guid.NewGuid(), character.InventoryRevision, harness.Id("GP301")));
+        await harness.AdvanceAsync(use);
+        harness.Tick(1);
+        Assert.True(harness.World.TryGetOpenField(20, out var field), "field missing");
+        var pets = field.MonstersForInspection.Where(monster => monster.OwnerId == harness.Player.EntityId).ToArray();
+        Assert.True((await use).Outcome.Ok && pets.Length == 3 && pets.All(pet => pet.Def.Key == "HOPY 2"), "a triple crystal did not call three pets");
+        Assert.True(MonsterCrystals.TryGet("GP101", out var hopy), "the Hopy crystal is missing");
+        var shown = MonsterCrystals.PetStatusCode(hopy);
+        var statuses = character.Effects.Effects.Where(effect => MonsterCrystals.TryGetByPetStatus(effect.Code, out _)).Select(effect => effect.Code).ToArray();
+        Assert.True(statuses.Length == 3 && statuses.Distinct().Count() == 3 && statuses.All(code => (code & 0xFFF) == (shown & 0xFFF)),
+            "the three pets do not hold their own slots under the Hopy crystal's icon");
+
+        for (var called = 3; called < MonsterCrystals.PetSlots - 2; called++)
+        {
+            Assert.True(field.CallCrystalMonster(harness.Player, "GP101", "HOPY 2") is not null, "a pet under the limit was not called");
+        }
+
+        Assert.True(field.FreeCrystalPetSlots(harness.Player) == 2, "free pet slots miscounted");
+        var over = harness.Use(new ItemUseCommand(Guid.NewGuid(), character.InventoryRevision, harness.Id("GP301")));
+        await harness.AdvanceAsync(over);
+        Assert.True((await over).Outcome.Status == ItemUseStatus.SummonLimit && harness.Item("GP301") is not null,
+            "a triple crystal with two free slots was not refused and kept");
     }
 
     private static async Task RefusalsAsync()

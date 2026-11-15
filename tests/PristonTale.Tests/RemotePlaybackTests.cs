@@ -37,6 +37,7 @@ internal static class RemotePlaybackTests
         yield return ("a model whose death clip is on its own sub model shows that model while it dies, as the mushroom does", AlternateModelAsync);
         yield return ("target frame follows the trace, keeps it after ground clicks and closes like the original", TargetSelectionAsync);
         yield return ("target HP bar is modern by default and classic only after a full-life attack", TargetHealthBarAsync);
+        yield return ("the target frame shows game masters an entity id the id commands read back", TargetEntityIdAsync);
         yield return ("presence clock extension round-trips and stamps decoded samples", PresenceClockAsync);
     }
 
@@ -321,6 +322,18 @@ internal static class RemotePlaybackTests
         selection.Trace(3);
         selection.Clear();
         Assert.True(selection.FrameId == 0 && selection.TracedId == 0 && selection.HoveredId == 0, "clear kept selection state");
+        return Task.CompletedTask;
+    }
+
+    private static Task TargetEntityIdAsync()
+    {
+        var combat = new HudCombat();
+        Assert.True(!combat.ShowEntityIds, "the entity id must be hidden from players");
+        Gameplay.Localization.ClientText.Use(ClientSettings.EnglishLanguage);
+        const ulong id = 18_446_744_073_709_551_000;
+        var text = combat.IdText(id);
+        Assert.True(text == "ID 18446744073709551000" && ReferenceEquals(text, combat.IdText(id)), $"id label {text}, formatted once per target");
+        Assert.True(Application.Chat.ChatCommandText.ToEntityId(text["ID ".Length..]) == id, "the shown number is not what /talk and /set_absorb read");
         return Task.CompletedTask;
     }
 

@@ -500,6 +500,10 @@ public sealed partial class GameplayHud : IDisposable
         {
             _syncedSkills = state.Skills;
             _bindings.SyncLearned(SkillClasses.Get(_class).Skills, state.Skills);
+            if (!_bindings.Restored)
+            {
+                _bindings.Restore(state.SkillBindings);
+            }
         }
 
         if (_context.Presentation.AwaitingConfirmation)

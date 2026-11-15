@@ -455,7 +455,7 @@ internal static class ItemRulesTests
         sink.Send(scratch.AsSpan(0, WireMapping.Status(state).Write(scratch)));
         ItemWireMapping.SendDetails(state, sink, scratch);
         sink.Send(scratch.AsSpan(0, new InventoryPartPacket(state.InventoryRevision, 0, 1, state.Items.Select(WireMapping.Item).ToArray()).Write(scratch)));
-        sink.Send(scratch.AsSpan(0, new SkillsPacket(state.SkillsRevision, []).Write(scratch)));
+        sink.Send(scratch.AsSpan(0, new SkillsPacket(state.SkillsRevision, [], WireMapping.Bindings(state.SkillBindings)).Write(scratch)));
         var decoder = new PresenceDecoder(new WorldRenderCatalog(), static _ => { });
         OwnerState? owner = null;
         foreach (var packet in sink.Packets)

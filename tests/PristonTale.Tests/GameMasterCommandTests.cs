@@ -295,6 +295,19 @@ internal static class GameMasterCommandTests
         Assert.True(gm.Link.Last == "Perfect +20 WA101 (no spec) created", $"the aging was not capped at +20: {gm.Link.Last}");
         await fixture.SayAsync(gm, "/@get_perf WA101 KS");
         Assert.True(gm.Link.Last == "WA101 cannot take the Knight spec", gm.Link.Last);
+        await fixture.SayAsync(gm, "/@get_perf WA101 MA");
+        Assert.True(gm.Link.Last == "WA101 cannot take the MartialArtist spec", $"the martial artist was not read as a class: {gm.Link.Last}");
+        await fixture.SayAsync(gm, "/@get_perf WA101 12");
+        Assert.True(gm.Link.Last.StartsWith("Unknown spec 12", StringComparison.Ordinal), gm.Link.Last);
+        foreach (var playerClass in Enum.GetValues<PlayerClass>())
+        {
+            var code = (int)playerClass;
+            Assert.True(GmItemCommands.SpecJobCode(playerClass.ToString()) == code && GmItemCommands.SpecJobCode(code.ToString(System.Globalization.CultureInfo.InvariantCulture)) == code,
+                $"{playerClass} is not read by name and number");
+        }
+
+        Assert.True(GmItemCommands.SpecJobCode("asn") == (int)PlayerClass.Assassin && GmItemCommands.SpecJobCode("SHA") == (int)PlayerClass.Shaman
+            && GmItemCommands.SpecJobCode("MA") == (int)PlayerClass.MartialArtist && GmItemCommands.SpecJobCode("0") == -1, "the newer classes' short names");
         await fixture.SayAsync(gm, "/@get_perf WA101 cooks");
         Assert.True(gm.Link.Last.StartsWith("Unknown spec cooks", StringComparison.Ordinal), gm.Link.Last);
         await fixture.SayAsync(gm, "/@get_perf ZZ999");

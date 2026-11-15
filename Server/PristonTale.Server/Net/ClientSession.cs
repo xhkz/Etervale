@@ -249,6 +249,14 @@ internal sealed partial class ClientSession : IMovementVerdictSink
                     }
 
                     break;
+                case EtervaleOpcodes.SkillBindings:
+                    var bindings = SkillBindingsPacket.Read(memory.Span);
+                    if (_player is not null && _session is { } binder)
+                    {
+                        _ = _services.World.SetSkillBindingsAsync(binder.EntityId, WireMapping.Bindings(bindings.Bindings));
+                    }
+
+                    break;
                 case EtervaleOpcodes.DescribeEntity:
                     DescribeObject(DescribeEntityPacket.Read(memory.Span));
                     break;

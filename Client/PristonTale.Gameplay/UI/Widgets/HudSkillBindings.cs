@@ -9,24 +9,25 @@ public readonly record struct HudSkillShortcut(uint SkillId, SkillMouseUse Side)
 
 public sealed class HudSkillBindings
 {
-    public const uint BasicAttackId = 0x11111111;
+    public const uint BasicAttackId = SkillBindings.NormalAttack;
     public static readonly HudSkillChoice BasicAttack = new(BasicAttackId, "Basic attack", 1, SkillMouseUse.Both);
     private readonly Dictionary<uint, HudSkillChoice> _choices = new() { [BasicAttackId] = BasicAttack };
-    // The F1 to F8 keys.
-    public const int ShortcutCount = 8;
-    private readonly HudSkillShortcut[] _shortcuts = new HudSkillShortcut[ShortcutCount];
+    private readonly HudSkillShortcut[] _shortcuts = new HudSkillShortcut[SkillBindings.ShortcutCount];
     private KeyboardState _previousKeys;
     private MouseState _previousMouse;
     private uint _pressedSkill;
     private SkillMouseUse _pressedSide;
     private bool _boundDuringPress;
 
-    // The saved record restores both sockets from the selected skill, which is 0 (the normal attack) until a skill is chosen.
     public uint LeftSkillId { get; private set; } = BasicAttackId;
     public uint RightSkillId { get; private set; } = BasicAttackId;
     public HudSkillChoice Left => _choices.GetValueOrDefault(LeftSkillId);
     public HudSkillChoice Right => _choices.GetValueOrDefault(RightSkillId);
     public HudSkillShortcut Shortcut(int index) => _shortcuts[index];
+
+    // Restored once the character's saved choices arrived; Revision counts the owner's changes since, each one to save.
+    public bool Restored { get; private set; }
+    public int Revision { get; private set; }
 
     // Set when a click asked for a socket the skill cannot use; Refusals counts them so the HUD shows each once.
     public string Refusal { get; private set; } = "";
@@ -63,6 +64,32 @@ public sealed class HudSkillBindings
         }
     }
 
+    // Takes the choices saved with the character, after SyncLearned: a socket whose skill is not learned keeps the basic
+    // attack, and a key whose skill is not learned does nothing until it is.
+    public void Restore(SkillBindings saved)
+    {
+        LeftSkillId = CanSelect(saved.Left, SkillMouseUse.Left) ? saved.Left : BasicAttackId;
+        RightSkillId = CanSelect(saved.Right, SkillMouseUse.Right) ? saved.Right : BasicAttackId;
+        for (var index = 0; index < _shortcuts.Length; index++)
+        {
+            var shortcut = index < saved.Shortcuts.Length ? saved.Shortcuts[index] : default;
+            _shortcuts[index] = new HudSkillShortcut(shortcut.Code, shortcut.Code == 0 ? SkillMouseUse.None : shortcut.Side);
+        }
+
+        Restored = true;
+    }
+
+    public SkillBindings Snapshot()
+    {
+        var shortcuts = new SkillShortcut[_shortcuts.Length];
+        for (var index = 0; index < shortcuts.Length; index++)
+        {
+            shortcuts[index] = new SkillShortcut(_shortcuts[index].SkillId, _shortcuts[index].Side);
+        }
+
+        return new SkillBindings(LeftSkillId, RightSkillId, [.. shortcuts]);
+    }
+
     public bool Assign(int index, uint skillId, SkillMouseUse side)
     {
         if (index < 0 || index >= _shortcuts.Length || !CanSelect(skillId, side))
@@ -80,6 +107,7 @@ public sealed class HudSkillBindings
         }
 
         _shortcuts[index] = new HudSkillShortcut(skillId, side);
+        Revision++;
         return true;
     }
 
@@ -88,6 +116,11 @@ public sealed class HudSkillBindings
         if (!CanSelect(skillId, side))
         {
             return false;
+        }
+
+        if (side == SkillMouseUse.Left ? LeftSkillId == skillId : RightSkillId == skillId)
+        {
+            return true;
         }
 
         if (side == SkillMouseUse.Left)
@@ -99,6 +132,7 @@ public sealed class HudSkillBindings
             RightSkillId = skillId;
         }
 
+        Revision++;
         return true;
     }
 

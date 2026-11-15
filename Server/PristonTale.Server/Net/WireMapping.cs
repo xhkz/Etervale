@@ -17,6 +17,28 @@ namespace PristonTale.Server.Net;
 internal static class WireMapping
 {
 
+    public static SkillBindingsEntry Bindings(Simulation.Skills.SkillBindings bindings)
+    {
+        var shortcuts = new (uint Code, byte Side)[bindings.Shortcuts.Length];
+        for (var index = 0; index < shortcuts.Length; index++)
+        {
+            shortcuts[index] = (bindings.Shortcuts[index].Code, (byte)bindings.Shortcuts[index].Side);
+        }
+
+        return new SkillBindingsEntry(bindings.Left, bindings.Right, shortcuts);
+    }
+
+    public static Simulation.Skills.SkillBindings Bindings(SkillBindingsEntry entry)
+    {
+        var shortcuts = new Simulation.Skills.SkillShortcut[entry.Shortcuts.Count];
+        for (var index = 0; index < shortcuts.Length; index++)
+        {
+            shortcuts[index] = new Simulation.Skills.SkillShortcut(entry.Shortcuts[index].Code, (Simulation.Skills.SkillMouseUse)entry.Shortcuts[index].Side);
+        }
+
+        return new Simulation.Skills.SkillBindings(entry.Left, entry.Right, [.. shortcuts]);
+    }
+
     public static uint ItemCode(string? catalogKey) => ItemCodes.TryParse(catalogKey, out var code) ? code : 0;
 
     // The template key clients use to share one description among monsters and NPCs of a kind. Players and owned

@@ -18,6 +18,7 @@ public sealed class GameplayScreen : GameScreen
     private GameplayHud _hud;
     private readonly List<GroundLabel> _groundLabels = [];
     private KeyboardState _lastKeyboard;
+    private int _savedBindings;
     private bool _showRenderStats = true;
     private volatile PristonTale.Client.Net.WorldCatalog.WorldRenderCatalog _pendingHudCatalog;
 
@@ -81,6 +82,7 @@ public sealed class GameplayScreen : GameScreen
         _hud.UseItem = _scene.UseItemAsync;
         _hud.Chat.PlayerName = _scene.Player.Name;
         _hud.Chat.Send = _scene.SendChatAsync;
+        _hud.Chat.ReadClipboard = Context.ReadClipboard;
         _hud.Overhead = _scene.Overhead;
         _hud.GroundLabels = _groundLabels;
         _hud.GroundLabelPlaced = _scene.PlaceGroundLabel;
@@ -146,6 +148,9 @@ public sealed class GameplayScreen : GameScreen
             _hud.Combat.SetCatalog(catalog);
         }
 
+        // Game masters see the target's entity id, which /talk, /set_absorb and /usercode take.
+        _hud.Combat.ShowEntityIds = _scene.IsGameMaster;
+
         var field = _scene.ActiveFieldDefinition;
         _ = _scene.TryGetNeighbourMap(out var neighbour, out var neighbourMap);
         var mapHidden = field is not null && HudMinimap.HiddenOn(field.FieldCode, field.State);
@@ -156,7 +161,7 @@ public sealed class GameplayScreen : GameScreen
         _scene.OwnClanId = _hud.Combat.OwnClan;
         _scene.CastleLeague = _hud.Castle.League;
         _scene.CastleOwnerClanId = _hud.Castle.OwnerClanId;
-        _hud.InTown = field?.State == Simulation.World.FieldState.Village;
+        _hud.InTown = _scene.InVillage;
         _hud.ShopSigns = _scene.ShopSigns;
         _hud.PlayerDead = _scene.PlayerDead;
         _hud.PlayerActing = _scene.PlayerActing;
@@ -170,6 +175,12 @@ public sealed class GameplayScreen : GameScreen
         _scene.CameraInputEnabled = Context.IsWindowActive && !Context.Presentation.AwaitingConfirmation;
         _scene.RightAttackEnabled = _hud.RightAttackEnabled;
         _scene.LeftSkill = _hud.Bindings.LeftSkillId;
+        if (_hud.Bindings.Restored && _hud.Bindings.Revision != _savedBindings)
+        {
+            _savedBindings = _hud.Bindings.Revision;
+            _scene.SaveSkillBindings(_hud.Bindings.Snapshot());
+        }
+
         _scene.RightSkill = _hud.Bindings.RightSkillId;
         _hud.Statuses = _scene.Skills?.Statuses;
         _hud.Cooldowns = _scene.Skills?.Cooldowns;
@@ -258,7 +269,7 @@ public sealed class GameplayScreen : GameScreen
     private bool Pressed(KeyboardState keyboard, Keys key) =>
         keyboard.IsKeyDown(key) && !_lastKeyboard.IsKeyDown(key);
 
-    public override bool HandleEscape() => _hud?.ClosePanel() == true;
+    public override void HandleEscape() => _hud?.ClosePanel();
 
     // The scene clears its hovered entity while the HUD has the pointer, so windows show the arrow unless the HUD imposes
     // one (a shop's mode, a dragged item).

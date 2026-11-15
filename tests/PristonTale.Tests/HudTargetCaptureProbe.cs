@@ -40,7 +40,8 @@ internal sealed class HudTargetCaptureProbe : Game
     // A long name over a head-bone NPC, at a window height that is not a multiple of the design height.
     private const uint CraftsmanId = 7;
 
-    private sealed record Scenario(string Name, int Width, int Height, ulong Target, bool Classic = false, bool HoverMap = false, bool Crown = false);
+    private sealed record Scenario(string Name, int Width, int Height, ulong Target, bool Classic = false, bool HoverMap = false, bool Crown = false,
+        bool GameMaster = false);
 
     private static readonly Scenario[] Scenarios =
     [
@@ -56,7 +57,9 @@ internal sealed class HudTargetCaptureProbe : Game
         new("target-player-1600x1200-scale2", 1600, 1200, PlayerId),
         new("minimap-hover-800", 800, 600, NpcId, HoverMap: true),
         new("crown-player-800", 800, 600, PlayerId, Crown: true),
-        new("crown-player-1280", 1280, 720, PlayerId, Crown: true)
+        new("crown-player-1280", 1280, 720, PlayerId, Crown: true),
+        new("target-monster-gm-800", 800, 600, HopyId, GameMaster: true),
+        new("target-npc-gm-1920", 1920, 1080, NpcId, GameMaster: true)
     ];
 
     private sealed class PortraitScene(PristonRenderer renderer, RemoteEntityManager remote) : IHudPortraitScene
@@ -208,6 +211,7 @@ internal sealed class HudTargetCaptureProbe : Game
         _renderer.Update(new GameTime(TimeSpan.FromSeconds(_seconds), TimeSpan.FromSeconds(step)));
         _hud.World = _world;
         _hud.TargetId = scenario.Target;
+        _hud.Combat.ShowEntityIds = scenario.GameMaster;
         _hud.Update(_owner, default, Pointer(scenario), step);
         if (_hud.IsReady && _hud.IconsIdle && _remote.Count >= 4)
         {

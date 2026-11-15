@@ -95,7 +95,7 @@ public sealed partial class GameScene : IDisposable, IHudPortraitScene
     private float MovementSpeed(bool running)
     {
         var moveSpeed = _serverMoveSpeed ?? _player?.Derived.MoveSpeed ?? 1;
-        var inVillage = _activeField?.Definition.State == FieldState.Village;
+        var inVillage = InVillage;
         if (running && GameMasterDash)
         {
             return Locomotion.GameMasterDashUnitsPerSecond;
@@ -106,8 +106,9 @@ public sealed partial class GameScene : IDisposable, IHudPortraitScene
 
     // A game master running with Shift held dashes, as the original's debug mode did; the server allows game masters
     // that speed.
-    private bool GameMasterDash => (_playChannel?.GameMasterLevel ?? 0) > 0 && !KeyboardCaptured
-        && ShiftHeld(Keyboard.GetState());
+    private bool GameMasterDash => IsGameMaster && !KeyboardCaptured && ShiftHeld(Keyboard.GetState());
+
+    public bool IsGameMaster => (_playChannel?.GameMasterLevel ?? 0) > 0;
 
     private static bool ShiftHeld(KeyboardState keyboard) => keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
 
@@ -354,6 +355,9 @@ public sealed partial class GameScene : IDisposable, IHudPortraitScene
     public (int Posed, int Reused) LastAnimationCounts => _renderer?.LastAnimationCounts ?? default;
 
     public float TimeOfDay => _renderer?.TimeOfDay ?? 0f;
+
+    // The field's village state at the server's hour (a nightmare town is fought in at night).
+    public bool InVillage => _activeField?.Definition.IsVillageAt(GameHours.IsNight(TimeOfDay)) == true;
     public Color SkyColor => _renderer?.SkyColor ?? new Color(72, 92, 116);
     public int StageLightCount => _renderer?.StageLightCount ?? 0;
 
@@ -429,7 +433,7 @@ public sealed partial class GameScene : IDisposable, IHudPortraitScene
     public void Update(GameTime gameTime)
     {
         _npcAudio?.Update();
-        if (_equipmentPresentation?.Update(Owner, _activeField?.Definition.State == FieldState.Village, PlayerWorld(), _playerController.Current) == true)
+        if (_equipmentPresentation?.Update(Owner, InVillage, PlayerWorld(), _playerController.Current) == true)
         {
             _playerBodyActor = _equipmentPresentation.Handles.Body;
             _playerHeadActor = _equipmentPresentation.Handles.Head;

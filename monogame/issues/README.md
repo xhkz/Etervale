@@ -33,3 +33,4 @@ upstream notes, in `../upstream/`.
 | 019 | [mono-pan](019-mono-pan.md) | runtime |
 | 020 | [macos-build](020-macos-build.md) | runtime (build) |
 | 021 | [retina-pixels](021-retina-pixels.md) | runtime, framework |
+| 022 | [clipboard-text](022-clipboard-text.md) | runtime, framework |

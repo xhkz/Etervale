@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using PristonTale.Simulation.Characters;
 using PristonTale.Simulation.Items;
 using PristonTale.Simulation.Progression;
+using PristonTale.Simulation.Skills;
 using PristonTale.Simulation.World.Npcs;
 
 namespace PristonTale.Persistence.Abstractions.Characters;
@@ -35,7 +36,9 @@ public sealed record SavedItems(int Version, SavedItem[] Items, long Revision = 
     AppliedServiceOperation[]? ServiceOperations = null, int ActiveSide = 0, Simulation.PersonalShops.AppliedShopPurchase[]? ShopPurchases = null);
 public sealed record SavedSkill(uint Code, int Rank, int Uses = 0);
 public sealed record SavedSkills(int Version, int Points, int ElitePoints, SavedSkill[] Skills,
-    long Revision = 0, AppliedProgressionOperation[]? Operations = null);
+    long Revision = 0, AppliedProgressionOperation[]? Operations = null, SavedSkillBindings? Bindings = null);
+// The mouse sockets and function keys (SkillBindings); a record saved before they were kept has none.
+public sealed record SavedSkillBindings(uint Left, uint Right, SkillShortcut[] Shortcuts);
 
 public static class CharacterStateCodec
 {
@@ -127,6 +130,11 @@ public static class CharacterStateCodec
             character.Skills.Restore(skill.Code, skill.Rank, skill.Uses);
         }
 
+        if (skills.Bindings is { } bindings)
+        {
+            character.RestoreSkillBindings(new SkillBindings(bindings.Left, bindings.Right, [.. bindings.Shortcuts]));
+        }
+
         character.RestoreInventoryHistory(inventory.Revision, inventory.Operations ?? []);
         character.RestoreServiceHistory(inventory.ServiceOperations ?? []);
         character.RestorePurchaseHistory(inventory.ShopPurchases ?? []);
@@ -185,7 +193,8 @@ public static class CharacterStateCodec
         }
 
         return new SavedSkills(1, character.SkillPoints, character.EliteSkillPoints, skills,
-            character.ProgressionRevision, StoredHistory.Newest(character.ProgressionOperations));
+            character.ProgressionRevision, StoredHistory.Newest(character.ProgressionOperations),
+            new SavedSkillBindings(character.SkillBindings.Left, character.SkillBindings.Right, [.. character.SkillBindings.Shortcuts]));
     }
 
     internal static SavedItem CaptureItem(ItemInstance item, int anchor, EquipmentSlot? slot)
@@ -251,7 +260,8 @@ public static class CharacterStateCodec
         }
 
         var state = JsonSerializer.Deserialize<SavedSkills>(json.Value, Options);
-        if (state is null || state.Version != 1 || state.Skills is null || state.Skills.Length > 128 || state.Points < 0 || state.ElitePoints < 0)
+        if (state is null || state.Version != 1 || state.Skills is null || state.Skills.Length > 128 || state.Points < 0 || state.ElitePoints < 0
+            || state.Bindings is { } bindings && (bindings.Shortcuts is null || bindings.Shortcuts.Length > SkillBindings.ShortcutCount))
         {
             throw new InvalidDataException("Unsupported skill-state version or size.");
         }

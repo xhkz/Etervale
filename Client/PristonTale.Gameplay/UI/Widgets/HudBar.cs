@@ -121,8 +121,12 @@ public sealed class HudBar
     public static string ExperienceText(OwnerState state)
     {
         var thousandths = Math.Min(MostExperienceThousandths, (int)(ExperienceFraction(state) * 100000.0));
-        return string.Create(CultureInfo.InvariantCulture, $"EXP: {thousandths / 1000}.{thousandths % 1000:000}%");
+        return string.Create(CultureInfo.InvariantCulture, $"{thousandths / 1000}.{thousandths % 1000:000}%");
     }
+
+    // The experience percentage follows Menu-1's "NL." label (x 494 to 508, capitals from y 553) on its line.
+    public static Point ExperienceTextPosition => new(512, 553);
+    public static readonly Color ExperienceTextColor = new(150, 225, 230);
 
     public void Draw(HudPainter painter, HudLayout layout, OwnerState state, HudBarView view)
     {
@@ -144,6 +148,8 @@ public sealed class HudBar
             // up as the other gauges.
             var experience = (int)(ExperienceLength * ExperienceFraction(state));
             painter.Sprite(HudArt.Experience, 485, 508 + y + ExperienceLength - experience, GaugeSource(6, ExperienceLength, experience));
+            Refresh(state);
+            painter.Text(_experience, ExperienceTextPosition.X, ExperienceTextPosition.Y + y, ExperienceTextColor);
         }
 
         var (day, time) = TimeGauge(view.TimeOfDay);
@@ -186,20 +192,11 @@ public sealed class HudBar
             return;
         }
 
-        if (!ReferenceEquals(state, _state))
-        {
-            _state = state;
-            _life = ClientText.Format("Hud.Life", state.Life, state.MaxLife);
-            _mana = ClientText.Format("Hud.Mana", state.Mana, state.MaxMana);
-            _stamina = ClientText.Format("Hud.Stamina", state.Stamina, state.MaxStamina);
-            _experience = ExperienceText(state);
-        }
-
+        Refresh(state);
         var design = new Point(pointer.X, pointer.Y - layout.BottomOffset);
         var (text, position) = LifeHover.Contains(design) ? (_life, new Point(343, 500))
             : ManaHover.Contains(design) ? (_mana, new Point(490, 498))
             : StaminaHover.Contains(design) ? (_stamina, new Point(320, 513))
-            : ExperienceHover.Contains(design) ? (_experience, new Point(497, 520))
             : ("", Point.Zero);
         if (text.Length == 0)
         {
@@ -210,6 +207,18 @@ public sealed class HudBar
         var x = Math.Min(position.X, layout.Width - painter.Measure(text) - 6);
         painter.Stretch(HudArt.InfoBox[4], new Rectangle(x - 5, position.Y - 1 + layout.BottomOffset, painter.Measure(text) + 10, 15));
         painter.Text(text, x, position.Y + layout.BottomOffset);
+    }
+
+    private void Refresh(OwnerState state)
+    {
+        if (!ReferenceEquals(state, _state))
+        {
+            _state = state;
+            _life = ClientText.Format("Hud.Life", state.Life, state.MaxLife);
+            _mana = ClientText.Format("Hud.Mana", state.Mana, state.MaxMana);
+            _stamina = ClientText.Format("Hud.Stamina", state.Stamina, state.MaxStamina);
+            _experience = ExperienceText(state);
+        }
     }
 
     private static void DrawSocket(HudPainter painter, Rectangle socket, int y, bool basicAttack)

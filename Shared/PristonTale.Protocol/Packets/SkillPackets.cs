@@ -421,3 +421,71 @@ public sealed record SkillCooldownsPacket(uint ServerTick, IReadOnlyList<SkillCo
 
 internal static class SkillWire
 {}
+
+// The mouse sockets' skills and the function keys, F1 first: {uint32 Left, uint32 Right, uint8 Count, Count x {uint32 Code,
+// uint8 Side}}. Side is 1 for the left socket and 2 for the right; an empty key is {0, 0}. The receiver checks the skills.
+public sealed record SkillBindingsEntry(uint Left, uint Right, IReadOnlyList<(uint Code, byte Side)> Shortcuts)
+{
+    public const int MaxShortcuts = 16;
+    public const int MinSize = 4 + 4 + 1;
+    public const int ShortcutSize = 4 + 1;
+
+    internal void Write(ref PacketWriter writer)
+    {
+        if (Shortcuts.Count > MaxShortcuts)
+        {
+            throw new InvalidOperationException("Too many skill shortcuts.");
+        }
+
+        writer.UInt32(Left);
+        writer.UInt32(Right);
+        writer.Byte((byte)Shortcuts.Count);
+        foreach (var (code, side) in Shortcuts)
+        {
+            writer.UInt32(code);
+            writer.Byte(side);
+        }
+    }
+
+    internal static SkillBindingsEntry Read(ref PacketReader reader)
+    {
+        var left = reader.UInt32();
+        var right = reader.UInt32();
+        var count = reader.Byte();
+        if (count > MaxShortcuts || reader.Remaining != count * ShortcutSize)
+        {
+            throw new InvalidDataException("Skill bindings have an invalid shortcut count.");
+        }
+
+        var shortcuts = new (uint, byte)[count];
+        for (var index = 0; index < count; index++)
+        {
+            shortcuts[index] = (reader.UInt32(), reader.Byte());
+        }
+
+        return new SkillBindingsEntry(left, right, shortcuts);
+    }
+}
+
+// C->S {header, uint16 Version = 1, uint16 0, SkillBindingsEntry}: the owner changed a mouse socket or a function key; the
+// server keeps the choices with the character and returns them in the skill list of the next entry.
+public readonly record struct SkillBindingsPacket(SkillBindingsEntry Bindings) : IFramePacket
+{
+    public const ushort CurrentVersion = 1;
+    public const int MinSize = 8 + WireHeader.Size + SkillBindingsEntry.MinSize;
+
+    public int Write(Span<byte> destination)
+    {
+        var writer = new PacketWriter(destination, EtervaleOpcodes.SkillBindings);
+        WireHeader.Write(ref writer, CurrentVersion);
+        Bindings.Write(ref writer);
+        return writer.Finish();
+    }
+
+    public static SkillBindingsPacket Read(ReadOnlySpan<byte> packet)
+    {
+        var reader = new PacketReader(packet, MinSize);
+        WireHeader.Read(ref reader, "Skill bindings");
+        return new SkillBindingsPacket(SkillBindingsEntry.Read(ref reader));
+    }
+}

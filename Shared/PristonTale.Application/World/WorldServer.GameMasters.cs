@@ -140,7 +140,7 @@ public sealed partial class WorldServer
     {
         var terrain = GetField(definition.FieldCode).Terrain;
         var position = onFloor ? terrain.PlaceOnFloor(requested) : terrain.SettleNear(requested, FieldTerrain.ArrivalTolerance);
-        var inVillage = definition.State == FieldState.Village;
+        var inVillage = InVillage(definition);
         Relocate(connection, definition.FieldCode, position, inVillage);
         connection.Player.EnterField(position, inVillage);
         return position;

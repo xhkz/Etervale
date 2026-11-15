@@ -48,6 +48,7 @@ public sealed partial class WorldServer
     private bool _membershipChanged;
     private readonly Dictionary<int, FieldInstance> _fields = new();
     private readonly Dictionary<ulong, Connection> _connections = new();
+    private bool? _villageNight;
     private readonly EntityIdAllocator _ids = new();
     private readonly WorldDataHolder _worldData;
     private readonly WorldDataLanguagesHolder _localizedData;
@@ -220,12 +221,12 @@ public sealed partial class WorldServer
                 position = field.Terrain.PlaceOnFloor(new Vector3(start.X, 0f, start.Z));
             }
 
-            player.EnterField(position, definition.State == FieldState.Village);
+            player.EnterField(position, InVillage(definition));
             player.Guard(PlayerGrace.ArrivalMs);
             field.Add(player);
             _connections.Add(player.EntityId, new Connection(fieldId, player, outbound, session) { NextGiftTick = GiftTick(StarterGifts.FirstDelay) });
             _membershipChanged = true;
-            UpdatePlacement(session, fieldId, player.Position, definition.State == FieldState.Village);
+            UpdatePlacement(session, fieldId, player.Position, player.InVillage);
             return true;
         });
     }
@@ -284,7 +285,7 @@ public sealed partial class WorldServer
             }
 
             // The request's placement never becomes authoritative. Gates retain position; warps use catalog exits.
-            var inVillage = destination.State == FieldState.Village;
+            var inVillage = InVillage(destination);
             var terrain = GetField(newFieldId).Terrain;
             Relocate(connection, newFieldId, arrival.Position, inVillage);
             if (arrival.IsWarp)
@@ -329,6 +330,10 @@ public sealed partial class WorldServer
             return field.CastSkill(connection.Player, request);
         });
     }
+
+    // The owner's mouse sockets and function keys, saved with the character; false when the class does not offer a choice.
+    public Task<bool> SetSkillBindingsAsync(ulong entityId, Simulation.Skills.SkillBindings bindings) =>
+        EnqueueAsync(entityId, () => _connections.TryGetValue(entityId, out var connection) && connection.Player.Character.SetSkillBindings(bindings));
 
     public Task<Vector3?> PositionOfAsync(ulong entityId)
     {
@@ -737,7 +742,8 @@ public sealed partial class WorldServer
         _activeFields.AddRange(_fields.Values);
         var nowSeconds = _clock.GetUtcNow().ToUnixTimeSeconds();
         // Fields share only immutable catalogs and the thread-safe id allocator, so they step in parallel.
-        var night = GameHours.IsNight(WorldClock.HoursAt(GameClockMs));
+        var night = Night;
+        ApplyVillageNight(night);
         var weather = Weather;
         _stepInputs = new FieldStepInputs(dt, serverTick, bossHour, nowSeconds, night, weather);
         Parallel.ForEach(_activeFields, _stepField ??= field => StepField(field, _stepInputs.Dt, _stepInputs.ServerTick, _stepInputs.BossHour,
@@ -843,6 +849,38 @@ public sealed partial class WorldServer
         to.Add(player);
         to.Statuses.Carry(player.EntityId, statuses, from.NowMs, to.NowMs);
         to.ArriveWithoutCrystalPets(player);
+    }
+
+    // Whether a field is a village now: a nightmare town is fought in at night.
+    private bool InVillage(FieldDef field) => field.IsVillageAt(Night);
+
+    private bool Night => GameHours.IsNight(WorldClock.HoursAt(GameClockMs));
+
+    // At nightfall and dawn the players in a nightmare town take its new state; a shop open there closes at nightfall.
+    private void ApplyVillageNight(bool night)
+    {
+        if (_villageNight == night)
+        {
+            return;
+        }
+
+        _villageNight = night;
+        foreach (var connection in _connections.Values)
+        {
+            if (!_catalog.TryGetFieldByCode(connection.FieldId, out var field) || field.FieldEvent != FieldEventKind.Nightmare)
+            {
+                continue;
+            }
+
+            var inVillage = field.IsVillageAt(night);
+            if (!inVillage)
+            {
+                connection.Player.CloseShop();
+            }
+
+            connection.Player.SetVillage(inVillage);
+            UpdatePlacement(connection.Session, connection.FieldId, connection.Player.Position, inVillage);
+        }
     }
 
     private static void UpdatePlacement(PlayerSession? session, int fieldId, Vector3 position, bool? inVillage = null)
