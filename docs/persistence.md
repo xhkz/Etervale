@@ -122,7 +122,7 @@ and its account warehouse are always written together, so a gold or item move be
 
 | Column | Shape | Limits on restore |
 | --- | --- | --- |
-| `inventory` | `SavedItems` v1: items with `Anchor` (grid cell), `Slot = null`, plus `Revision`, inventory `Operations`, `ServiceOperations`, `ShopPurchases`; the item in the hand has `Held = true` and `Anchor = -1` (written only when set) | `CharacterStateCodec.MaxSavedItems` (166: both bag pages, belt, special item box, hand) |
+| `inventory` | `SavedItems` v1: items with `Anchor` (grid cell), `Slot = null`, plus `Revision`, inventory `Operations`, `ServiceOperations`, `ShopPurchases`; the item in the hand has `Held = true` and the worn costume `Wardrobe = true`, each with `Anchor = -1` and written only when set ([costumes](costumes.md)). `CostumeItemId` is only read, from older saves that wore a bag costume | `CharacterStateCodec.MaxSavedItems` (167: both bag pages, belt, special item box, hand, wardrobe) |
 | `equipment` | `SavedItems` v1: items with `Slot` set and `Anchor = -1` | `CharacterStateCodec.MaxSavedItems` |
 | `skills` | `SavedSkills` v1: points, elite points, `(Code, Rank, Uses)`, progression `Revision` and `Operations`, and `Bindings` (mouse sockets and `F1`-`F8` keys, `SkillBindings`; absent in older rows, which restore the defaults) | 128 skills, points >= 0, at most 8 keys; a bound skill the class lacks resets |
 | `warehouses.items` | `SavedItems` v1 with anchors in the warehouse grid | `WarehouseStorage.MaxItems` |

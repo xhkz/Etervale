@@ -2,13 +2,38 @@ using Microsoft.Xna.Framework;
 using PristonTale.Contracts.Characters;
 using PristonTale.Contracts.Units;
 using PristonTale.Engine3D.Equipment;
+using System.Collections.Frozen;
+using PristonTale.Assets;
+using PristonTale.Engine3D.Diagnostics;
 using PristonTale.Simulation.Characters;
+using PristonTale.Simulation.Items;
 
 namespace PristonTale.Gameplay.World.Remote;
 
 public static class EquipmentVisuals
 {
     private static readonly Dictionary<string, (int Index, string Mesh, bool LeftHand, string VillageBone)> Items = BuildItems();
+    // The costume bodies (CostumeCatalog) the game data holds; a costume whose body is missing keeps the armour's.
+    private static FrozenSet<string> _costumeBodies = FrozenSet<string>.Empty;
+
+    // Once per asset root, off the frame: it checks every costume body's file.
+    public static void FindCostumeBodies(string assetRoot, IClientLog log)
+    {
+        var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var body in CostumeCatalog.Shipped.Bodies())
+        {
+            if (AssetFiles.ResolveFile(assetRoot, body) is not null)
+            {
+                found.Add(body);
+            }
+            else
+            {
+                log.Warn($"[Costume] body '{body}' is missing; its costume keeps the armour's body.");
+            }
+        }
+
+        _costumeBodies = found.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+    }
 
     // A class that carries a family otherwise than the catalog's hand and village bone: the Assassin holds a dagger in
     // each hand, the left one on its fifth weapon bone, and hangs the two on its back in a village; the Martial Artist
@@ -60,12 +85,18 @@ public static class EquipmentVisuals
         return $"image/sinimage/Items/DropItem/{prefix}{item.Mesh}.smd";
     }
 
-    public static CharacterVisualSet Apply(CharacterVisualSet defaults, string armor, string weapon, string offHand, bool village, uint jobMask)
+    public static CharacterVisualSet Apply(CharacterVisualSet defaults, string armor, string weapon, string offHand, bool village, uint jobMask, string costume = "")
     {
         string body = defaults.Body.InxExtensionPath;
-        // Premium costume bodies (CA) keep the class body; their wings are an effect (CostumeWings). An armour without a
-        // body in the table also keeps it, so one unknown item cannot stop the frame that draws its wearer.
-        if (!string.IsNullOrEmpty(armor) && !armor.StartsWith("CA", StringComparison.OrdinalIgnoreCase)
+        // A worn costume's body wins over the armour's. Premium costume bodies (CA) worn as armour keep the class body; their
+        // wings are an effect (CostumeWings). An armour without a body in the table also keeps it, so one unknown item
+        // cannot stop the frame that draws its wearer.
+        if (!string.IsNullOrEmpty(costume) && CostumeCatalog.Shipped.TryBody(costume, defaults.ArmorTableIndex, out var wornBody)
+            && _costumeBodies.Contains(wornBody))
+        {
+            body = wornBody;
+        }
+        else if (!string.IsNullOrEmpty(armor) && !armor.StartsWith("CA", StringComparison.OrdinalIgnoreCase)
             && EquipmentVisualTables.ArmorSlots.TryGetValue(armor, out var index))
         {
             if ((uint)defaults.ArmorTableIndex >= (uint)EquipmentVisualTables.Armors.Length)

@@ -3,8 +3,8 @@ using PristonTale.Effects.Vfx;
 
 namespace PristonTale.Gameplay.Effects;
 
-// The wings the premium costume armours and robes show on their wearer: Cygnus (blue), Aquila (white) and Corvus
-// (red), for the male and female sets of either body slot. The wing hangs at the wearer's back, turns with the wearer
+// The wings the premium costume armours and robes show on whoever wears them in the wardrobe: Cygnus (blue), Aquila
+// (white) and Corvus (red), for the male and female sets of either kind. The wing hangs at the wearer's back, turns with the wearer
 // and is not shown in a village or on the dead.
 public sealed class CostumeWings
 {
@@ -12,11 +12,11 @@ public sealed class CostumeWings
     private readonly HashSet<ulong> _seen = new();
     private readonly List<ulong> _gone = new();
 
-    // The wing effect of a body item ("" for none): costume armours CA1xx and robes CA2xx by their ordinal.
-    public static string EffectFor(string armorKey)
+    // The wing effect of a costume ("" for none): costume armours CA1xx and robes CA2xx by their ordinal.
+    public static string EffectFor(string costumeKey)
     {
-        if (armorKey is not { Length: 5 } || !armorKey.StartsWith("CA", StringComparison.OrdinalIgnoreCase) || armorKey[2] is not ('1' or '2')
-            || !int.TryParse(armorKey.AsSpan(3), out var ordinal))
+        if (costumeKey is not { Length: 5 } || !costumeKey.StartsWith("CA", StringComparison.OrdinalIgnoreCase) || costumeKey[2] is not ('1' or '2')
+            || !int.TryParse(costumeKey.AsSpan(3), out var ordinal))
         {
             return "";
         }
@@ -31,9 +31,9 @@ public sealed class CostumeWings
     }
 
     // One wearer this frame; yaw is the wearer's model yaw. Wearers not reported before EndFrame lose their wing.
-    public void Wear(SkillPresentation skills, ulong entityId, string armorKey, bool shown, Vector3 position, float yaw)
+    public void Wear(SkillPresentation skills, ulong entityId, string costumeKey, bool shown, Vector3 position, float yaw)
     {
-        var effect = shown ? EffectFor(armorKey) : "";
+        var effect = shown ? EffectFor(costumeKey) : "";
         if (effect.Length == 0)
         {
             return;

@@ -29,11 +29,14 @@ public sealed record SavedItem(
     bool Hidden = false,
     int? QuestBox = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Held = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Link = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Link = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Wardrobe = false);
 
 // ActiveSide: the bag page shown (inventory) or the weapon pair held (equipment); Hidden items are on the other side.
+// CostumeItemId is read only: a save that wore its costume from a bag names it there; it moves into the wardrobe on load.
 public sealed record SavedItems(int Version, SavedItem[] Items, long Revision = 0, AppliedInventoryOperation[]? Operations = null,
-    AppliedServiceOperation[]? ServiceOperations = null, int ActiveSide = 0, Simulation.PersonalShops.AppliedShopPurchase[]? ShopPurchases = null);
+    AppliedServiceOperation[]? ServiceOperations = null, int ActiveSide = 0, Simulation.PersonalShops.AppliedShopPurchase[]? ShopPurchases = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Guid CostumeItemId = default);
 public sealed record SavedSkill(uint Code, int Rank, int Uses = 0);
 public sealed record SavedSkills(int Version, int Points, int ElitePoints, SavedSkill[] Skills,
     long Revision = 0, AppliedProgressionOperation[]? Operations = null, SavedSkillBindings? Bindings = null);
@@ -63,7 +66,7 @@ public static class CharacterStateCodec
 
         character.RestoreSides(inventory.ActiveSide, equipment.ActiveSide);
         // Gear restores first: the potion space it gives bounds the belt's stacks.
-        foreach (var saved in inventory.Items.Where(static saved => saved.Belt is null && saved.QuestBox is null && !saved.Held))
+        foreach (var saved in inventory.Items.Where(static saved => saved.Belt is null && saved.QuestBox is null && !saved.Held && !saved.Wardrobe))
         {
             var item = RestoreItem(saved, catalog, identities);
             var bag = saved.Hidden ? character.HiddenBag : character.Inventory;
@@ -74,12 +77,40 @@ public static class CharacterStateCodec
             }
         }
 
+        // A costume the wardrobe does not take (another is there, or this character may not wear it) goes to a bag once
+        // the rest is restored, else to the hand.
+        var unplaced = new List<ItemInstance>();
+        foreach (var saved in inventory.Items.Where(static saved => saved.Wardrobe))
+        {
+            if (saved.Slot.HasValue || saved.Anchor != -1 || saved.Belt is not null || saved.QuestBox is not null || saved.Held || saved.Hidden)
+            {
+                throw new InvalidDataException("Invalid saved wardrobe item.");
+            }
+
+            var item = RestoreItem(saved, catalog, identities);
+            if (!character.RestoreCostume(item))
+            {
+                unplaced.Add(item);
+            }
+        }
+
         foreach (var saved in equipment.Items)
         {
             var item = RestoreItem(saved, catalog, identities);
             if (!saved.Slot.HasValue || saved.Anchor != -1)
             {
                 throw new InvalidDataException("Invalid saved equipment.");
+            }
+
+            // A costume saved in an equipment slot, from before the wardrobe, goes into the wardrobe.
+            if (CostumeCatalog.Shipped.Contains(item.Definition.CatalogKey))
+            {
+                if (!character.RestoreCostume(item))
+                {
+                    unplaced.Add(item);
+                }
+
+                continue;
             }
 
             if (saved.Hidden)
@@ -117,6 +148,19 @@ public static class CharacterStateCodec
             }
         }
 
+        foreach (var item in unplaced)
+        {
+            if (!character.Inventory.TryAdd(item) && !character.HiddenBag.TryAdd(item) && !character.RestoreHeld(item))
+            {
+                throw new InvalidDataException("No room in the bags or the hand for a costume the wardrobe does not take.");
+            }
+        }
+
+        if (inventory.CostumeItemId != Guid.Empty && character.Costume is null)
+        {
+            character.TryWearCostume(inventory.CostumeItemId);
+        }
+
         foreach (var saved in inventory.Items.Where(static saved => saved.Belt is not null))
         {
             if (saved.Slot.HasValue || saved.Anchor != -1 || !character.RestoreBelt(saved.Belt!.Value, RestoreItem(saved, catalog, identities)))
@@ -141,6 +185,8 @@ public static class CharacterStateCodec
         character.RestoreProgressionHistory(skills.Revision, skills.Operations ?? []);
     }
 
+    public static SavedItems ReadInventory(JsonText inventory) => ReadItems(inventory, JsonValueKind.Array);
+
     public static SavedItems CaptureInventory(PlayerCharacter character)
     {
         var items = new List<SavedItem>();
@@ -151,6 +197,11 @@ public static class CharacterStateCodec
         if (character.Held is { } held)
         {
             items.Add(CaptureItem(held, -1, null) with { Held = true });
+        }
+
+        if (character.Costume is { } costume)
+        {
+            items.Add(CaptureItem(costume, -1, null) with { Wardrobe = true });
         }
 
         return new SavedItems(1, items.ToArray(), character.InventoryRevision, StoredHistory.Newest(character.InventoryOperations),
@@ -231,9 +282,9 @@ public static class CharacterStateCodec
         return item;
     }
 
-    // The most items a saved item list holds: every cell of both bag pages, the belt's and the special box's boxes and the
-    // hand (CaptureInventory); the equipment's list, slots and the stored pair, stays far below.
-    public const int MaxSavedItems = PlayerCharacter.Sides * Inventory.DefaultWidth * Inventory.DefaultHeight + PotionBelt.Boxes + QuestItemBox.Boxes + 1;
+    // The most items a saved item list holds: every cell of both bag pages, the belt's and the special box's boxes, the
+    // hand and the wardrobe (CaptureInventory); the equipment's list, slots and the stored pair, stays far below.
+    public const int MaxSavedItems = PlayerCharacter.Sides * Inventory.DefaultWidth * Inventory.DefaultHeight + PotionBelt.Boxes + QuestItemBox.Boxes + 2;
 
     private static SavedItems ReadItems(JsonText json, JsonValueKind blankKind)
     {

@@ -90,6 +90,8 @@ public sealed record ClientSettings
     // Classic: the name boxes over monsters and NPCs use the speech bubble frame and the HUD text size, and a monster's
     // life bar shows while the cursor is on it; otherwise a compact box, the bar once the monster was clicked or attacked.
     public bool ClassicNamePlates { get; init; }
+    // The camera stops short of the scenery; off, it passes through. The player's own collision never changes.
+    public bool CameraSceneryCollision { get; init; } = true;
     // The level guide's notice on reaching a level it has a guide for (its On/Off switch in the guide window).
     public bool LevelGuide { get; init; } = true;
     // The bar's camera button and the Z key cycle it.

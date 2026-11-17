@@ -76,11 +76,15 @@ public static class HudArt
     public const string PotionBack = Sin + "Inven/PotionBack.bmp";
     public const string SideLeft = Sin + "Inven/LeftArrow.bmp";
     public const string SideRight = Sin + "Inven/RightArrow.bmp";
+    // The wardrobe: its button, in the frame of the side arrows, and its page, whose middle frame is the costume slot.
+    public const string CostumeButton = Sin + "Inven/CArrow.bmp";
+    public const string CostumePanel = Sin + "Inven/Costume-UI.bmp";
 
     // The labels the original shows above an inventory button under the pointer: the bag page (A, B), the weapon pair
     // (A, B) and the close button.
     public static readonly string[] PageHints = [Sin + "Inven/InfoBox/ButtonItemA.bmp", Sin + "Inven/InfoBox/ButtonItemB.bmp"];
     public static readonly string[] PairHints = [Sin + "Inven/InfoBox/ButtonA.bmp", Sin + "Inven/InfoBox/ButtonB.bmp"];
+    public const string CostumeHint = Sin + "Inven/InfoBox/Costume.bmp";
     public const string CloseHint = Sin + "Inven/InfoBox/ButtonExit.bmp";
 
     // The special item box: its button closed and open (or under the pointer), the 44-pixel box drawn for each of its
@@ -160,7 +164,7 @@ public static class HudArt
         SystemMenu, SystemSettings, SystemHelp, SystemExit, RestartMain, RestartField, RestartTown, RestartExit, SelectJobGray, SelectJob,
         .. MenuButtons, .. MenuButtonsDown, .. MenuInfo,
         SkillNormal, SkillWindow, SkillWindowSecond, SkillPageForward, SkillPageBack, SkillSelect, SkillGauge, SkillGaugeBack, SkillGaugePassive, SkillTraining, SkillTrainingTop, .. ShortKeys,
-        Inventory, PuzzleBoard, CoverLarge, CoverMiddle, CoverSmall, PotionBack, SideLeft, SideRight, .. PageHints, .. PairHints, CloseHint,
+        Inventory, PuzzleBoard, CoverLarge, CoverMiddle, CoverSmall, PotionBack, SideLeft, SideRight, CostumeButton, CostumePanel, .. PageHints, .. PairHints, CostumeHint, CloseHint,
         QuestBoxButton, QuestBoxButtonOpen, QuestBoxTile, QuestBoxHint, QuestBoxCloseHint, QuestBoxGlow,
         Status, StatusPoint, StatusArrow, StatusArrowDown,
         .. InfoBox, .. NameMarks,

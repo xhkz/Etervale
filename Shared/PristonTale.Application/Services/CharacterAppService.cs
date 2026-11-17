@@ -132,10 +132,11 @@ public sealed class CharacterAppService
     // in; entering it is refused as an unsupported saved state.
     private CharacterSummary BuildSummary(CharacterRecord character)
     {
-        var (armorKey, weaponKey, offHandKey) = (string.Empty, string.Empty, string.Empty);
+        var (armorKey, weaponKey, offHandKey, costumeKey) = (string.Empty, string.Empty, string.Empty, string.Empty);
         try
         {
             (armorKey, weaponKey, offHandKey) = VisualKeys(character);
+            costumeKey = CostumeKey(character);
         }
         catch (Exception exception) when (exception is InvalidDataException or System.Text.Json.JsonException or ArgumentException)
         {
@@ -152,7 +153,7 @@ public sealed class CharacterAppService
             armorKey,
             weaponKey,
             offHandKey,
-            inVillage);
+            inVillage) { CostumeKey = costumeKey };
     }
 
     private (string Armor, string Weapon, string OffHand) VisualKeys(CharacterRecord character)
@@ -190,6 +191,25 @@ public sealed class CharacterAppService
         }
 
         return (armorKey, weaponKey, offHandKey);
+    }
+
+    // The saved wardrobe's costume (a bag item an older save names by CostumeItemId), if the character may still wear it;
+    // the select screen draws its body.
+    private string CostumeKey(CharacterRecord character)
+    {
+        var inventory = CharacterStateCodec.ReadInventory(character.Inventory);
+        foreach (var saved in inventory.Items)
+        {
+            if ((saved.Wardrobe || inventory.CostumeItemId != Guid.Empty && saved.InstanceId == inventory.CostumeItemId)
+                && saved is { Slot: null, Belt: null, QuestBox: null, Held: false }
+                && _worldData.Current.Items.TryGet(saved.Code, out var definition)
+                && CostumeCatalog.Shipped.Wears(definition.CatalogKey, saved.Count, ClassProfiles.Of((PlayerClass)character.JobCode).Female))
+            {
+                return definition.CatalogKey;
+            }
+        }
+
+        return string.Empty;
     }
 
     private static void AssignVisualKey(

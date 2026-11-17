@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using PristonTale.Client.Net;
 using PristonTale.Engine3D.Diagnostics;
 using PristonTale.Engine3D.Rendering;
@@ -9,6 +10,7 @@ using PristonTale.Gameplay.UI.Rendering;
 using PristonTale.Gameplay.UI;
 using PristonTale.Gameplay.Audio;
 using PristonTale.Gameplay.Localization;
+using PristonTale.Gameplay.World.Remote;
 
 namespace PristonTale.Gameplay.Screens.Framework;
 
@@ -67,7 +69,7 @@ public sealed class GameClient : IDisposable
         _font = font;
         _uiAtlas = HudAtlas.LoadBootstrap(_graphicsDevice, _assetRoot, ConsoleClientLog.Instance);
         _cursor = HudCursor.Load(_graphicsDevice, _assetRoot, ConsoleClientLog.Instance);
-        _cursor.Show(HudCursorKind.Default);
+        EquipmentVisuals.FindCostumeBodies(_assetRoot, ConsoleClientLog.Instance);
         _sky = PristonSkyLibrary.LoadBootstrap(_graphicsDevice, _assetRoot, ConsoleClientLog.Instance);
         _effects = PristonTale.Gameplay.Effects.EffectLibrary.LoadBootstrap(_graphicsDevice, _content, _assetRoot, ConsoleClientLog.Instance);
         _audio = PristonAudioLibrary.LoadBootstrap(_assetRoot, ConsoleClientLog.Instance);
@@ -120,7 +122,6 @@ public sealed class GameClient : IDisposable
 
         _displayConfirmation?.Update();
         _screen?.Update(gameTime);
-        _cursor?.Show(_screen?.Cursor ?? HudCursorKind.Default);
         if (_pendingScreen != null)
         {
             var next = _pendingScreen;
@@ -136,6 +137,7 @@ public sealed class GameClient : IDisposable
             _screen?.Draw();
             _displayConfirmation?.Draw();
             DrawDiagnostics();
+            _cursor?.Draw(_spriteBatch, Mouse.GetState().Position, _screen?.Cursor ?? HudCursorKind.Default, HudLayout.Of(_graphicsDevice.Viewport).Scale);
             return;
         }
 
@@ -215,6 +217,8 @@ public sealed class GameClient : IDisposable
         });
         return _shutdown;
     }
+
+    public bool HasGameCursor => _cursor?.HasDefaultArt == true;
 
     public void Dispose()
     {

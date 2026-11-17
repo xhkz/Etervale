@@ -22,8 +22,8 @@ public sealed class PlayerEquipmentPresentation
     private bool _appearanceVillage;
     public PlayerActorHandles Handles => _playerHandles;
 
-    // The body item worn now ("" for none).
-    public string ArmorKey { get; private set; } = "";
+    // The costume worn now ("" for none).
+    public string CostumeKey { get; private set; } = "";
 
     public string WeaponKey => (_requestedPlayerVisuals ?? _basePlayerVisuals)?.WeaponKey ?? "";
 
@@ -104,8 +104,8 @@ public sealed class PlayerEquipmentPresentation
                 }
             }
 
-            ArmorKey = armor;
-            var desired = EquipmentVisuals.Apply(_basePlayerVisuals, armor, weapon, offHand, village, _jobMask);
+            CostumeKey = owner.CostumeKey;
+            var desired = EquipmentVisuals.Apply(_basePlayerVisuals, armor, weapon, offHand, village, _jobMask, owner.CostumeKey);
             if (desired != _requestedPlayerVisuals)
             {
                 _requestedPlayerVisuals = desired;

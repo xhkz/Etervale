@@ -322,6 +322,7 @@ public sealed partial class GameplayHud : IDisposable
             _skills.SetClass(value);
             _status.Class = value;
             _status.Invalidate();
+            _inventory.Female = ClassProfiles.Of(value).Female;
         }
     }
 

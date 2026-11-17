@@ -102,6 +102,19 @@ var target = pgConn is not null ? $"postgres" : $"sqlite {sqlitePath}";
 Console.WriteLine($"ptworld {command} → {target}");
 Console.WriteLine($"source: {sourceRoot}");
 
+if (command == "unresolved")
+{
+    // A read of a database the import already filled: no migration runs, and a missing SQLite file is not created.
+    if (pgConn is null && !File.Exists(sqlitePath))
+    {
+        Console.Error.WriteLine($"database not found: {sqlitePath}");
+        return 1;
+    }
+
+    UnresolvedReferenceReport.Write(Console.Out, await UnresolvedReferenceReport.ReadAsync(connections), argv.Contains("--all"));
+    return 0;
+}
+
 try
 {
     await migrator.MigrateAsync();
@@ -286,6 +299,9 @@ static void PrintUsage()
         Commands:
           import [options]    parse the config files and idempotently upsert all world data
           verify [options]    print table row counts + persisted cross-ref integrity
+          unresolved [options] [--all]
+                              list the unresolved references the last import kept, per kind; reads only,
+                              without migrating, and never creates a SQLite file
           export-monster-names --source <dir> --output <path>
                               export authored *Name labels for migration; no database access
           export-npc-motions --source <dir> --assets <dir> --output <path>

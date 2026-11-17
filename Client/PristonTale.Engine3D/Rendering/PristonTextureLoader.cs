@@ -398,11 +398,14 @@ public sealed class PristonTextureLoader : IDisposable
     private static readonly string[] TextureExtensions = [".bmp", ".tga", ".jpg", ".jpeg"];
 
     // Folders whose models name textures the shipped data keeps only in another folder: the opening's stage is built from
-    // Ricarten's pieces, the Stygian Lord's effect model wears the monster's skin. Asset-root relative, '/'-separated.
-    private static readonly (string Folder, string Source)[] BorrowedTextureFolders =
+    // Ricarten's pieces, the Stygian Lord's effect model wears the monster's skin, and one opening NPC wears TN-006's
+    // face. Asset-root relative, '/'-separated; a Name limits the borrow to that one texture, since the folder's other
+    // models name their own.
+    private static readonly (string Folder, string Source, string Name)[] BorrowedTextureFolders =
     [
-        ("StartImage/Opening/Map", "Field/Ricarten"),
-        ("Effect/ObjAnimationData/Stygianlord", "char/monster/Monstygianlord")
+        ("StartImage/Opening/Map", "Field/Ricarten", ""),
+        ("Effect/ObjAnimationData/Stygianlord", "char/monster/Monstygianlord", ""),
+        ("StartImage/Opening/npc", "char/npc/TN-006", "mm.bmp")
     ];
 
     // The texture in the model's folder, else in the folder its textures are borrowed from; empty when neither has it.
@@ -417,7 +420,8 @@ public sealed class PristonTextureLoader : IDisposable
         var folder = directory.Replace('\\', '/').TrimEnd('/');
         foreach (var borrowed in BorrowedTextureFolders)
         {
-            if (folder.EndsWith("/" + borrowed.Folder, StringComparison.OrdinalIgnoreCase))
+            if (folder.EndsWith("/" + borrowed.Folder, StringComparison.OrdinalIgnoreCase)
+                && (borrowed.Name.Length == 0 || string.Equals(Path.GetFileName(name), borrowed.Name, StringComparison.OrdinalIgnoreCase)))
             {
                 return ResolveIn(AssetFiles.Combine(folder[..^borrowed.Folder.Length], borrowed.Source), name);
             }

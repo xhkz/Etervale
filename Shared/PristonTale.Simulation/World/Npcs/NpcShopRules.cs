@@ -57,10 +57,14 @@ public static class NpcShopRules
     public static bool IsValidCount(ItemDefinition definition, int count) =>
         count >= 1 && (definition.IsStackable ? count <= definition.MaxStack : count == 1);
 
+    // A costume is sold only to whom the wardrobe would let wear it; every other item to anyone.
+    public static bool CanBuy(PlayerCharacter character, ItemDefinition definition) =>
+        !CostumeCatalog.Shipped.Contains(definition.CatalogKey) || character.MayWearCostume(definition.CatalogKey);
+
     public static NpcServiceStatus TryBuy(PlayerCharacter character, ItemDefinition definition, int count, int anchor, out long cost, int tax = 0)
     {
         cost = 0;
-        if (!IsValidCount(definition, count))
+        if (!IsValidCount(definition, count) || !CanBuy(character, definition))
         {
             return NpcServiceStatus.Rejected;
         }

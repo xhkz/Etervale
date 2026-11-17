@@ -144,7 +144,9 @@ Rules in `SkillLearning` and `PlayerCharacter.ApplyProgression`; the command is 
 
 - The NPC must offer `NpcServiceKind.SkillMaster` and be within reach (`NpcServiceTransactions.CanReach`); the player
   must be alive. Opening the skill master opens the skill window in training mode
-  (`HudSkillsPanel.HandleTrainingClick`).
+  (`HudSkillsPanel.HandleTrainingClick`). A click on a skill that meets every gate but its price shows the
+  not-enough-gold notice instead of the confirmation. A hovered skill's details quote its next rank's price with the
+  castle tax (`HudSkillsPanel.NextTrainingPrice`), wherever the player stands; nothing at rank 10.
 - Class tier `t` (0..4) opens window indices `< 4 (t + 1)`. A skill needs rank >= 1 in the window entry before it.
 - Training from rank `r` to `r + 1` needs level `RequiredLevel + 2r`, rank < 10, ten mana entries, one point, money.
 - Price: `BasePrices[index] + RankPrices[index] x r`, both tables indexed by window position (500..40000 base).
@@ -241,7 +243,10 @@ means absent); `SkillRule.At` clamps the rank into the table. Distances are worl
 - Presentation per hit and on actors (`SkillRulePresentation.cs`, ignored by the server): `impactSounds` with
   `impactSoundOrder` (`Sequence`: impact n of the cast plays entry n, wrapping; `Random`; `Final`: only the cast's last
   impact, `SkillFormulas.HitCount`), played on landed hits instead of `impactSound`; `impactEffects` (impact n plays entry
-  n, the last entry after that); `-` in either list plays nothing at that impact. `statusLook` while the skill's
+  n, the last entry after that); `-` in either list plays nothing at that impact. `preImpactEffect` starts
+  `preImpactLeadMs` (0..10000) before impact `preImpactHitIndex` (zero-based): index 0 is the Start's `hitAtMs`, a later
+  one its authored event's share of the cast's real duration (`SkillPresentation.PreImpactDelayMs`); it moves no damage
+  and a `Cancel` drops it. `statusLook` while the skill's
   status is on an entity: `Frost`, `Poison`, `Distortion` (harmful statuses only), `Vanish`, `Vague`. `rageGlow`
   (red light 0..255 at each impact, fading 70 a second), `shieldModel` (drawn instead of a held shield while the
   status lasts, from the cast's hit on), `weaponGrowth[10]` (percent growth of a red translucent weapon copy during the

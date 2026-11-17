@@ -74,14 +74,14 @@ public sealed partial class GameScene
             if (_sideView)
             {
                 _sideView = false;
-                _camera.SnapFollow(_playerBody.Position, _fieldCollision);
+                _camera.SnapFollow(_playerBody.Position, CameraCollisionQuery);
             }
 
             var planar = _playerBody.PlanarPosition;
             var moving = Vector2.DistanceSquared(planar, _cameraPlanar) > MovedSquared;
             _cameraPlanar = planar;
             _camera.Mode = _presentation?.Requested.CameraMode ?? PristonCameraMode.Auto;
-            _camera.Update(gameTime, _graphicsDevice, _playerBody.Position, _playerForward, _fieldCollision, PointerCaptured, CameraInputEnabled,
+            _camera.Update(gameTime, _graphicsDevice, _playerBody.Position, _playerForward, CameraCollisionQuery, PointerCaptured, CameraInputEnabled,
                 keysEnabled: !KeyboardCaptured, moving: moving);
             return;
         }

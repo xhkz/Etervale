@@ -9,6 +9,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Skills/Data/Classes/*.json" LogicalName="PristonTale.Simulation.Skills.Data.Classes.%(Filename)%(Extension)" />
     <EmbeddedResource Include="World/Motion/Data/PlayerEquipmentTiming.json" LogicalName="PristonTale.Simulation.World.Motion.Data.PlayerEquipmentTiming.json" />
+    <EmbeddedResource Include="Items/Data/Costumes.json" LogicalName="PristonTale.Simulation.Items.Data.Costumes.json" />
   </ItemGroup>
 
   <ItemGroup>

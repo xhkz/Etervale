@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+using System.Text;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using PristonTale.Persistence.Abstractions;
@@ -16,11 +18,135 @@ internal static class WorldImportTests
     public static IEnumerable<(string, Func<Task>)> Cases()
     {
         yield return ("world import follows linked data, retains variants and unresolved references; a drop line's weight is shared by the items the catalog knows, three bonus lines roll, and a boss line takes the last file of its name", ImportAsync);
+        yield return ("a field SPC character asset preserves its original path and is not classified as a missing NPC", SpcCharacterAssetAsync);
+        yield return ("the unresolved reference report counts rows, references and pairs per kind and the empty shop slots apart", UnresolvedReportAsync);
         yield return ("every key of the monster, item and NPC files reaches the world data, and unknown keys are reported", EveryKeyAsync);
         yield return ("set bonuses are read from the comment that states them", SetBonusAsync);
         yield return ("names the data gives only in Portuguese are imported in English", EnglishNamesAsync);
         yield return ("every monster and NPC has one id and one English key, and every monster a crystal or a skill calls is registered", RegistryAsync);
         yield return ("a named unique keeps its number by code and name, and the registry refuses a number or name given twice", NamedUniqueRegistryAsync);
+    }
+
+    private static async Task SpcCharacterAssetAsync()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"priston-spc-character-{Guid.NewGuid():N}");
+        var source = Path.Combine(directory, "GameServer");
+        var fieldDirectory = Path.Combine(source, "Field");
+        var npcDirectory = Path.Combine(source, "NPC");
+        Directory.CreateDirectory(fieldDirectory);
+        Directory.CreateDirectory(npcDirectory);
+        var path = Path.Combine(fieldDirectory, "dun-3.ase.spc");
+        var bytes = new byte[504 * 100];
+
+        void SetPlacement(int index, string authoredPath)
+        {
+            var record = bytes.AsSpan(index * 504, 504);
+            BinaryPrimitives.WriteInt32LittleEndian(record[4..], 1);
+            Encoding.ASCII.GetBytes(authoredPath).AsSpan().CopyTo(record[104..164]);
+            BinaryPrimitives.WriteInt32LittleEndian(record[180..], 1);
+            BinaryPrimitives.WriteInt32LittleEndian(record[476..], -345097);
+            BinaryPrimitives.WriteInt32LittleEndian(record[480..], 32605);
+            BinaryPrimitives.WriteInt32LittleEndian(record[484..], -6827267);
+        }
+
+        SetPlacement(0, @"char\tmABCD\tmh-c03.inf");
+        SetPlacement(1, @"NPC\Guard.npc");
+        await File.WriteAllBytesAsync(path, bytes);
+        await WriteCp949Async(Path.Combine(npcDirectory, "Guard.npc"), "*이름 \"Guard\"\n*모델 \"guard.ini\"\n");
+
+        var field = new WorldImport.Parsers.ParsedField { AseBase = "dun-3" };
+        new WorldImport.Parsers.SpcReader().Read(path, field);
+        Assert.True(field.FixedNpcs.Count == 2
+            && field.FixedNpcs[0].SourceFile == "tmh-c03.inf"
+            && field.FixedNpcs[0].RawSourcePath == @"char\tmABCD\tmh-c03.inf"
+            && field.FixedNpcs[1].SourceFile == "Guard.npc"
+            && field.FixedNpcs[1].RawSourcePath == @"NPC\Guard.npc",
+            "the SPC reader discarded the source directory or changed the NPC basename");
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddPristonSqlite(Path.Combine(directory, "world.db"));
+        try
+        {
+            await using var provider = services.BuildServiceProvider();
+            await provider.GetRequiredService<IDatabaseMigrator>().MigrateAsync();
+            var connections = provider.GetRequiredService<IDbConnectionFactory>();
+            var report = await new Importer(connections, source).RunAsync();
+            Assert.True(report.FixedNpcRefsDangling == 0 && report.FixedNpcRows == 1 && report.UnresolvedReferenceRows == 1,
+                "the visual character placement was counted as a missing NPC, or a real NPC was dropped");
+            await using var connection = await connections.OpenAsync();
+            var visual = await connection.QuerySingleAsync<(string Kind, string Owner, string Reference, string Details)>(
+                "SELECT kind, owner_key, raw_reference, details_json FROM world_import_unresolved_refs");
+            Assert.True(visual.Kind == "field_character_asset" && visual.Owner == "dun-3"
+                && visual.Reference == @"char\tmABCD\tmh-c03.inf"
+                && visual.Details.Contains("tmh-c03.inf", StringComparison.Ordinal)
+                && await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM field_npcs WHERE stage = 'dun-3'") == 1,
+                "the visual reference, its raw path, or the real NPC placement was lost");
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    private static async Task UnresolvedReportAsync()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"priston-unresolved-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddPristonSqlite(Path.Combine(directory, "world.db"));
+        try
+        {
+            await using var provider = services.BuildServiceProvider();
+            await provider.GetRequiredService<IDatabaseMigrator>().MigrateAsync();
+            var connections = provider.GetRequiredService<IDbConnectionFactory>();
+            await using (var connection = await connections.OpenAsync())
+            {
+                var rows = new List<(string Kind, string Owner, string Reference)>
+                {
+                    ("npc_shop", "Smith", UnresolvedReferenceReport.EmptyShopSlot),
+                    ("npc_shop", "Smith", UnresolvedReferenceReport.EmptyShopSlot),
+                    ("npc_shop", "Guard", "ZZ999"),
+                    ("monster_drop", "Bad Wolf", "or228"),
+                };
+                rows.AddRange(Enumerable.Range(0, UnresolvedReferenceReport.Shown + 2).Select(static index => ("field_fixed_npc", $"field-{index:D2}", "Lost.npc")));
+                foreach (var row in rows)
+                {
+                    await connection.ExecuteAsync(
+                        "INSERT INTO world_import_unresolved_refs (kind, owner_key, raw_reference, details_json) VALUES (@Kind, @Owner, @Reference, '{}')",
+                        new { row.Kind, row.Owner, row.Reference });
+                }
+            }
+
+            var report = await UnresolvedReferenceReport.ReadAsync(connections);
+            Assert.True(report.Rows == 16 && report.EmptyShopSlots == 2
+                && report.Kinds.Select(static kind => kind.Kind).SequenceEqual(["field_fixed_npc", "monster_drop", "npc_shop"]),
+                "the report miscounted the rows or the empty shop slots, or left a kind out");
+            var shop = report.Kinds[2];
+            Assert.True(shop.Rows == 3 && shop.References == 2 && shop.Pairs.Count == 2
+                && shop.Pairs[0] == new UnresolvedPair(UnresolvedReferenceReport.EmptyShopSlot, "Smith", 2),
+                "a kind's rows, references or most frequent pair were wrong");
+            var fixedNpcs = report.Kinds[0];
+            Assert.True(fixedNpcs.References == 1 && fixedNpcs.Pairs.Count == UnresolvedReferenceReport.Shown + 2,
+                "one reference with many owners was not kept per owner");
+            var shown = new StringWriter();
+            UnresolvedReferenceReport.Write(shown, report, all: false);
+            var listed = new StringWriter();
+            UnresolvedReferenceReport.Write(listed, report, all: true);
+            Assert.True(shown.ToString().Contains("... 2 more", StringComparison.Ordinal) && !shown.ToString().Contains("field-11", StringComparison.Ordinal)
+                && listed.ToString().Contains("field-11", StringComparison.Ordinal) && !listed.ToString().Contains("more (", StringComparison.Ordinal),
+                "the report did not cut the pairs at ten, or --all still cut them");
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            Directory.Delete(directory, recursive: true);
+        }
     }
 
     private static Task SetBonusAsync()

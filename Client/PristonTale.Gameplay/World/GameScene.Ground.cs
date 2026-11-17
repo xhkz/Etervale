@@ -80,7 +80,7 @@ public sealed partial class GameScene
         {
             EndFall(landed: false);
             ApplyPlayerWorld();
-            _camera?.SnapFollow(_playerBody.Position, _fieldCollision);
+            _camera?.SnapFollow(_playerBody.Position, CameraCollisionQuery);
         }
         else if (float.IsFinite(_fallTop))
         {
@@ -223,15 +223,31 @@ public sealed partial class GameScene
         return _fieldCollision.TryGetFloorHeight(position, float.MaxValue, 0f, out height);
     }
 
+    // Floors under one another that a pick looks through, and how far past an unreachable one the next cast starts.
+    private const int PickedFloorLayers = 4;
+    private const float PickedFloorStep = 1f;
+
+    // The nearest floor under the ray among those the player's feet can reach, so a bridge or roof over a reachable
+    // floor does not swallow the click: a field's mesh answers its nearest floor only, so the ray is cast again past
+    // each one the feet cannot reach.
     private bool TryRaycastFloor(Ray ray, out Vector3 point)
     {
         point = default;
         var found = false;
         var bestDistance = float.MaxValue;
+        var feet = PlayerFeet;
+        var direction = Vector3.Normalize(ray.Direction);
         foreach (var field in _fields)
         {
-            if (field.Collision.TryRaycastFloor(ray, out var p))
+            var probe = new Ray(ray.Position, direction);
+            for (var layer = 0; layer < PickedFloorLayers && field.Collision.TryRaycastFloor(probe, out var p); layer++)
             {
+                if (!GroundTraversal.CanReachSurface(feet, p, _groundFloorQuery))
+                {
+                    probe = new Ray(p + direction * PickedFloorStep, direction);
+                    continue;
+                }
+
                 var distance = Vector3.DistanceSquared(ray.Position, p);
                 if (distance < bestDistance)
                 {
@@ -239,8 +255,11 @@ public sealed partial class GameScene
                     point = p;
                     found = true;
                 }
+
+                break;
             }
         }
+
         return found;
     }
 

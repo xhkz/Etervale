@@ -5,15 +5,20 @@ public sealed record NpcShopStock(
     IReadOnlyList<uint> ArmorItemCodes,
     IReadOnlyList<uint> MiscItemCodes)
 {
+    public const int WeaponTab = 0;
+    public const int ArmorTab = 1;
+    public const int MiscTab = 2;
+    public const int Tabs = 3;
+
     public static readonly NpcShopStock Empty = new([], [], []);
 
     public bool IsEmpty => WeaponItemCodes.Count == 0 && ArmorItemCodes.Count == 0 && MiscItemCodes.Count == 0;
 
     public IReadOnlyList<uint> Tab(int tab) => tab switch
     {
-        0 => WeaponItemCodes,
-        1 => ArmorItemCodes,
-        2 => MiscItemCodes,
+        WeaponTab => WeaponItemCodes,
+        ArmorTab => ArmorItemCodes,
+        MiscTab => MiscItemCodes,
         _ => []
     };
 

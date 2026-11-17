@@ -79,6 +79,7 @@ renderer through `PresentationSettings.ApplyRendering` and apply at once.
 | `backgroundMaxFps` | int, `30` | 0 or 15-1000 | yes (same list) | Limit while the window is inactive: `min(maxFps, backgroundMaxFps)`, or `backgroundMaxFps` when `maxFps` is 0; 0 means "use `maxFps`". |
 | `uiScale` | float, `1` | 0.75-1.5 | | Validated and stored only; the in-game HUD always uses the largest integer scale that fits. |
 | `classicTargetHealthBar` | bool, `false` | | yes (Target HP) | `false`: the target frame always shows the HP bar with level and life percentage. `true`: the bar, without numbers, appears only after you attack a monster at full life. Either way the frame shows a live 3D portrait of the target's head, its name and, for monsters, the race icon. |
+| `cameraSceneryCollision` | bool, `true` | | yes (Camera collision; login form's Game tab) | The camera sweeps against the scenery and stops short of walls. Off, it passes through them; the player's collision and the server's movement are unchanged ([client.md](client.md#camera-modes)). |
 | `classicNamePlates` | bool, `false` | | yes (Name plates) | `false`: the name boxes over monsters and NPCs (rounded, in the speech bubble's colours) hold smaller text, a monster's life bar shows once it was clicked or attacked, and NPCs get no hover outline. `true`: the same box, the HUD text size, the bar while the cursor is on the monster, and a green NPC outline. |
 | `levelGuide` | bool, `true` | | yes (the guide window's On/Off) | On reaching a level the game guide has a page for, a blinking notice offers its summary. |
 | `cameraMode` | `Auto` (default), `Manual`, `Lock` | defined enum | yes (the bar's camera button and `Z`) | The original's camera mode: Auto also turns the camera behind the moving player, Lock holds a fixed distance and pitch ([client.md](client.md#camera-modes)). |
@@ -173,9 +174,11 @@ it differs from the named preset (`WithQualityLabel`).
 
 ## In-game Settings panel
 
-`HudSettingsPanel` rows, in order: Window, Monitor, Resolution, Frequency, VSync, BGM, Audio, Maximum FPS, Background
-FPS, Anti-aliasing, Sun shadow, Graphics quality, Shadow animation, Shadows, Target HP, Name plates, Weather, Sky,
-Clouds, Language. Click cycles
+`HudSettingsPanel` has three pages of up to 11 rows, turned by Previous and Next under the rows. Display and audio:
+Window, Monitor, Resolution, Frequency, VSync, BGM, Audio, Maximum FPS, Background FPS, Anti-aliasing, Sun shadow.
+Graphics and camera: Graphics quality, Shadow animation, Shadows, Target HP, Name plates, Weather, Sky, Clouds, Language,
+Camera collision. The third page lists the mouse and keyboard shortcuts (`Settings.Keys1` to `Settings.Keys11`), read
+only; keep it in step with the keys `GameplayHud.Input` and `GameScene.Input` handle. Click cycles
 forward, Shift+click backward. Resolution offers only the sizes the primary monitor reports (at least 800x600,
 `SettingsChoices.Resolutions`): any of them in fullscreen, those that fit on the desktop below the window's title bar
 when windowed, and none when borderless (it covers the desktop). Graphics quality cycles Low, Medium, High, Ultra;

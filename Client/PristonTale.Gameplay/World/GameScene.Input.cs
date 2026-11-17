@@ -216,12 +216,6 @@ public sealed partial class GameScene
             return false;
         }
 
-        var feet = PlayerFeet;
-        if (!GroundTraversal.CanReachSurface(feet, point, _groundFloorQuery))
-        {
-            return false;
-        }
-
         var destination = new Vector2(point.X, point.Z);
         var current = _playerBody.PlanarPosition;
         if (DestinationMovement.WithinDistance(new NumVector2(current.X, current.Y), new NumVector2(destination.X, destination.Y), PlayerRadius))

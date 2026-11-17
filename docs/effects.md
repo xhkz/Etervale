@@ -211,6 +211,7 @@ Skill rules (`Shared/PristonTale.Simulation/Skills/Data/Classes/<Class>.json`) n
 |---|---|---|
 | `Start` phase | `castEffect` | At the caster; stopped on `Cancel` |
 | `hitAtMs` after Start/Release, projectile rules | `projectileEffect` | Travels caster -> target |
+| `preImpactLeadMs` before hit `preImpactHitIndex` | `preImpactEffect` | Point at the target; dropped on `Cancel` |
 | `Impact` phase | charged, mode, per-hit (`impactEffects`) or plain `impactEffect`; per-hit `impactSounds` | Point at the target (or caster for caster-centred areas), target id set |
 | Companion/Counter impact | `companionEffect` | Travels from above the caster to the target |
 | Chain impact | `impactEffect` | Travels from the previous link to the target |
@@ -446,7 +447,7 @@ Every cast draws `vfx.magician.castcircle` (the Magician's circle textures) unle
 | Dancing Sword | The floating sword by element; strikes by element | `dancingsword.blade[.fire/.ice]`, `dancingsword.strike[.fire/.ice]` |
 | Fire Elemental, Distortion | The cast circle; distorted targets glow red-yellow and wobble | `castcircle`; `statusLook` Distortion |
 | Flame Wave | Five fire streams fanning ahead | `flamewave.wave` |
-| Meteo | Four burning meteors falling around the target, a burst where each lands, on each of the clip's two events | `meteo.fall`, `meteo.hit` |
+| Meteo | A burst at the first hit; four burning meteors start falling around the target 970 ms before the second hit so they land on it, the second hit plays nothing more | `meteo.hit`, `meteo.fall` (`preImpactEffect`) |
 | Silraphim | Casting circle; at the target a cyan starburst with sparks and a glow, two shock rings spreading over the area, a spinning swirl on the ground and rising motes, and a cyan light | `vfx.magician.castcircle`, `vfx.magician.silraphim.hit` |
 | Vis Tenus | A violet beam from the staff hand to the target, the Vis Tenus flash on it, motes drawn in, a glow and three rings closing in around it from head to feet; the target draws at half its size while shrunk | `vfx.magician.vistenus.beam` |
 | Prima Ignis | Casting circle; the primal fire rolling ahead of the caster | `vfx.magician.primaignis.shot` |
@@ -504,10 +505,12 @@ more red and blue light for 16 ticks of every 32 left (`ActorLookBook`).
 
 ### Costume wings
 
-The premium costume armours and robes show a wing at the wearer's back (`CostumeWings`, `Effect/Vfx/Costumes`):
+The premium costume armours and robes, worn in the wardrobe ([costumes](costumes.md)), show a wing at the wearer's back
+(`CostumeWings`, `Effect/Vfx/Costumes`):
 Cygnus CA166-169 / CA266-269 `vfx.costume.wing.blue`, Aquila CA185-188 / CA285-288 `vfx.costume.wing.white`, Corvus
 CA189-192 / CA289-292 `vfx.costume.wing.red`. The wing model hangs 2.42 below the wearer's origin plus its own height,
-turns with the wearer and is hidden in a village and on the dead. Costume bodies keep the class body.
+turns with the wearer and is hidden in a village and on the dead. These costumes list no body, so the wearer keeps the
+armour's body.
 
 ### Basic shots
 
@@ -597,7 +600,7 @@ light and trail effects on its holder's weapon while it lasts, beside any class-
 - Weapon bands use a fixed blade length per effect, not the equipped weapon's length.
 - Afterimages and the enlarged weapon are extra actors; translucent actors draw in the transparent queue without depth
   writes or motion vectors and cast no shadow.
-- Costume bodies (CA) keep the class body; only their wings are drawn.
+- The winged costumes (CA) keep the armour's body; only their wings are drawn.
 - `Color`/`AddColor` blends draw additively with squared colour; `Shadow`/`InvShadow` darken in the HDR scene.
 
 ## Pitfalls

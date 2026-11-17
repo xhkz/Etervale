@@ -15,14 +15,17 @@ public sealed record OwnedItemView(
     public string Link { get; init; } = "";
 
     // Where it is: the bag (Anchor), an equipment slot (Slot), a potion belt box (Slot from PotionBelt.FirstOwnerSlot), a
-    // special item box (Slot from QuestItemBox.FirstOwnerSlot) or the hand (HeldSlot, PlayerCharacter.Held).
+    // special item box (Slot from QuestItemBox.FirstOwnerSlot), the hand (HeldSlot, PlayerCharacter.Held) or the wardrobe
+    // (WardrobeSlot, PlayerCharacter.Costume).
     public const int HeldSlot = QuestItemBox.FirstOwnerSlot + QuestItemBox.Boxes;
+    public const int WardrobeSlot = HeldSlot + 1;
 
     public bool InBag => Slot < 0;
     public bool Equipped => Slot is >= 0 and < PotionBelt.FirstOwnerSlot;
     public int BeltBox => Slot is >= PotionBelt.FirstOwnerSlot and < QuestItemBox.FirstOwnerSlot ? Slot - PotionBelt.FirstOwnerSlot : -1;
     public int QuestBox => Slot is >= QuestItemBox.FirstOwnerSlot and < HeldSlot ? Slot - QuestItemBox.FirstOwnerSlot : -1;
     public bool Held => Slot == HeldSlot;
+    public bool Worn => Slot == WardrobeSlot;
 
     // What a view shows of an item at a bag or grid anchor or an owner slot; a sealed puzzle piece shows as the lucky bag
     // until it is revealed.
@@ -81,6 +84,9 @@ public sealed record OwnerState(
     // The bag page shown and the weapon pair held (0 A, 1 B; PlayerCharacter.BagPage, WeaponSet).
     public int BagPage { get; init; }
     public int WeaponSet { get; init; }
+    // The worn costume (PlayerCharacter.Costume, in Items at OwnedItemView.WardrobeSlot) and its item key; empty when none.
+    public Guid CostumeItemId { get; init; }
+    public string CostumeKey { get; init; } = "";
 
     // Class tier 0..3 and the points the final tier's skills spend.
     public int Tier { get; init; }
@@ -152,6 +158,8 @@ public sealed record OwnerState(
             Tier = character.Tier,
             BagPage = character.BagPage,
             WeaponSet = character.WeaponSet,
+            CostumeItemId = character.CostumeItemId,
+            CostumeKey = character.CostumeKey,
             EliteSkillPoints = character.EliteSkillPoints,
             Skills = previous is not null && previous.SkillsRevision == character.Skills.Revision ? previous.Skills : SkillViews(character.Skills),
             SkillBindings = character.SkillBindings,
@@ -207,6 +215,11 @@ public sealed record OwnerState(
         if (character.Held is { } held)
         {
             captured.Add(Project(held, -1, OwnedItemView.HeldSlot, character));
+        }
+
+        if (character.Costume is { } costume)
+        {
+            captured.Add(Project(costume, -1, OwnedItemView.WardrobeSlot, character));
         }
 
         return captured.AsReadOnly();

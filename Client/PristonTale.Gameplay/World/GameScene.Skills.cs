@@ -109,7 +109,7 @@ public sealed partial class GameScene : ISkillSceneHost
 
         if (_playerBody is not null && _equipmentPresentation is not null)
         {
-            _wings.Wear(_skillFx, _remote.SelfEntityId, _equipmentPresentation.ArmorKey, !InVillage && !_playerController.IsDead, _playerBody.Position,
+            _wings.Wear(_skillFx, _remote.SelfEntityId, _equipmentPresentation.CostumeKey, !InVillage && !_playerController.IsDead, _playerBody.Position,
                 PlayerYaw);
         }
 
@@ -119,11 +119,11 @@ public sealed partial class GameScene : ISkillSceneHost
 
     private Action<ulong, string, bool, float> _wearRemote;
 
-    private void WearRemote(ulong entityId, string armorKey, bool shown, float yaw)
+    private void WearRemote(ulong entityId, string costumeKey, bool shown, float yaw)
     {
         if (_remote.TryGetDrawnPosition(entityId, out var position))
         {
-            _wings.Wear(_skillFx, entityId, armorKey, shown, position, yaw);
+            _wings.Wear(_skillFx, entityId, costumeKey, shown, position, yaw);
         }
     }
 

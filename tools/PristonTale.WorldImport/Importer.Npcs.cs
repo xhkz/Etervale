@@ -60,7 +60,7 @@ public sealed partial class Importer
                 {
                     // The empty-slot placeholder is recorded as "none"; the slot keeps its ordinal.
                     report.ShopItemCodesDangling++;
-                    await RecordUnresolvedAsync(conn, tx, "npc_shop", identity.Key, code == KeyMaps.DropNone ? "none" : code,
+                    await RecordUnresolvedAsync(conn, tx, UnresolvedReferenceReport.ShopKind, identity.Key, code == KeyMaps.DropNone ? UnresolvedReferenceReport.EmptyShopSlot : code,
                         new { Tab = tab, Ordinal = ordinal }, report, ct);
                     continue;
                 }

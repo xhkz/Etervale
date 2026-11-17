@@ -87,6 +87,7 @@ internal static class SettingsOptions
         Toggle(SettingsTab.Game, "Options.Sound", static s => s.SoundEnabled, static (s, v) => s with { SoundEnabled = v }),
         Toggle(SettingsTab.Game, "Options.Weather", static s => s.WeatherEnabled, static (s, v) => s with { WeatherEnabled = v }),
         EnumChoice<PristonCameraMode>(SettingsTab.Game, "Options.CameraMode", static s => s.CameraMode, static (s, v) => s with { CameraMode = v }),
+        Toggle(SettingsTab.Game, "Options.CameraSceneryCollision", static s => s.CameraSceneryCollision, static (s, v) => s with { CameraSceneryCollision = v }),
         Toggle(SettingsTab.Game, "Options.ClassicTargetHealth", static s => s.ClassicTargetHealthBar, static (s, v) => s with { ClassicTargetHealthBar = v }),
         Toggle(SettingsTab.Game, "Options.ClassicNamePlates", static s => s.ClassicNamePlates, static (s, v) => s with { ClassicNamePlates = v }),
         Toggle(SettingsTab.Game, "Options.LevelGuide", static s => s.LevelGuide, static (s, v) => s with { LevelGuide = v }),

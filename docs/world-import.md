@@ -6,7 +6,7 @@ catalog tables, and the authored file formats it reads. Also covers the small `t
 
 ## Read this when
 
-- Running `import` or `verify`, or deciding which options to pass.
+- Running `import`, `verify` or `unresolved`, or deciding which options to pass.
 - A monster, item, NPC, shop, drop, spawn or NPC service is missing or wrong in game.
 - Reading or changing a parser for item, monster, NPC or field files.
 - Reconciling the import report, `world_entity_variants` or `world_import_unresolved_refs`.
@@ -18,6 +18,7 @@ catalog tables, and the authored file formats it reads. Also covers the small `t
 | Path | Responsibility |
 | --- | --- |
 | [Program.cs](../tools/PristonTale.WorldImport/Program.cs) | CLI: option parsing, defaults, provider setup, migration, report and `verify` output |
+| [UnresolvedReferenceReport.cs](../tools/PristonTale.WorldImport/UnresolvedReferenceReport.cs) | The `unresolved` command: `world_import_unresolved_refs` per kind, read and printed |
 | [Importer.cs](../tools/PristonTale.WorldImport/Importer.cs) | Parse all sources, choose catalog entries, replace the catalog in one transaction |
 | `tools/PristonTale.WorldImport/Importer.Items.cs`, `.Monsters.cs`, `.Npcs.cs`, `.Fields.cs` | The catalog writes of each domain |
 | `tools/PristonTale.WorldImport/Tokenizer.cs` | Line tokenizer of the `*key value` text format; C-style integer and float parsing |
@@ -55,6 +56,7 @@ dotnet run --project tools/PristonTale.WorldImport -c Release --no-build -- veri
 | --- | --- | --- |
 | `import` | yes | Migrate, parse, write the catalog and preservation tables, print the report and row counts. Exit 1 if the source root does not exist |
 | `verify` | yes | Migrate, print row counts, orphan checks (drop items, shop items, spawn monsters), NPC services by kind, NPCs with dialog and with a name. On a new database it creates the schema and prints zero counts |
+| `unresolved [--all]` | yes | Read only, without migrating: the unresolved rows per kind (rows, distinct references, owner/reference pairs, the ten most frequent unless `--all`), with the empty shop slots (`none`) counted apart. Exit 1 if the SQLite file does not exist (it is not created) |
 | `export-item-names` | no | `[{Code, Name}]` of item files, first per code, to `--output` |
 | `export-monster-names` | no | `[{Id, Key, DisplayName, SourceFile}]`, first per identity; fails on a file without identity or `*Name` |
 | `export-npc-placements` | no | Fixed NPC placements of every `WorldCatalog` field (field code, NPC id and key, position, angle, source file) |
@@ -346,6 +348,7 @@ Korean are translated in `EnglishNames.Dialog`.
 | `field_boss` | field base | Boss entry not written; warning |
 | `field_boss_escort` | field base | Boss written without escort |
 | `field_fixed_npc` | field base | Placement not written |
+| `field_character_asset` | field base | A `.spc` placement naming a `char/.../*.inf` model instead of an NPC file: kept with its authored path, not written as an NPC and not counted as a dangling NPC |
 
 `owner_key` is the monster's or NPC's English key or the field base; `raw_reference` is the source text that resolved to
 nothing (an item code, or a monster or NPC identity no file defines).
