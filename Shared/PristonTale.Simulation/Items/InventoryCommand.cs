@@ -28,7 +28,12 @@ public enum InventoryAction
     // Puts Count gold on the ground where the player stands, as Drop does an item; ItemId is unused.
     DropGold,
     // A special item left in the bag into the first free box of the special item box (PlayerCharacter.TryStoreQuestItem).
-    StoreQuestItem
+    StoreQuestItem,
+    // A costume from either bag page into the wardrobe, the one worn before back to its place (PlayerCharacter.TryWearCostume);
+    // ItemId is the costume.
+    WearCostume,
+    // The worn costume back into the page shown (PlayerCharacter.TryClearCostume); ItemId is unused.
+    ClearCostume
 }
 
 public sealed record InventoryCommand(Guid OperationId, long ExpectedRevision, InventoryAction Action,
@@ -50,7 +55,7 @@ public static class InventoryCommands
     public static bool Apply(PlayerCharacter character, InventoryCommand command)
     {
         var sideSwitch = command.Action is InventoryAction.SwitchBagPage or InventoryAction.SwitchWeaponSet;
-        if (command.OperationId == Guid.Empty || command.ItemId == Guid.Empty && !sideSwitch || !Enum.IsDefined(command.Action)
+        if (command.OperationId == Guid.Empty || command.ItemId == Guid.Empty && !sideSwitch && command.Action != InventoryAction.ClearCostume || !Enum.IsDefined(command.Action)
             || command.ExpectedRevision != character.InventoryRevision)
         {
             return false;
@@ -76,6 +81,8 @@ public static class InventoryCommands
             InventoryAction.BeltTake => character.TryTakeFromBelt(command.ItemId, command.Destination),
             InventoryAction.SwitchBagPage => character.TrySwitchBagPage(command.Destination, command.ItemId),
             InventoryAction.SwitchWeaponSet => Fitted(character, character.TrySwitchWeaponSet(command.Destination)),
+            InventoryAction.WearCostume => character.TryWearCostume(command.ItemId),
+            InventoryAction.ClearCostume => character.TryClearCostume(),
             _ => false
         };
     }

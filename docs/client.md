@@ -298,7 +298,8 @@ coordinates; their consumers mirror them with `WorldSpace` instead of negating Z
   lie flat. The turned mesh rests on the floor by its lowest rotated corner (`GroundLootPresentation.Orientation`).
 - Drop names: each anchored at its own drop's point 16 units up, recomputed every frame. Holding `A` names the drops
   32 to 768 units from the camera; the drop under the cursor (`GameScene.HoveredDropId`, picked in `Update` by its
-  label or a sphere around it) is named at any distance. `GroundLootPresentation.CollectLabels` lists them nearest
+  label, which wins over every drop's sphere, or else by the nearest 16-unit sphere 7 units over its point) is named at
+  any distance. `GroundLootPresentation.CollectLabels` lists them nearest
   first by depth before the camera, in an order kept from frame to frame: a newly named drop is placed by its depth
   (`InsertByDepth`), and two neighbours swap only once the first lies more than `OrderHysteresis` (12 units, half a drop
   cell) farther than the second (`SettleOrder`), so drops of one row, at nearly one depth, do not trade places as the
@@ -432,6 +433,10 @@ hands it to `PristonCamera.Mode` each frame, with whether the player moved since
 - Lock: on entering it the camera turns to the heading of 45 degrees; it then stays 440 units away (600 in a window
   wider than 4:3) at a pitch of 45 degrees less 128 units (`HoldLock`), and the wheel, the zoom keys, the tilt and the
   screen edge do nothing. The middle drag and the arrows still turn it.
+
+The camera sweeps against the loaded fields' scenery (`GameScene.CameraCollisionQuery`) while
+`cameraSceneryCollision` is on; off, it passes through walls and the scenery may hide the player. Only the camera
+changes: the player's collision and the server's movement stay.
 
 The bar draws `AutoCameraImage.bmp` or `PixCameraImage.bmp` over the camera button in Auto or Lock (none in Manual), and
 pointing at the button shows the mode's tooltip (`Camera_Hand`, `Camera_Auto`, `Camera_Fix`).
@@ -759,18 +764,26 @@ puts it in `ScreenContext.ReadClipboard` for `HudChat.ReadClipboard`.
   bar (`DrawHealthBar`, the target frame's colours) shows under a monster once it was clicked or the local player swung
   at it (`Entity.Attacked`, set by `NoteAttack`); when true the box holds the name at the HUD text size and the bar
   shows while the cursor is on the monster (`ShowsPlateBar`).
+- Pointer picking: an entity is hit by two stacked spheres over its feet, at one and two radii up
+  (`CursorPicking.IntersectActor`; radius 30 for monsters, 23 for players and NPCs, `RemoteEntityManager.PickRadius`),
+  so the pointer takes the body rather than a wide ball around the feet; the nearest hit wins. A ground click takes the
+  nearest floor under the pointer that the player's feet can reach (`GameScene.TryRaycastFloor`,
+  `GroundTraversal.CanReachSurface`), so a bridge or roof over it does not swallow the click.
 - Hover outline (`GameScene.Outline.cs`, `PristonRenderer.SetActorOutline`): every actor of the hovered entity is
   outlined, red (255, 30, 0) for monsters and white for players; NPCs only with `classicNamePlates`, in green
   (0, 255, 100). The width share is 1 within 300 units of the camera and falls to 0 at 1300 (`OutlineStrength`). It is
   set again each frame and cleared when the cursor leaves.
-- Mouse pointer (`HudCursor`, loaded by `GameClient`): the original yellow arrow (`image/Sinimage/Cursor`) as a system
-  cursor tipped at its top-left pixel, on every screen. `GameClient` shows the screen's `GameScreen.Cursor` after each
-  update; in play it is the attack arrow over a monster without an owner, the speech balloon over an NPC, the open hand
+- Mouse pointer (`HudCursor`, loaded by `GameClient`): the original yellow arrow (`image/Sinimage/Cursor`) drawn by the
+  game, tipped at its top-left pixel, on every screen. The system pointer is hidden when the arrow's image loaded
+  (`GameClient.HasGameCursor`) and stays when it is missing. `GameClient` draws the screen's `GameScreen.Cursor` last in
+  each frame, over every window and dialog, with point sampling at the HUD's integer scale (`HudLayout`), so it keeps
+  the art's pixels where a system cursor would be filtered by the desktop; it follows the pointer at the frame rate. In
+  play it is the attack arrow over a monster without an owner, the speech balloon over an NPC, the open hand
   (`GetItem_Cursor1`) over a drop and the closed hand (`GetItem_Cursor2`) while the left button is held, a drop winning
   over the monster or NPC behind it, and the plain arrow over players, summons, the HUD and the ground. The HUD imposes
   its own (`GameplayHud.CursorOverride`): the arrow over a dialog or message box, the pointer of the shop's mode
-  (`BuyCursor`, `SellCursor`, `RepairCursor`) while a shop is open, and none while an item is dragged (a transparent
-  cursor; the item's icon takes its place). A missing image keeps the system arrow.
+  (`BuyCursor`, `SellCursor`, `RepairCursor`) while a shop is open, and none while an item is dragged (the item's icon
+  takes its place). A kind without an image draws the arrow.
 - 3D portrait (`HudTargetPortrait`): rendered each frame into its own 4x MSAA target through
   `PristonRenderer.DrawActorPortrait`, framed on the `Bip01 Head` bone (fallback: model height) plus the authored
   portrait offsets from `MonsterRenderInfo`/`NpcRenderInfo`, with its own studio lighting.
@@ -789,7 +802,8 @@ puts it in `ScreenContext.ReadClipboard` for `HudChat.ReadClipboard`.
   list. The guide pages carry the level guide's On/Off switch (`ClientSettings.LevelGuide`). The wheel and the scroll bar
   move a long text; OK and Escape close the window, which keeps the world's clicks inside it.
 - Level guide (`HudLevelGuide`): reaching a level the guide has a page for, or entering as a level-1 character without
-  experience, shows a picture blinking every 0.7 s at the top left while the switch is on; a click opens its summary (a
+  experience, shows a picture blinking every 0.7 s at the top left, under the quest information (y 84), while the switch
+  is on; a click opens its summary (a
   guide box with the first six lines beside the page's picture, Close, and ">>more..." opening the page in the help
   window when it is longer). A new character's first weapon and armour gifts (`ItemEffectKind.StarterGift`, order 0
   and 1) open the summaries of their beginner's pages at once, whatever the switch (once the guide's files are read).
@@ -902,17 +916,16 @@ puts it in `ScreenContext.ReadClipboard` for `HudChat.ReadClipboard`.
   footsteps (stone in towns and ruins, dungeon stone, soft ground in forests and deserts) on their first two event
   frames. Everything comes from the presence stream, so every client near the action plays it.
 - Equipment looks (`EquipmentVisuals`, `EquipmentVisualTables` in Engine3D, where model descriptors also name weapons
-  through it): every item with a model has its motion index (the
-  weapon index the character motion files list; weapons newer than those files take the first item of their family and
-  hand class, and items no hand holds that are newer than them take -1), model
-  (`image/sinimage/Items/DropItem/it<model>.smd`, also its ground model), hand and village bone. Every catalog item with
-  its own `it<code>.smd` has a row; one without a row has no ground model, and its drop shows only its name. An
-  equipment item without an imported client model is kept by the server but omitted from the rendered look, so it cannot
-  abort character entry or remote-player preparation. An
-  armour or robe wears the body of its catalog ordinal (`ArmorSlots`: ordinals from 26 sit sixteen slots further, so
-  DA126-129 wear the 25th-28th bodies, DA301/401 the 29th, DA302-304/402-404 the 30th-32nd and DA131+ the costume
-  bodies) from its class row (A, B, C, D, mA, mB, mC, mD, E, mE, f; 75 slots each); premium costumes (`CA`) keep the
-  class body and wear wings, and an armour missing from `ArmorSlots` keeps the class body. The phantoms, daggers and
+  through it): every item with a model has its motion index (the weapon index the character motion files list; weapons
+  newer than those files take the first item of their family and hand class, and items no hand holds that are newer than
+  them take -1), model (`image/sinimage/Items/DropItem/it<model>.smd`, also its ground model), hand and village bone.
+  Every catalog item with its own `it<code>.smd` has a row; one without a row has no ground model, and its drop shows
+  only its name. An equipment item without an imported client model is kept by the server but omitted from the rendered
+  look, so it cannot abort character entry or remote-player preparation. An armour or robe wears the body of its catalog
+  ordinal (`ArmorSlots`: ordinals from 26 sit sixteen slots further, so DA126-129 wear the 25th-28th bodies, DA301/401
+  the 29th, DA302-304/402-404 the 30th-32nd) from its class row (A, B, C, D, mA, mB, mC, mD, E, mE, f; 75 slots
+  each); an armour missing from `ArmorSlots` or a `CA` armour keeps the class body. A costume is worn in the wardrobe,
+  never as armour, and draws the body its list names ([costumes](costumes.md)). The phantoms, daggers and
   vambraces use the Shaman's, the Assassin's and the Martial Artist's motion indices (phantoms 101-129 and 151-153 from
   261, daggers from 293, vambraces 101-137 from 325). The Assassin holds a dagger in each hand (`Bip weapon01` and
   `Bip weapon05`) and hangs the two on `Bip in07` and `Bip in08` in a village; the Martial Artist wears a vambrace on

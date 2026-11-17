@@ -49,6 +49,8 @@ internal static class HudInteractionTests
         yield return ("the weapon pair switches with an item on the cursor and sounds the pair now held; a quest item set into the closed box rings and glows",
             CarriedSidesAsync);
         yield return ("a ground item picked up with the window open comes to the cursor, and goes where any item goes with it closed", PickupToCursorAsync);
+        yield return ("a right click wears a costume cut for the wearer and reports the other gender's without asking the server", CostumeRightClickAsync);
+        yield return ("the worn costume shows in the wardrobe slot only, and an item put on closes the wardrobe page", WardrobePageAsync);
         yield return ("the pointer attacks over wild monsters, talks over NPCs and stays the arrow elsewhere", CursorKindAsync);
         yield return ("drop names on one spot rise into a column above the nearest, which keeps its place", DropNameColumnAsync);
         yield return ("the settings offer only the monitor's sizes: all in fullscreen, those that fit in a window, none borderless", ResolutionsAsync);
@@ -161,7 +163,12 @@ internal static class HudInteractionTests
             "NPC help box escaped 800x600");
         Assert.True(HudNpcPanel.Box == new Rectangle(50, 45, 352, 352), "NPC help box differs from QuestMessageBoxPosi2/Size2");
         Assert.True(design.Contains(HudSettingsPanel.Box) && HudSettingsPanel.Box.Contains(HudSettingsPanel.OkButton)
-            && HudSettingsPanel.Box.Contains(HudSettingsPanel.Row(15)), "settings rows escaped the help box");
+            && HudSettingsPanel.Box.Contains(HudSettingsPanel.Row(HudSettingsPanel.RowsPerPage - 1)), "settings rows escaped the help box");
+        Assert.True(HudSettingsPanel.Box.Contains(HudSettingsPanel.PreviousPage) && HudSettingsPanel.Box.Contains(HudSettingsPanel.NextPage)
+            && !HudSettingsPanel.PreviousPage.Intersects(HudSettingsPanel.NextPage)
+            && HudSettingsPanel.PreviousPage.Top > HudSettingsPanel.Row(HudSettingsPanel.RowsPerPage - 1).Bottom
+            && !HudSettingsPanel.PreviousPage.Intersects(HudSettingsPanel.OkButton) && !HudSettingsPanel.NextPage.Intersects(HudSettingsPanel.OkButton),
+            "the settings page buttons overlap the rows, each other or OK, or leave the box");
         AssertDisjointInside([HudMessageBox.Accept, HudMessageBox.Reject], HudMessageBox.Bounds, "message box buttons");
         HudMessageBox.Place(HudLayout.Create(1920, 1080));
         Assert.True(HudMessageBox.Bounds == new Rectangle(876, 478, HudMessageBox.VisibleWidth, HudMessageBox.Height) && HudMessageBox.Bounds.Contains(HudMessageBox.Accept)
@@ -499,6 +506,87 @@ internal static class HudInteractionTests
         controller.Update(state, layout, true, default, MouseAt(HudInventoryLayout.PageButton(origin, 1).Center, layout.Scale, ButtonState.Pressed));
         Assert.True(sent is [{ Action: InventoryAction.SwitchBagPage, Destination: 1 } switched] && switched.ItemId == id && controller.Dragging == id,
             "the page button with a carried stone did not switch the page taking the stone, or dropped it");
+        return Task.CompletedTask;
+    }
+
+    private static Task CostumeRightClickAsync()
+    {
+        var layout = HudLayout.Create(800, 600);
+        var origin = HudInventoryLayout.Origin(layout);
+        var character = new CharacterClassRegistry().CreatePlayer(PlayerClass.Archer, "Wardrobe");
+        var hopy = new OwnedItemView(Guid.NewGuid(), ItemCodes.Parse("CA547"), "Hopy", ItemKind.Armor, 1, 0, -1, 1, 1, "CA547");
+        var cupy = new OwnedItemView(Guid.NewGuid(), ItemCodes.Parse("CA548"), "Cupy", ItemKind.Armor, 1, 5, -1, 1, 1, "CA548");
+        var state = OwnerState.Capture(character) with { Items = new[] { hopy, cupy }, InventoryRevision = 3 };
+        var sent = new List<InventoryCommand>();
+        var controller = new HudInventoryController(null!, command =>
+        {
+            sent.Add(command);
+            return Task.FromResult(new InventoryOutcome(true, state.InventoryRevision + 1, GameText.None));
+        })
+        { Female = ClassProfiles.Of(PlayerClass.Archer).Female };
+
+        void RightClick(int cell)
+        {
+            var at = HudInventoryLayout.Cell(origin, cell).Center;
+            controller.Update(state, layout, true, default, new MouseState(at.X * layout.Scale, at.Y * layout.Scale, 0,
+                ButtonState.Released, ButtonState.Released, ButtonState.Pressed, ButtonState.Released, ButtonState.Released));
+            controller.Update(state, layout, true, default, MouseAt(at, layout.Scale, ButtonState.Released));
+        }
+
+        RightClick(0);
+        Assert.True(sent.Count == 0 && controller.Completions == 1 && !controller.LastOk
+            && controller.Message == ClientText.Get("Inventory.CostumeOtherGender"), "a man's costume was sent, or its refusal was not reported");
+        RightClick(5);
+        Assert.True(sent is [{ Action: InventoryAction.WearCostume } wear] && wear.ItemId == cupy.InstanceId, "the wearer's own costume was not worn");
+        return Task.CompletedTask;
+    }
+
+    private static Task WardrobePageAsync()
+    {
+        var layout = HudLayout.Create(800, 600);
+        var origin = HudInventoryLayout.Origin(layout);
+        var character = new CharacterClassRegistry().CreatePlayer(PlayerClass.Archer, "Wardrobe");
+        var cupy = new OwnedItemView(Guid.NewGuid(), ItemCodes.Parse("CA548"), "Cupy", ItemKind.Armor, 1, -1, OwnedItemView.WardrobeSlot, 1, 1, "CA548");
+        var armor = new OwnedItemView(Guid.NewGuid(), ItemCodes.Parse("DA108"), "Armor", ItemKind.Armor, 1, 0, -1, 2, 3, "DA108");
+        var state = OwnerState.Capture(character) with { Items = new[] { cupy, armor }, InventoryRevision = 3, CostumeItemId = cupy.InstanceId, CostumeKey = "CA548" };
+        Assert.True(!HudInventoryLayout.Shows(cupy, questBoxShown: false) && !HudInventoryLayout.Shows(cupy, questBoxShown: true)
+            && HudInventoryLayout.ItemAt(origin, state.Items, HudInventoryLayout.Cell(origin, 0).Center, false) == armor,
+            "the worn costume is drawn or picked on a bag cell");
+        Assert.True(HudInventoryLayout.CostumeArea(origin).Contains(HudInventoryLayout.CostumeSlot(origin)), "the costume slot is outside the wardrobe page");
+        var sent = new List<InventoryCommand>();
+        var controller = new HudInventoryController(null!, command =>
+        {
+            sent.Add(command);
+            return Task.FromResult(new InventoryOutcome(true, state.InventoryRevision, GameText.None));
+        })
+        { Female = ClassProfiles.Of(PlayerClass.Archer).Female };
+
+        void Press(Point at, bool right)
+        {
+            var x = at.X * layout.Scale;
+            var y = at.Y * layout.Scale;
+            controller.Update(state, layout, true, default, new MouseState(x, y, 0, right ? ButtonState.Released : ButtonState.Pressed,
+                ButtonState.Released, right ? ButtonState.Pressed : ButtonState.Released, ButtonState.Released, ButtonState.Released));
+            controller.Update(state, layout, true, default, MouseAt(at, layout.Scale, ButtonState.Released));
+            controller.Update(state, layout, true, default, MouseAt(at, layout.Scale, ButtonState.Released));
+        }
+
+        var button = HudInventoryLayout.CostumeButton(origin).Center;
+        var slot = HudInventoryLayout.CostumeSlot(origin).Center;
+        Press(button, right: false);
+        Assert.True(controller.CostumePage, "the C button did not open the wardrobe page");
+        Press(slot, right: false);
+        Assert.True(sent is [{ Action: InventoryAction.ClearCostume }], "a click on the costume slot did not take the costume off");
+        Press(HudInventoryLayout.Cell(origin, 0).Center, right: true);
+        Assert.True(sent is [_, { Action: InventoryAction.Equip } equip] && equip.ItemId == armor.InstanceId && !controller.CostumePage,
+            "armour put on with a right click stayed under the wardrobe page");
+
+        Press(button, right: false);
+        Press(HudInventoryLayout.Cell(origin, 0).Center, right: false);
+        Assert.True(controller.CostumePage && controller.Dragging == armor.InstanceId, "the armour was not picked up");
+        Press(slot, right: false);
+        Assert.True(!controller.CostumePage && sent[^1].Action != InventoryAction.WearCostume,
+            "armour set down over the wardrobe page did not go to the equipment under it");
         return Task.CompletedTask;
     }
 

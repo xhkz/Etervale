@@ -21,11 +21,43 @@ internal static class EquipmentTests
     {
         yield return ("original catalog metadata enables armor and weapons without allowing two-handed shield combinations", CatalogMetadataAsync);
         yield return ("equipment resources preserve original indices, armor aliases and village bones", ResourcesAsync);
+        yield return ("a worn costume draws its body when the file is there, else the armour's", CostumeCatalogAsync);
         yield return ("the assassin holds a dagger in each hand and the shaman's phantom hovers at its back", NewClassWeaponsAsync);
         yield return ("an item key's family names its kind without allocating", KindOfAsync);
         yield return ("motion selection respects item lists, class and map masks", MotionAsync);
         yield return ("equipment changes refresh public appearance over TCP", PresenceAsync);
         yield return ("remote equipment preparation preserves old actors and discards superseded swaps", ReplacementAsync);
+    }
+
+    private static Task CostumeCatalogAsync()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "etervale-costumes-" + Guid.NewGuid().ToString("N"));
+        var log = PristonTale.Engine3D.Diagnostics.NullClientLog.Instance;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "char", "tmABCD"));
+            Assert.True(CostumeCatalog.Shipped.TryBody("DA131", 1, out var body) && body == "char/tmABCD/Cb001.inx",
+                "the Fighter row of a shipped costume has no body");
+            File.WriteAllBytes(Path.Combine(root, "char", "tmABCD", "cb001.INX"), []);
+            EquipmentVisuals.FindCostumeBodies(root, log);
+            var fighter = new CharacterClassRegistry().Get(PlayerClass.Fighter).Definition.DefaultVisuals;
+            var original = EquipmentVisuals.Apply(fighter, "DA108", "", "", false, 2).Body.InxExtensionPath;
+            Assert.True(EquipmentVisuals.Apply(fighter, "DA108", "", "", false, 2, "da131").Body.InxExtensionPath == body,
+                "a worn costume did not draw its body over the armour's");
+            Assert.True(EquipmentVisuals.Apply(fighter, "DA108", "", "", false, 2, "DA153").Body.InxExtensionPath == original,
+                "a costume without a body for the class changed the armour's body");
+            File.Delete(Path.Combine(root, "char", "tmABCD", "cb001.INX"));
+            EquipmentVisuals.FindCostumeBodies(root, log);
+            Assert.True(EquipmentVisuals.Apply(fighter, "DA108", "", "", false, 2, "DA131").Body.InxExtensionPath == original,
+                "a costume whose body file is missing did not keep the armour's body");
+        }
+        finally
+        {
+            EquipmentVisuals.FindCostumeBodies(root, log);
+            Directory.Delete(root, recursive: true);
+        }
+
+        return Task.CompletedTask;
     }
 
     private static Task KindOfAsync()

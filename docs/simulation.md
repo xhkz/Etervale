@@ -38,7 +38,8 @@ progression, regeneration and movement rates. `World/`, `Physics/` and `Skills/`
 | `Items/Item.cs` | `ItemKind`, `ItemStatBlock`, `ItemDefinition`, `ItemInstance` |
 | `Items/ItemTemplate.cs`, `ItemRoll.cs` | Authored value ranges of a kind; the values of one copy (`ItemRoll`, `ItemSpecBonus`) |
 | `Items/ItemRoller.cs` | Shop (lowest) form and drop rolls, class specialization and its requirement shift |
-| `Items/EquipmentTotals.cs` | What the usable worn items and their specializations add (`EquipmentTotals.Sum`) |
+| `Items/CostumeCatalog.cs`, `Items/Data/Costumes.json`, `Characters/PlayerCharacter.Costume.cs` | The costume list and the wardrobe ([costumes](costumes.md)) |
+| `Items/EquipmentTotals.cs` | What the usable worn items and their specializations add, the worn costume included (`EquipmentTotals.Sum`) |
 | `Items/ItemUsability.cs`, `CarriedWeight.cs` | Requirement and class checks; carried weight and the weight limit checks |
 | `Items/ItemAbsorbCorrection.cs` | Absorb added to armor, robes, boots, gloves and shields by catalog number |
 | `Items/ItemDetailView.cs` | Owner view of one copy |

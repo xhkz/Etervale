@@ -50,6 +50,11 @@ internal static class ClientSettingsTests
         settings = new ClientSettings { WindowWidth = 3440, WindowHeight = 1440, RefreshRate = 165, MaxFps = 237, Monitor = 2 };
         Assert.True(settings.Validate(NullClientLog.Instance) == settings, "valid custom mode or frame limit was lost");
         Assert.True(settings.HasSameDisplay(settings with { MaxFps = 60, UiScale = 1.2f, MusicEnabled = false, SoundEnabled = false }), "non-device settings triggered display reset");
+        Assert.True(new ClientSettings().CameraSceneryCollision, "camera collision should default on");
+        Assert.True((settings with { CameraSceneryCollision = false }).Validate(NullClientLog.Instance).CameraSceneryCollision == false,
+            "camera collision option was not persisted by validation");
+        Assert.True(settings.HasSameDisplay(settings with { CameraSceneryCollision = false }),
+            "camera-only option triggered a display reset");
         Assert.True(!settings.HasSameDisplay(settings with { RefreshRate = 144 }), "refresh change missed display reset");
         return Task.CompletedTask;
     }
@@ -95,6 +100,17 @@ internal static class ClientSettingsTests
             Assert.True(Path.GetFullPath(PristonTextureLoader.ResolvePath(opening, "sea_0.bmp")) == Path.GetFullPath(own),
                 "the opening's stage takes Ricarten's texture over its own");
             Assert.True(PristonTextureLoader.ResolvePath(other, "riy-w017.bmp").Length == 0, "a field borrows textures it does not name");
+
+            var npc = Path.Combine(root, "StartImage", "Opening", "npc");
+            var tn006 = Path.Combine(root, "char", "npc", "TN-006");
+            Directory.CreateDirectory(npc);
+            Directory.CreateDirectory(tn006);
+            var face = Path.Combine(tn006, "mm.bmp");
+            File.WriteAllBytes(face, []);
+            File.WriteAllBytes(Path.Combine(tn006, "TN-006-b.BMP"), []);
+            Assert.True(Path.GetFullPath(PristonTextureLoader.ResolvePath(npc, "mm.bmp")) == Path.GetFullPath(face),
+                "the opening's NPC does not find its face in TN-006");
+            Assert.True(PristonTextureLoader.ResolvePath(npc, "TN-006-b.BMP").Length == 0, "the opening's NPCs borrow every TN-006 texture");
         }
         finally
         {

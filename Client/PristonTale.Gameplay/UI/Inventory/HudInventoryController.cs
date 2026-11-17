@@ -113,6 +113,9 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
     // Set by the HUD each frame: nothing is picked up while the player attacks or casts, as in the original.
     public bool PickupLocked { get; set; }
 
+    // The wearer's gender, which the wardrobe's costumes are cut for (CostumeCatalog.Allows).
+    public bool Female { get; set; }
+
     // The player's swings and casts begun so far (GameScene.PlayerActionStarts).
     public long ActionStarts { get; set; }
 
@@ -135,6 +138,8 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
     // Whether the special item box shows over the bag (the bag's items hidden), and the bag's item count it closes on
     // when the bag gains an item, as the original closes it to show what was received.
     public bool QuestBoxShown { get; private set; }
+    // The wardrobe page shown over the equipment (a view only; the server keeps what is worn).
+    public bool CostumePage { get; private set; }
     private (long Revision, int Count) _bagCount = (-1, 0);
 
     // A right click on a carried usable item (premium, travel and effect items).
@@ -253,6 +258,11 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
         _hovered = visible && state is not null && _dragging == Guid.Empty
             ? HudInventoryLayout.ItemAt(_origin, state.Items, layout.ToLogical(mouse.Position), QuestBoxShown)
             : null;
+        if (_hovered is { Equipped: true } && CostumePage)
+        {
+            // The wardrobe page covers the equipment, which takes no clicks under it.
+            _hovered = null;
+        }
         if (_hovered is not null && Hides(_hovered))
         {
             _hovered = null;
@@ -291,6 +301,11 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
         // The side buttons take their clicks with an item on the cursor too, which is never set down on them.
         if (clicked)
         {
+            if (HudInventoryLayout.CostumeButton(_origin).Contains(pointer))
+            {
+                CostumePage = !CostumePage;
+                return;
+            }
             for (var side = 0; side < PlayerCharacter.Sides; side++)
             {
                 if (HudInventoryLayout.PageButton(_origin, side).Contains(pointer))
@@ -316,6 +331,19 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
             }
             else if (clicked)
             {
+                if (CostumePage && IsCostume(carried) && HudInventoryLayout.CostumeSlot(_origin).Contains(pointer))
+                {
+                    _dragging = Guid.Empty;
+                    WearCostume(carried);
+                    return;
+                }
+
+                // Anything else set down over the wardrobe goes to the equipment under it, which the page then uncovers.
+                if (CostumePage && !IsCostume(carried) && HudInventoryLayout.CostumeArea(_origin).Contains(pointer))
+                {
+                    CostumePage = false;
+                }
+
                 SetDown(carried, pointer, keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift));
             }
 
@@ -341,6 +369,17 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
                 ShopRequested?.Invoke();
                 return;
             }
+        }
+
+        if (CostumePage && HudInventoryLayout.CostumeSlot(_origin).Contains(pointer))
+        {
+            var rightClick = mouse.RightButton == ButtonState.Pressed && _previousMouse.RightButton == ButtonState.Released;
+            if ((clicked || rightClick) && _state.CostumeItemId != Guid.Empty)
+            {
+                SendCostume(InventoryAction.ClearCostume, Guid.Empty);
+            }
+
+            return;
         }
 
         var hovered = _hovered;
@@ -407,6 +446,12 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
         switch (placement.Kind)
         {
             case HudPlacementKind.Fits or HudPlacementKind.Exchange when placement.Slot is { } slot:
+                if (IsCostume(carried))
+                {
+                    Refuse("Inventory.CostumeInWardrobe");
+                    break;
+                }
+
                 Send(InventoryAction.Equip, carried, 0, 0, slot, placement.Covered);
                 break;
             case HudPlacementKind.Fits when placement.Anchor == carried.Anchor:
@@ -655,9 +700,43 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
         }
     }
 
-    // Right click: a usable item is used, a potion drunk, and an item worn or taken off.
+    // A single costume in a bag, which only the wardrobe wears.
+    public static bool IsCostume(OwnedItemView item) => item is { InBag: true, Count: 1 } && CostumeCatalog.Shipped.Contains(item.CatalogKey);
+
+    // A bag costume goes into the wardrobe, the one worn before back to its place (the server checks the wearer,
+    // PlayerCharacter.TryWearCostume).
+    private void WearCostume(OwnedItemView item)
+    {
+        if (!CostumeCatalog.Shipped.Allows(item.CatalogKey, Female))
+        {
+            Refuse("Inventory.CostumeOtherGender");
+        }
+        else
+        {
+            SendCostume(InventoryAction.WearCostume, item.InstanceId);
+        }
+    }
+
+    // A refusal the client knows without asking the server, reported as a completed operation is.
+    private void Refuse(string text)
+    {
+        Message = ClientText.Get(text);
+        LastOk = false;
+        Completions++;
+    }
+
+    private void SendCostume(InventoryAction action, Guid itemId) =>
+        SendInventory(new InventoryCommand(Guid.NewGuid(), _state.InventoryRevision, action, itemId, 0, 0, default));
+
+    // Right click: a usable item is used, a potion drunk, a costume worn, and an item worn or taken off.
     private void Use(OwnedItemView item)
     {
+        if (IsCostume(item))
+        {
+            WearCostume(item);
+            return;
+        }
+
         if (!item.Equipped && QuestItemUse?.Invoke(item) == true)
         {
             return;
@@ -685,6 +764,12 @@ public sealed class HudInventoryController(ScreenContext context, Func<Inventory
 
     private void SendInventory(InventoryCommand command, Guid carryOnSuccess = default)
     {
+        // An item put on is shown: the wardrobe page would cover it.
+        if (command.Action == InventoryAction.Equip)
+        {
+            CostumePage = false;
+        }
+
         _pendingOperation = true;
         _carryOnSuccess = carryOnSuccess;
         _pendingSound = command.Action switch

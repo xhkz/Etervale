@@ -95,9 +95,9 @@ Bodies start with `uint16 Version = 1`; text is UTF-8 with a `uint16` byte lengt
 | Step | Packet | Notes |
 | --- | --- | --- |
 | Connect | S→C `ServerHello` (`0x45540F00`) | `{uint16 Version, uint16 0, uint32 Protocol, MinimumProtocol, int32 FullPlayers, text ServerName (32 B)}`: `FullPlayers` = players in the world when the player limit (`server.max_users` or `/user_limit`) is reached, else 0 (then only game masters may log in); `ServerName` is `server.name`. |
-| Log in | C→S `Login` (`0x45540F01`) | `{uint16 Version, uint16 0, uint32 Protocol, text Account (64 B), text Password (128 B), text Language (16 B)}`. `Protocol` is `ProtocolVersion.Current` (26); a change of any message's layout raises it and `ProtocolVersion.Minimum`, so a client built before it is refused instead of misreading the world (a login without the language, from a client before protocol 4, is still read so the server can answer it is outdated). `Language` is the client's language (`en` or `pt-BR`; any other value is English): the server sends names and NPC dialog in it, falling back to English. |
+| Log in | C→S `Login` (`0x45540F01`) | `{uint16 Version, uint16 0, uint32 Protocol, text Account (64 B), text Password (128 B), text Language (16 B)}`. `Protocol` is `ProtocolVersion.Current` (27); a change of any message's layout raises it and `ProtocolVersion.Minimum`, so a client built before it is refused instead of misreading the world (a login without the language, from a client before protocol 4, is still read so the server can answer it is outdated). `Language` is the client's language (`en` or `pt-BR`; any other value is English): the server sends names and NPC dialog in it, falling back to English. |
 | Result | S→C `CharacterList` (`0x45540F03`), then `LoginResult` (`0x45540F02`) | `LoginResult` = `{uint16 Version, uint8 Status, uint8 0}`: 0 ok, 1 bad credentials (also unknown accounts), 2 account blocked, 3 already logged in on this connection, 4 busy (throttled, full or storage failure), 5 client protocol older than the server's minimum. A failed login sends no list. |
-| Character list | S→C `CharacterList` | `{uint16 Version, uint16 0, int32 Count (at most 6)}`, then `{text Name, uint32 Class (PlayerClass), int32 Level, uint8 Tier, Face, Hair, Flags (1 in a village), uint32 WeaponCode, ArmorCode, OffHandCode, uint32 0, text ClanName (48 B; empty out of a clan)}`. |
+| Character list | S→C `CharacterList` | `{uint16 Version, uint16 0, int32 Count (at most 6)}`, then `{text Name, uint32 Class (PlayerClass), int32 Level, uint8 Tier, Face, Hair, Flags (1 in a village), uint32 WeaponCode, ArmorCode, OffHandCode, CostumeCode (the worn costume, 0 none), text ClanName (48 B; empty out of a clan)}`. |
 | Create, delete | C→S `CharacterCommand` (`0x45540F04`), S→C `CharacterResult` (`0x45540F05`) | Command `{uint16 Version, uint8 Action (1 create, 2 delete), uint8 0, int32 Class (PlayerClass), FaceIndex, text Name}`; result `{uint16 Version, uint8 Action, uint8 Ok, int32 Failure (CreateCharacterFailure), text Name}`. |
 | Select | C→S `EnterWorld` (`0x45540E00`) | `{uint16 Version = 1, uint16 0, text Name (64 B)}`. |
 | Entry | S→C `WorldEntry` (`0x45540E01`) | `{uint16 Version, uint8 Status (0 entered, else EnterWorldFailure), uint8 0, uint64 EntityId, int32 Field, int32 X, Z (x256)}`. The owner's stats, inventory and skills follow on the presence stream. |
@@ -173,7 +173,7 @@ Every message code has the high word `0x4554` ("ET"); every message keeps the `{
 
 | Code | Name | Direction | Content |
 | --- | --- | --- | --- |
-| `0x45540100` | `OwnerStatus` | S→C | Level, unsigned 64-bit experience (current, level start, next level), 64-bit money, resources, attributes, combat values and revisions, then the elite skill points and the class tier (0..4), the bag page shown and the weapon pair held (a byte each, 0 A, 1 B). 158 B. |
+| `0x45540100` | `OwnerStatus` | S→C | Level, unsigned 64-bit experience (current, level start, next level), 64-bit money, resources, attributes, combat values and revisions, then the elite skill points and the class tier (0..4), the bag page shown and the weapon pair held (a byte each, 0 A, 1 B), then the worn costume: `guid CostumeItemId` (empty none) and `uint32 CostumeCode`. 178 B. |
 | `0x45540101` | `Skills` | S→C | Skill revision, (code, rank, uses) entries (at most 512) and the saved mouse sockets and `F1`-`F8` keys. |
 | `0x45540102` | `Inventory` | S→C | Inventory revision split into parts of up to 48 items, each `{Guid, uint32 Code, int32 Kind, Count, Anchor, Slot, int16 Width, Height, text Name (64 B), text Link (48 B: a bound Union Core's clan member)}`; the client replaces its inventory when all parts of a revision arrived. |
 | `0x45540110` / `0x45540111` | `InventoryCommand` / `InventoryResult` | C→S / S→C | Transactional inventory operation, correlated by operation id. A ground pickup (`InventoryAction.Pickup`) names the drop in `ItemId`, with `Destination` 0 (received as any item) or `InventoryCommand.PickupToBag` (1: into the bag as a stack of its own, for the client's cursor, or to the hand when the page shown is full; anything else is refused); a throw (`InventoryAction.Drop`) names the bag item or the item in the hand and the amount in `Count`; `Move`, `Merge` and `Swap` naming the item in the hand set it down on the page shown; a gold throw (`InventoryAction.DropGold`) only the amount. |
@@ -368,9 +368,10 @@ Rules: [special-items.md](special-items.md).
 
 ### Entity descriptions
 
-Bodies start with `{uint16 Version = 3, uint16 Flags = 0}` (version 2 appended the player's shop sign to
-`EntityDescription`, version 3 then its clan: `varuint ClanId` (0 none), `text ClanName` (48 bytes), `varuint ClanMark`;
-a reader fills each only from its version); text is UTF-8 with a `uint16` byte length (name 64 bytes, model paths 160).
+Bodies start with `{uint16 Version = 4, uint16 Flags = 0}` (version 2 appended the player's shop sign to
+`EntityDescription`, version 3 then its clan: `varuint ClanId` (0 none), `text ClanName` (48 bytes), `varuint ClanMark`,
+version 4 then `uint32 Costume`, the worn costume's item code (0 none); a reader fills each only from its version); text
+is UTF-8 with a `uint16` byte length (name 64 bytes, model paths 160).
 
 | Message | Layout after the header |
 | --- | --- |

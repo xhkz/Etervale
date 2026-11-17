@@ -60,6 +60,7 @@ public class Game1 : Game
         _client = new GameClient(GraphicsDevice, Content, _presentation.AssetRoot, ResolveServerAddress(_presentation.Requested.ServerAddress), _presentation,
             Window.GetClipboardText);
         _client.LoadContent();
+        IsMouseVisible = !_client.HasGameCursor;
         Window.TextInput += (_, args) => _client.TypeCharacter(args.Character);
         ConsoleClientLog.Instance.Info($"[Presentation] GPU={GraphicsDevice.Adapter.DeviceName}; variable timestep; VSync={_presentation.VerticalSync}; maxFps={_presentation.Requested.MaxFps} (0=unlimited).");
     }
@@ -191,6 +192,7 @@ public class Game1 : Game
 
     protected override void UnloadContent()
     {
+        IsMouseVisible = true;
         _client?.Dispose();
         base.UnloadContent();
     }

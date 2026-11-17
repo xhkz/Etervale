@@ -249,6 +249,9 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
                 _host.PlaySkillMotion(skillEvent.CasterId, SkillFormulas.Plan(rule, skillEvent.Rank), skillEvent.DurationMs / loops, MotionRate(rule, skillEvent),
                     pending.Loop);
                 break;
+            case PendingKind.PreImpact:
+                Spawn(rule.PreImpactEffect, skillEvent.CasterId, skillEvent.TargetId, Position(skillEvent.TargetId, skillEvent.Position), -skillEvent.Facing);
+                break;
         }
     }
 
@@ -276,6 +279,25 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
         {
             _sounds.Play(rule.CastSound, Position(skillEvent.CasterId, skillEvent.Position), _host.ListenerPosition);
         }
+
+        if (rule.PreImpactEffect.Length > 0)
+        {
+            _pending.Add(new Pending(nowMs + PreImpactDelayMs(rule, skillEvent, plan), PendingKind.PreImpact, skillEvent, 0));
+        }
+    }
+
+    // A falling effect starts its lead ahead of the chosen hit and never moves the server's damage. Hit 0 is
+    // Start.HitAtMs; a later hit is its authored event's share of the cast's real duration, so it follows the caster's
+    // speed.
+    internal static double PreImpactDelayMs(SkillRule rule, SkillEventInfo skillEvent, SkillMotionPlan plan)
+    {
+        var hitAtMs = (double)skillEvent.HitAtMs;
+        if (rule.PreImpactHitIndex > 0 && plan.Motion != SkillMotion.Attack && plan.Frames > 0 && rule.PreImpactHitIndex < plan.Events.Length)
+        {
+            hitAtMs = (double)skillEvent.DurationMs * plan.Events[rule.PreImpactHitIndex] / plan.Frames;
+        }
+
+        return Math.Max(0d, hitAtMs - rule.PreImpactLeadMs);
     }
 
     private static bool Releases(SkillRule rule) => rule.Projectile && rule.ProjectileEffect.Length > 0 || rule.CastSoundAtRelease || rule.CastEffectAtRelease;
@@ -516,6 +538,14 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
 
     private void Cancel(ulong casterId)
     {
+        for (var index = _pending.Count - 1; index >= 0; index--)
+        {
+            if (_pending[index].Kind == PendingKind.PreImpact && _pending[index].Event.CasterId == casterId)
+            {
+                _pending.RemoveAt(index);
+            }
+        }
+
         Looks.Cancel(casterId);
         _releases.End(casterId);
         _landedEarly.Remove(casterId);
@@ -742,7 +772,8 @@ public sealed class SkillPresentation : IVfxServices, IDisposable
     private enum PendingKind : byte
     {
         Event,
-        Loop
+        Loop,
+        PreImpact
     }
 
     private readonly record struct Pending(double AtMs, PendingKind Kind, SkillEventInfo Event, int Loop);

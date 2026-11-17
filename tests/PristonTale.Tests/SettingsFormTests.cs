@@ -248,10 +248,12 @@ internal static class SettingsFormTests
         var inGame = new PresentationSettings();
         var panel = new HudSettingsPanel(inGame);
         const int ShadowsRow = 13;
-        panel.Click(HudSettingsPanel.Row(ShadowsRow).Center, backwards: false);
+        panel.Click(HudSettingsPanel.NextPage.Center, backwards: false);
+        panel.Click(HudSettingsPanel.Row(ShadowsRow - HudSettingsPanel.RowsPerPage).Center, backwards: false);
         Assert.True(inGame.Requested.Quality == GraphicsQuality.Custom, "the in-game panel kept the preset's name with shadows off");
         const int MusicRow = 5;
         inGame.Requested = new ClientSettings();
+        panel.Click(HudSettingsPanel.PreviousPage.Center, backwards: false);
         panel.Click(HudSettingsPanel.Row(MusicRow).Center, backwards: false);
         Assert.True(inGame.Requested.Quality == GraphicsQuality.High, "the in-game panel made the quality custom for an option no preset sets");
         return Task.CompletedTask;

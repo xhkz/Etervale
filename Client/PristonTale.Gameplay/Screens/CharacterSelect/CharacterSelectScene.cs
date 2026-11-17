@@ -558,7 +558,8 @@ internal sealed class CharacterSelectScene
             weapon: "",
             offHand: "",
             summary.InVillage,
-            definition.MotionJobMask);
+            definition.MotionJobMask,
+            summary.CostumeKey);
         return true;
     }
 

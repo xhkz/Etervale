@@ -6,6 +6,7 @@ using PristonTale.Simulation.Items;
 using PristonTale.Simulation.Progression;
 using PristonTale.Simulation.Skills;
 using PristonTale.Contracts.Characters;
+using PristonTale.Contracts.Texts;
 using PristonTale.Gameplay.Localization;
 
 namespace PristonTale.Gameplay.UI.Widgets;
@@ -41,6 +42,9 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
     public int Tax { get; set; }
     private IReadOnlyList<OwnedSkillView> _displayedSkills;
     private Entry _hovered;
+    private string _hoveredTrainingPrice = "";
+    // The hovered skill's index, rank and tax the price above was formatted for, so a held hover formats it once.
+    private (int Index, int Rank, int Tax) _hoveredPriceKey = (-1, 0, 0);
     private bool _hoveredBasic;
     private bool _secondPage;
     private int _shownTier;
@@ -135,7 +139,7 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
         return 0;
     }
 
-    public void HandleTrainingClick(Point origin, Point pointer, OwnerState state, ulong npcId, HudProgressionController controller)
+    public void HandleTrainingClick(Point origin, Point pointer, OwnerState state, ulong npcId, HudProgressionController controller, Action<string> showNotice)
     {
         if (state is null || npcId == 0 || controller.Pending)
         {
@@ -165,15 +169,40 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
 
             var entry = _entries[index];
             var rank = Rank(state, entry.Skill.Code);
-            if (!CanTrain(index, state))
+            if (!MeetsTraining(index, state))
             {
+                return;
+            }
+
+            if (!Affords(index, state))
+            {
+                showNotice(ClientText.Get(GameTextId.NotEnoughGold));
                 return;
             }
 
             _trainingIndex = index;
             _trainingName = DataText.SkillName(entry.Skill);
-            _trainingPrice = ClientText.Format("SkillWindow.TrainPrice", rank + 1, SkillLearning.Price(index, rank, Tax).ToString("N0", System.Globalization.CultureInfo.InvariantCulture));
+            _trainingPrice = NextTrainingPrice(index, rank, Tax);
         }
+    }
+
+    // The next rank's price with the castle tax, for the confirmation and the skill's details; empty at the last rank.
+    internal static string NextTrainingPrice(int index, int currentRank, int tax) =>
+        currentRank >= SkillLearning.MaxRank ? "" :
+        ClientText.Format("SkillWindow.TrainPrice", currentRank + 1,
+            SkillLearning.Price(index, currentRank, tax).ToString("N0", System.Globalization.CultureInfo.InvariantCulture));
+
+    // The hovered skill's next price, shown wherever the player stands and whatever its gold.
+    private void HoverPrice(int index, Entry entry, OwnerState state)
+    {
+        var key = state is null || entry.Skill.Code == 0 ? (-1, 0, 0) : (index, entry.Rank, Tax);
+        if (key == _hoveredPriceKey)
+        {
+            return;
+        }
+
+        _hoveredPriceKey = key;
+        _hoveredTrainingPrice = key.Item1 < 0 ? "" : NextTrainingPrice(index, entry.Rank, Tax);
     }
 
     // Yes to the skill being confirmed (its Yes button, or Enter as the original's skill box takes it).
@@ -320,6 +349,7 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
             if (interactive && node.Contains(pointer))
             {
                 _hovered = entry;
+                HoverPrice(index, entry, state);
                 painter.Sprite(HudArt.SkillSelect, node.X + (pressed ? 1 : 0), node.Y + (pressed ? 1 : 0));
             }
         }
@@ -429,7 +459,7 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
 
         if (_hovered is not null)
         {
-            DrawDetails(painter, layout, pointer, _hovered);
+            DrawDetails(painter, layout, pointer, _hovered, _hoveredTrainingPrice);
         }
         else if (_hoveredBasic)
         {
@@ -437,17 +467,21 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
         }
     }
 
-    private bool CanTrain(int index, OwnerState state)
+    private bool CanTrain(int index, OwnerState state) => MeetsTraining(index, state) && Affords(index, state);
+
+    // Every gate of the next rank but its price: level, prerequisite, tier and points.
+    private bool MeetsTraining(int index, OwnerState state)
     {
         if (state is null || index >= _entries.Length)
         {
             return false;
         }
 
-        var skills = Classes.Get(_class).Skills;
-        return SkillLearning.CanTrain(skills, index, code => Rank(state, code), state.Level, state.Tier, state.SkillPoints, state.EliteSkillPoints)
-            && state.Money >= SkillLearning.Price(index, Rank(state, skills[index].Code), Tax);
+        return SkillLearning.CanTrain(Classes.Get(_class).Skills, index, code => Rank(state, code), state.Level, state.Tier, state.SkillPoints, state.EliteSkillPoints);
     }
+
+    private bool Affords(int index, OwnerState state) =>
+        state.Money >= SkillLearning.Price(index, Rank(state, Classes.Get(_class).Skills[index].Code), Tax);
 
     private static int Rank(OwnerState state, uint code) => Owned(state, code) is var at and >= 0 ? state.Skills[at].Rank : 0;
 
@@ -477,7 +511,7 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
         }
     }
 
-    private static void DrawDetails(HudPainter painter, HudLayout layout, Point pointer, Entry entry)
+    private static void DrawDetails(HudPainter painter, HudLayout layout, Point pointer, Entry entry, string trainingPrice)
     {
         if (entry.Skill.Code == 0)
         {
@@ -490,6 +524,11 @@ public sealed class HudSkillsPanel(SpriteFont font, HudSprites sprites)
             $"{entry.Level}   {entry.Mouse}",
             entry.Cost
         };
+        if (trainingPrice.Length > 0)
+        {
+            lines.Add(trainingPrice);
+        }
+
         lines.AddRange(entry.Details ?? []);
         lines.AddRange(entry.Weapons);
         lines.Add(entry.Status);

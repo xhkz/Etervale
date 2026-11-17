@@ -263,7 +263,7 @@ internal static class NpcServiceTransactions
         {
             NpcServiceKind.Shop => new NpcServiceReply(outcome)
             {
-                Catalog = command.Action == NpcServiceAction.Open ? Catalog(npc.Definition.Shop, items, tax) : null,
+                Catalog = command.Action == NpcServiceAction.Open ? Catalog(npc.Definition.Shop, items, tax, character) : null,
                 Quotes = Quotes(character)
             },
             NpcServiceKind.Warehouse => new NpcServiceReply(outcome) { Warehouse = storage!.View() },
@@ -308,17 +308,21 @@ internal static class NpcServiceTransactions
             _ => new NpcServiceReply(outcome)
         };
 
-    public static IReadOnlyList<ShopOffer> Catalog(NpcShopStock stock, ItemCatalog items, int tax = 0)
+    // The buyer is not offered a costume the wardrobe would refuse them.
+    public static IReadOnlyList<ShopOffer> Catalog(NpcShopStock stock, ItemCatalog items, int tax, PlayerCharacter buyer)
     {
         var offers = new List<ShopOffer>();
-        for (var tab = 0; tab < 3; tab++)
+        for (var tab = 0; tab < NpcShopStock.Tabs; tab++)
         {
             var codes = stock.Tab(tab);
             for (var ordinal = 0; ordinal < codes.Count; ordinal++)
             {
-                if (items.TryGet(codes[ordinal], out var definition))
+                if (items.TryGet(codes[ordinal], out var definition)
+                    && NpcShopRules.CanBuy(buyer, definition))
                 {
-                    offers.Add(new ShopOffer(definition.Code, tab, ordinal, definition.Name, definition.Kind, NpcShopRules.BuyPrice(definition, 1, tax),
+                    // The shipped stock lists some costumes under weapons; they are shown after the armour.
+                    var moved = tab == NpcShopStock.WeaponTab && CostumeCatalog.Shipped.Contains(definition.CatalogKey);
+                    offers.Add(new ShopOffer(definition.Code, moved ? NpcShopStock.ArmorTab : tab, moved ? stock.ArmorItemCodes.Count + ordinal : ordinal, definition.Name, definition.Kind, NpcShopRules.BuyPrice(definition, 1, tax),
                         definition.GridWidth, definition.GridHeight, definition.MaxStack, definition.CatalogKey));
                 }
             }

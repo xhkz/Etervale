@@ -75,6 +75,7 @@ public sealed partial class GameScene : IDisposable, IHudPortraitScene
     private PristonTale.Effects.Vfx.VfxHandle _warpSparkle;
     private readonly List<LoadedField> _fields = [];
     private readonly FieldCollisionQuery _fieldCollision;
+    private IPristonCollisionQuery CameraCollisionQuery => (_presentation?.Requested.CameraSceneryCollision ?? true) ? _fieldCollision : null;
     private readonly List<EntityNeighbour> _entityNeighbours = [];
     private LoadedField _activeField;
     private string _assetRoot;

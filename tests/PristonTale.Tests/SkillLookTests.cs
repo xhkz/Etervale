@@ -41,7 +41,7 @@ internal static class SkillLookTests
         yield return ("shield swaps wait for the cast's hit; thrown shields move bone and glow during the cast", ShieldsAsync);
         yield return ("expansion grows a red translucent weapon copy; shadow master trails six or four afterimages", CastLooksAsync);
         yield return ("impact sounds follow the hit order, a random take or only the final hit; per-hit impact effects", ImpactsAsync);
-        yield return ("effect sounds pick a random take and costume wings follow the worn body item", SoundsAndWingsAsync);
+        yield return ("effect sounds pick a random take and costume wings follow the worn costume", SoundsAndWingsAsync);
     }
 
     private static SkillRule Rule(uint code)
@@ -247,11 +247,17 @@ internal static class SkillLookTests
         Assert.True(SkillPresentation.ImpactEffectOf(cross, start, 0) == "vfx.knight.grandcross.hit"
             && SkillPresentation.ImpactEffectOf(cross, start, 1) == "vfx.knight.grandcross.hit2"
             && SkillPresentation.ImpactEffectOf(cross, start, 5) == "vfx.knight.grandcross.hit2", "grand cross per-hit effects");
-        // Meteo's meteors fall, and sound, on both of its clip's events.
+        // The first Meteo strike has immediate feedback; the meteor starts falling ahead of
+        // the second authoritative strike, rather than spawning another fall at that hit.
         var meteo = Rule(Meteo);
-        Assert.True(SkillPresentation.ImpactEffectOf(meteo, start, 0) == "vfx.magician.meteo.fall" && SkillPresentation.ImpactEffectOf(meteo, start, 1) == "vfx.magician.meteo.fall"
-            && SkillPresentation.ImpactSoundFor(meteo, 0, 1, 5, random).Length > 0 && SkillPresentation.ImpactSoundFor(meteo, 1, 1, 5, random).Length > 0,
-            "meteo's meteors or sound are missing on one of its two strikes");
+        var meteoStart = Cast(Self, Meteo);
+        Assert.True(SkillPresentation.ImpactEffectOf(meteo, meteoStart, 0) == "vfx.magician.meteo.hit"
+            && SkillPresentation.ImpactEffectOf(meteo, meteoStart, 1).Length == 0
+            && SkillPresentation.ImpactSoundFor(meteo, 0, 1, 5, random).Length > 0
+            && SkillPresentation.ImpactSoundFor(meteo, 1, 1, 5, random).Length == 0
+            && meteo.PreImpactEffect == "vfx.magician.meteo.fall"
+            && meteo.PreImpactHitIndex == 1 && meteo.PreImpactLeadMs == 970f,
+            "meteo must show and sound its first strike, then fall before the silent second strike");
         return Task.CompletedTask;
     }
 
@@ -265,7 +271,7 @@ internal static class SkillLookTests
             && CostumeWings.EffectFor("CA185") == "vfx.costume.wing.white" && CostumeWings.EffectFor("ca292") == "vfx.costume.wing.red",
             "costume wing colours");
         Assert.True(CostumeWings.EffectFor("CA170").Length == 0 && CostumeWings.EffectFor("DA166").Length == 0 && CostumeWings.EffectFor("").Length == 0,
-            "a body item without wings showed some");
+            "a costume without wings showed some");
         return Task.CompletedTask;
     }
 }

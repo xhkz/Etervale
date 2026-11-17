@@ -19,7 +19,22 @@ internal sealed class HudSettingsPanel
     private static readonly int WindowModes = Enum.GetValues<WindowMode>().Length;
     private static readonly int AntiAliasingModes = Enum.GetValues<AntiAliasingMode>().Length;
     private readonly PresentationSettings _settings;
-    private readonly string[] _labels = new string[20];
+    // Display and audio, graphics and camera, then the read-only shortcut reference.
+    private const int PageCount = 3;
+    private const int KeysPage = 2;
+    private static readonly string[] PageTitles = ["Settings.Title", "Settings.PageGraphics", "Settings.PageKeys"];
+    private static readonly string[] KeyLines = [.. Enumerable.Range(1, RowsPerPage).Select(static line => "Settings.Keys" + line)];
+    // The option rows of the pages before the reference, in the order RefreshLabels writes them.
+    private const int OptionRows = 21;
+    private readonly string[] _labels = new string[OptionRows];
+    private int _page;
+    private string _pageLabel = "";
+    private int _labelPage = -1;
+    public const int RowsPerPage = 11;
+    // The display and message notes, in row units under the page rows and the page buttons.
+    private const int NotesRow = 18;
+    public static Rectangle PreviousPage => new(BoxX + 22, BoxY + 294, 105, 25);
+    public static Rectangle NextPage => new(BoxX + 208, BoxY + 294, 105, 25);
     private ClientSettings _labelSettings;
 
     public HudSettingsPanel(PresentationSettings settings) => _settings = settings;
@@ -37,14 +52,32 @@ internal sealed class HudSettingsPanel
             return;
         }
 
-        var current = _settings.Requested;
-        for (var row = 0; row < _labels.Length; row++)
+        if (PreviousPage.Contains(pointer))
         {
-            if (!Row(row).Contains(pointer))
+            _page = (_page - 1 + PageCount) % PageCount;
+            return;
+        }
+
+        if (NextPage.Contains(pointer))
+        {
+            _page = (_page + 1) % PageCount;
+            return;
+        }
+
+        if (_page == KeysPage)
+        {
+            return;
+        }
+
+        var current = _settings.Requested;
+        for (var localRow = 0; localRow < RowsPerPage; localRow++)
+        {
+            if (!Row(localRow).Contains(pointer))
             {
                 continue;
             }
 
+            var row = _page * RowsPerPage + localRow;
             var direction = backwards ? -1 : 1;
             _settings.Requested = (row switch
             {
@@ -68,6 +101,7 @@ internal sealed class HudSettingsPanel
                 17 => current with { RealisticSky = !current.RealisticSky },
                 18 => current with { CloudQuality = (CloudQuality)(((int)current.CloudQuality + direction + CloudQualities) % CloudQualities) },
                 19 => current with { Language = NextLanguage(current.Language, direction) },
+                20 => current with { CameraSceneryCollision = !current.CameraSceneryCollision },
                 _ => current
             }).WithQualityLabel();
             return;
@@ -80,21 +114,33 @@ internal sealed class HudSettingsPanel
         painter.HelpBox(BoxX, BoxY, SizeW, SizeH);
         var title = Title;
         painter.Sprite(HudArt.HelpTitle, title.X, title.Y);
-        painter.TextCentered(ClientText.Get("Settings.Title"), title.Left, title.Right, title.Y + 7, HudTextColors.BoxTitle);
-        for (var index = 0; index < _labels.Length; index++)
+        painter.TextCentered(ClientText.Get(PageTitles[_page]), title.Left, title.Right, title.Y + 7, HudTextColors.BoxTitle);
+        for (var localRow = 0; localRow < RowsPerPage; localRow++)
         {
-            var row = Row(index);
-            if (row.Contains(pointer))
+            var row = Row(localRow);
+            var index = _page * RowsPerPage + localRow;
+            var text = _page == KeysPage ? ClientText.Get(KeyLines[localRow]) : index < _labels.Length ? _labels[index] : null;
+            if (text is null)
+            {
+                continue;
+            }
+
+            if (_page != KeysPage && row.Contains(pointer))
             {
                 painter.Fill(row, Color.FromNonPremultiplied(255, 200, 0, 64));
             }
 
-            painter.Text(painter.Fit(_labels[index], row.Width - 8), row.X + 6, row.Y + 1);
+            painter.Text(painter.Fit(text, row.Width - 8), row.X + 6, row.Y + 1);
         }
 
-        var notes = Row(_labels.Length);
+        painter.Text(_pageLabel, PreviousPage.X, PreviousPage.Y + 3,
+            PreviousPage.Contains(pointer) ? HudTextColors.Marked : HudTextColors.Hint);
+        painter.Text(ClientText.Get("Settings.NextPage"), NextPage.X, NextPage.Y + 3,
+            NextPage.Contains(pointer) ? HudTextColors.Marked : HudTextColors.Hint);
+        var notes = Row(NotesRow);
         painter.Text(painter.Fit(_settings.EffectiveDisplay, notes.Width - 8), notes.X + 6, notes.Y + 6, HudTextColors.Hint);
-        var hint = ClientText.Get(_settings.Message.Length > 0 ? "Settings.NeedsAttention" : "Settings.Hint");
+        var hint = ClientText.Get(_settings.Message.Length > 0 ? "Settings.NeedsAttention" :
+            _page == KeysPage ? "Settings.ReferenceOnly" : "Settings.Hint");
         painter.Text(hint, notes.X + 6, notes.Y + 6 + RowHeight, _settings.Message.Length > 0 ? Color.Orange : HudTextColors.Hint);
         var ok = OkButton;
         painter.Sprite(HudArt.HelpButton, ok.X - 9, ok.Y - 4);
@@ -146,12 +192,14 @@ internal sealed class HudSettingsPanel
     private void RefreshLabels()
     {
         var settings = _settings.Requested;
-        if (_labelSettings == settings)
+        if (_labelSettings == settings && _labelPage == _page)
         {
             return;
         }
 
         _labelSettings = settings;
+        _labelPage = _page;
+        _pageLabel = ClientText.Format("Settings.PageOf", ClientText.Get("Settings.PrevPage"), _page + 1, PageCount);
         _labels[0] = ClientText.Format("Settings.Window", ClientText.Get("Settings.WindowMode." + settings.WindowMode));
         _labels[1] = settings.Monitor < 0 ? ClientText.Get("Settings.MonitorCurrent") : ClientText.Format("Settings.Monitor", settings.Monitor);
         _labels[2] = settings.WindowMode == WindowMode.Borderless
@@ -182,6 +230,7 @@ internal sealed class HudSettingsPanel
         _labels[17] = ClientText.Get(settings.RealisticSky ? "Settings.SkyRealistic" : "Settings.SkyClassic");
         _labels[18] = ClientText.Format("Settings.Clouds", ClientText.Get("Settings.Clouds." + settings.CloudQuality));
         _labels[19] = ClientText.Format("Settings.Language", ClientText.Get("Language." + settings.Language));
+        _labels[20] = ClientText.Get(settings.CameraSceneryCollision ? "Settings.CameraCollisionOn" : "Settings.CameraCollisionOff");
     }
 
     private static string NextLanguage(string language, int direction)

@@ -8,6 +8,7 @@ using PristonTale.Client.Net.WorldCatalog;
 using PristonTale.Engine3D.Formats;
 using PristonTale.Engine3D.Rendering;
 using PristonTale.Gameplay.World.Remote;
+using PristonTale.Gameplay.UI.Inventory;
 using PristonTale.Protocol.Binary;
 using PristonTale.Protocol.Packets;
 using PristonTale.Simulation.Characters;
@@ -15,6 +16,7 @@ using PristonTale.Contracts.Motion;
 using PristonTale.Contracts.World;
 using PristonTale.Contracts.Combat;
 using PristonTale.Contracts.Characters;
+using PristonTale.Simulation.Items;
 
 namespace PristonTale.Tests;
 
@@ -32,6 +34,29 @@ internal static class ClientTests
         yield return ("NPC, monster and player collision survives pending assets", CollisionRosterAsync);
         yield return ("an action field draws actors facing left or right, finds the nearest one ahead on the player's line and the player a walk bumps into, never one it walks away from", SideViewAsync);
         yield return ("cursor rays originate at the camera and reject an enclosing NPC pick volume", CursorPickingAsync);
+        yield return ("cosmetic inventory button and slot are separate from armour and weapon pairs", CostumePageLayoutAsync);
+    }
+
+    private static Task CostumePageLayoutAsync()
+    {
+        var origin = new Point(0, 0);
+        var button = HudInventoryLayout.CostumeButton(origin);
+        var pair0 = HudInventoryLayout.PairButton(origin, 0);
+        var pair1 = HudInventoryLayout.PairButton(origin, 1);
+        var armor = HudInventoryLayout.Equipment(origin, (int)EquipmentSlot.Armor);
+        var costume = HudInventoryLayout.CostumeSlot(origin);
+        Assert.True(!button.Intersects(pair0) && !button.Intersects(pair1),
+            "the costume button overlaps a weapon-pair button");
+        Assert.True(costume.Intersects(armor) && costume != armor,
+            "the costume page must have a separate visible slot over the character pane");
+        Assert.True(!costume.Intersects(HudInventoryLayout.Bag(origin)),
+            "the cosmetic slot must not replace any bag cell");
+        Assert.True(PristonTale.Gameplay.UI.Rendering.HudArt.Static.Contains(PristonTale.Gameplay.UI.Rendering.HudArt.CostumeButton)
+            && PristonTale.Gameplay.UI.Rendering.HudArt.Static.Contains(PristonTale.Gameplay.UI.Rendering.HudArt.CostumePanel),
+            "the original costume button and wardrobe page must be preloaded with the inventory art");
+        Assert.True(PristonTale.Gameplay.UI.Rendering.HudArt.Static.Contains(PristonTale.Gameplay.UI.Rendering.HudArt.CostumeHint),
+            "the original costume hover hint must be preloaded with the inventory art");
+        return Task.CompletedTask;
     }
 
     private static Task MovementPacingAsync()
@@ -377,6 +402,10 @@ internal static class ClientTests
 
         var enclosingRay = new Ray(Vector3.Zero, Vector3.Forward);
         Assert.True(CursorPicking.IntersectSphere(enclosingRay, Vector3.Zero, 40f) is null, "camera inside an NPC volume made every cursor direction a hit");
+        Assert.True(CursorPicking.IntersectActor(centerRay, new Vector3(0f, -4f, 0f), 4f) is not null,
+            "torso picking missed an actor centred under the pointer");
+        Assert.True(CursorPicking.IntersectActor(cornerRay, new Vector3(0f, -4f, 0f), 4f) is null,
+            "torso picking caught an actor outside the pointer");
         return Task.CompletedTask;
     }
 

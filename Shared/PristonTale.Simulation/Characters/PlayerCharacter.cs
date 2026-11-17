@@ -388,6 +388,12 @@ public sealed partial class PlayerCharacter
             return false;
         }
 
+        // A costume is worn in the wardrobe only, never in an equipment slot.
+        if (CostumeCatalog.Shipped.Contains(item.Definition.CatalogKey))
+        {
+            return false;
+        }
+
         if (!ItemEquipmentMetadata.Fits(item.Definition.Kind, item.Definition.EquipSlot, slot))
         {
             return false;
@@ -690,6 +696,11 @@ public sealed partial class PlayerCharacter
         {
             yield return hidden;
         }
+
+        if (Costume is not null)
+        {
+            yield return Costume;
+        }
     }
 
     public bool RestoreDurability(Guid instanceId)
@@ -739,6 +750,7 @@ public sealed partial class PlayerCharacter
         clone.RestoreStarterGifts(StarterGiftsReceived);
         clone.RestoreHelpPet(HelpPet, HelpPetHidden);
         clone.SkillBindings = SkillBindings;
+        clone.Costume = Costume?.Copy(1, preserveId: true);
         clone.Premium.CopyFrom(Premium);
         clone.ItemUses.CopyFrom(ItemUses);
         clone.Recompute();
@@ -893,6 +905,7 @@ public sealed partial class PlayerCharacter
         (_storedWeapon, _storedOffHand) = (candidate._storedWeapon, candidate._storedOffHand);
         (BagPage, WeaponSet) = (candidate.BagPage, candidate.WeaponSet);
         Held = candidate.Held;
+        Costume = candidate.Costume;
 
         RestoreInventoryHistory(candidate.InventoryRevision, candidate.InventoryOperations);
         RestoreServiceHistory(candidate.ServiceOperations);
